@@ -1,0 +1,9 @@
+/* Page styling. The game itself is drawn on the <canvas>; this only sets the page around it
+   and the on-screen buttons that appear on touch devices. */
+html, body { margin: 0; height: 100%; background: #dcbf9b; overflow: hidden; touch-action: none; -webkit-user-select: none; user-select: none; }
+canvas { display: block; image-rendering: pixelated; image-rendering: crisp-edges; }
+#touch { position: fixed; left: 0; right: 0; bottom: 14px; display: none; justify-content: space-between; padding: 0 14px; pointer-events: none; }
+#touch .grp { display: flex; gap: 12px; }
+.tb { pointer-events: auto; width: 64px; height: 64px; background: rgba(13,23,71,.55); border: 3px solid #141414; box-shadow: 3px 3px 0 #f08aa6;
+      color: #f4eedb; font: bold 22px monospace; display: flex; align-items: center; justify-content: center; }
+.tb.on { background: rgba(13,23,71,.85); }
