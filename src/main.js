@@ -2,7 +2,8 @@
 // main.js — the starting point. Loads the level, then runs the game loop ~60 times a second:
 // update everything a little, then draw a frame.
 // ============================================================================
-import { W, PX } from './config.js';
+import { pc } from './pc.js';   // the PC around the game (keyboard, power button); loaded first so the page is complete before sizing
+import { W, PIXEL } from './config.js';
 import { S } from './state.js';
 import { present } from './pixel.js';
 import { input } from './input.js';
@@ -23,6 +24,9 @@ async function loadLevel(path) {
 
 let last = performance.now();
 function frame(now) {
+  if (!pc.on) {   // the PC is switched off: the game waits, exactly where it was
+    last = now; input.anyPressed = false; requestAnimationFrame(frame); return;
+  }
   const dt = Math.max(0.004, Math.min(0.033, (now - last) / 1000)); last = now;
   S.T += dt; S.sceneT += dt;
   const pressed = input.anyPressed; input.anyPressed = false;
@@ -44,7 +48,7 @@ function frame(now) {
   }
 
   // draw (the camera moves in whole pixels so nothing shimmers)
-  const cam = S.camX; S.camX = Math.round(S.camX / PX) * PX;
+  const cam = S.camX; S.camX = Math.round(S.camX / PIXEL) * PIXEL;
   if (S.scene === 'title') drawTitle(); else if (S.scene === 'intro') drawIntro(S.sceneT); else drawPlay();
   S.camX = cam;
   present();

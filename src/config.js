@@ -2,9 +2,46 @@
 // config.js — numbers you might want to tweak, all in one place.
 // ============================================================================
 
-// Screen. The game "thinks" in 960×540 units but draws a 320×180 pixel picture (3 units = 1 pixel).
-export const W = 960, H = 540;
-export const LW = 320, LH = 180, PX = 3;
+// ---------------------------------------------------------------------------
+// ART STYLE: the game's global style settings. (The art is drawn by code onto a canvas,
+// where CSS can't reach it, so these constants do that job.)
+//
+// The screen is a grid of art pixels: 320×240 on the PC (4:3, like a 1996 monitor), widening to
+// 428×240 (16:9) in full screen. Every line, outline, dot and edge in the art is a whole number of
+// these pixels: write sizes of lines as px(n) ("n pixels") and snap positions with onPixel().
+//
+// PIXEL is how much of the world one art pixel covers, in game units: it's the camera's zoom.
+// It only changes how big things look; the screen stays 320×240 (4:3) whatever it is.
+//   1.5  = 2× the original size (Ichigo is 24×36 pixels). The screen shows a 480×360 slice of the
+//          world: the bottom of it, where the sea, the wreckage and Ichigo are; the high sky is cropped.
+//   2.25 = shows exactly the world's height (720×540).
+//   3    = zoomed out: 960×720, with extra sky above the world.
+// Values that divide evenly into 3 (1.5, 3) keep Ichigo's pixels perfectly even.
+// ---------------------------------------------------------------------------
+export const PIXEL = 2;
+export const px = n => n * PIXEL;                                   // n art pixels, in game units
+export const onPixel = v => Math.round(v / PIXEL) * PIXEL;          // snap a game-unit position to the pixel grid
+// Hand-drawn pixel art (Ichigo, the sea crests) was drawn for PIXEL = 3; it's redrawn this much bigger
+// (on the same pixel grid) so it stays in proportion with the world.
+export const SPRITE_SCALE = 3 / PIXEL;
+
+// The screen is always 240 art pixels tall. The world (where all the gameplay happens) is 540 game
+// units tall, and the screen always shows its bottom (the sea). TOP is the difference: extra sky above
+// the world when zoomed out (positive), or how much of the world's high sky is cropped off when
+// zoomed in (negative). World y = 0 is TOP units down the screen.
+export const LH = 240, H = 540;
+export const TOP = LH * PIXEL - H;
+export const TOP_PX = TOP / PIXEL;                     // the extra sky, in art pixels
+export const NARROW_LW = 320, WIDE_LW = 428;           // screen width in art pixels: 4:3 and 16:9
+export let LW = NARROW_LW, W = LW * PIXEL;             // current screen width: art pixels / game units
+export function setWidth(lw) { LW = lw; W = LW * PIXEL; }
+export function setWide(wide) { setWidth(wide ? WIDE_LW : NARROW_LW); }
+// A hand-drawn pixel grid (rows of letters) redrawn s times bigger on the same pixel grid.
+export function scaleGrid(rows, s = SPRITE_SCALE) {
+  const h = Math.round(rows.length * s), w = Math.round(rows[0].length * s);
+  return Array.from({ length: h }, (_, r) => Array.from({ length: w }, (_, c) => rows[Math.floor(r / s)][Math.floor(c / s)]).join(''));
+}
+
 export const SEA = 430;                 // resting height of the sea surface (in game units, y grows downward)
 
 // The woodblock palette: colours matched to Hokusai's Great Wave, plus Ichigo's jersey, skin and hair.

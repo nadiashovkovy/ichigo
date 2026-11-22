@@ -65,7 +65,7 @@ function coverTitle(txt, size) {
   const ox = echoes * step + 3, oy = 3;
   for (let e = echoes; e >= 0; e--) {
     const x = ox - e * step, y = oy + e * step;
-    g.lineWidth = Math.max(2, size / 14); g.strokeStyle = '#141414'; g.strokeText(txt, x, y);
+    g.lineWidth = Math.max(2, Math.round(size / 14)); g.strokeStyle = '#141414'; g.strokeText(txt, x, y);   // outline in whole pixels
     if (e === 0) { const gr = g.createLinearGradient(x, 0, x + w, 0); RAINBOW.forEach((col, i) => gr.addColorStop(i / 4, col)); g.fillStyle = gr; }
     else g.fillStyle = ['#5cc8c8', '#f08aa6', '#f9e45b', '#a8d88a'][(e - 1) % 4];
     g.fillText(txt, x, y);
