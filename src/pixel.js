@@ -31,11 +31,14 @@ function setupScale() {
 }
 function resize() {
   dpr = window.devicePixelRatio || 1;
-  // In full screen (see src/pc.js) only the game is shown, so it gets the whole display.
+  // In full screen (see src/pc.js) the monitor's casing fills the display, so the screen only needs
+  // room for its bezel all round: 1.6% + the .6% dark rim of the screen's width (see style.css),
+  // plus a little casing showing beyond it.
   const full = root.classList.contains('full');
   setWide(full);   // 16:9 in full screen, 4:3 on the PC
   if (lo.width !== LW) lo.width = topC.width = LW;
-  const [sx, sy] = full ? [1, 1] : setupScale(), margin = full ? 1 : .96;
+  const edge = 2 * (.016 + .006 + .008);
+  const [sx, sy] = full ? [1 + edge, 1 + edge * LW / LH] : setupScale(), margin = full ? 1 : .96;
   const fit = Math.min(innerWidth * margin / (LW * sx), innerHeight * margin / (LH * sy)) * dpr;
   k = fit >= 1 ? Math.floor(fit) : fit;   // whole-number zoom, unless the window is tiny
   cv.width = Math.round(LW * k); cv.height = Math.round(LH * k);
@@ -66,6 +69,7 @@ for (let r = 0; r < 32; r++) for (let g = 0; g < 32; g++) for (let b = 0; b < 32
   LUT[(r << 10) | (g << 5) | b] = best;
 }
 const SPREAD = 16;   // how strongly gradients dither
+const EXACT = new Set(PAL.map(([r, g, b]) => (r << 16) | (g << 8) | b));   // palette colours are left as they are
 export function quantize(c2d) {
   const img = c2d.getImageData(0, 0, LW, LH), d = img.data;
   for (let y = 0; y < LH; y++) for (let x = 0; x < LW; x++) {
@@ -73,10 +77,28 @@ export function quantize(c2d) {
     if (a === 0) continue;
     const b = BAYER[((y & 3) << 2) | (x & 3)];
     if (a < 250 && (a / 255) * 16 <= b + 0.5) { d[i + 3] = 0; continue; }   // dithered transparency (fades)
+    if (EXACT.has((d[i] << 16) | (d[i + 1] << 8) | d[i + 2])) { d[i + 3] = 255; continue; }
     const off = (b / 16 - 0.47) * SPREAD;
     const r = Math.max(0, Math.min(255, d[i] + off)) >> 3, g = Math.max(0, Math.min(255, d[i + 1] + off)) >> 3, bb = Math.max(0, Math.min(255, d[i + 2] + off)) >> 3;
     const p = PAL[LUT[(r << 10) | (g << 5) | bb]];
     d[i] = p[0]; d[i + 1] = p[1]; d[i + 2] = p[2]; d[i + 3] = 255;
+  }
+  c2d.putImageData(img, 0, 0);
+}
+
+// Square a picture off into the title card's chart look: every 2×2 block of pixels becomes one
+// colour (the most common one in the block; on a tie, the darkest, so thin outlines survive).
+export function cellify(c2d) {
+  const img = c2d.getImageData(0, 0, LW, LH), d = new Uint32Array(img.data.buffer);
+  const lum = v => (v & 255) + ((v >> 8) & 255) + ((v >> 16) & 255);
+  for (let y = 0; y < LH - 1; y += 2) for (let x = 0; x < LW - 1; x += 2) {
+    const i = y * LW + x, q = [d[i], d[i + 1], d[i + LW], d[i + LW + 1]];
+    let best = q[0], bn = 0;
+    for (const v of q) {
+      const n = q.filter(u => u === v).length;
+      if (n > bn || (n === bn && lum(v) < lum(best))) { best = v; bn = n; }
+    }
+    d[i] = d[i + 1] = d[i + LW] = d[i + LW + 1] = best;
   }
   c2d.putImageData(img, 0, 0);
 }

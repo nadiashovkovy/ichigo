@@ -1,53 +1,13 @@
 // ============================================================================
-// art.js — Hokusai's Great Wave, in code: claw foam, bubbles, sky, Fuji, the great wave, the sea.
-// Everything here draws in 960×540 game units; the pixel pipeline turns it into pixel art.
+// art.js — the scenery: the sky with the title card's cloud, Fuji, the far and near sea of the level,
+// the intro's sea (drawn straight in 2×2 cells, like the title card's chart), and the carp streamer.
+// Most of it draws in 960×540 game units; the pixel pipeline turns it into pixel art.
 // ============================================================================
-import { W, H, TOP, SEA, P, PIXEL, px, onPixel, scaleGrid, SPRITE_SCALE } from './config.js';
+import { W, H, TOP, TOP_PX, LW, LH, SEA, P, PIXEL, px, onPixel } from './config.js';
 import { seaY } from './sea.js';
-import { foam } from './texture.js';
 
-// Seeded "random" number in 0..1, so claws and bubbles stay put from frame to frame.
+// Seeded "random" number in 0..1, so things scattered about stay put from frame to frame.
 export const hsh = n => { const v = Math.sin(n * 127.1 + 311.7) * 43758.5453; return v - Math.floor(v); };
-
-// Hokusai's foam claws: a tapering finger that reaches forward, arches over and curls back into a
-// sharp hooked point, with smaller fingers branching off its underside (the print's fractal foam).
-// dir = -1 reaches left, +1 reaches right. s = size. n = fingers in all (one main + smaller ones).
-// unit = one screen pixel in the current drawing units (used for the thin blue outline).
-// fill = the foam colour or texture.
-export function claws(g, x, y, s, n = 4, dir = -1, unit = PIXEL, fill = P.foam) {
-  // one hooked finger as a filled outline, along a cubic curve from its root to its tip
-  const finger = (bx, by, len, w, droop) => {
-    const P0 = [bx, by], P1 = [bx + dir * 20 * len, by - (12 - droop) * len],
-          P2 = [bx + dir * 34 * len, by + (2 + droop) * len], P3 = [bx + dir * 22 * len, by + (13 + droop) * len];
-    const at = (t, k) => { const u = 1 - t; return u * u * u * P0[k] + 3 * u * u * t * P1[k] + 3 * u * t * t * P2[k] + t * t * t * P3[k]; };
-    const slope = (t, k) => { const u = 1 - t; return 3 * u * u * (P1[k] - P0[k]) + 6 * u * t * (P2[k] - P1[k]) + 3 * t * t * (P3[k] - P2[k]); };
-    const L = [], R = [];
-    for (let i = 0; i <= 16; i++) {
-      const t = i / 16, dx = slope(t, 0), dy = slope(t, 1), d = Math.hypot(dx, dy) || 1;
-      const hw = w * Math.pow(1 - t, .75) / 2 + unit * .15, nx = -dy / d * hw, ny = dx / d * hw;
-      const fx = at(t, 0), fy = at(t, 1);
-      L.push([fx + nx, fy + ny]); R.push([fx - nx, fy - ny]);
-    }
-    g.moveTo(L[0][0], L[0][1]); for (const q of L) g.lineTo(q[0], q[1]);
-    for (let i = R.length - 1; i >= 0; i--) g.lineTo(R[i][0], R[i][1]);
-    g.closePath();
-    return t => [at(t, 0), at(t, 1)];
-  };
-  const len = .85 * s;
-  const shape = root => {
-    g.beginPath();
-    if (root) g.ellipse(x, y + 2 * s, 7 * s, 6 * s, 0, 0, 7);       // the root, where the claw leaves the wave
-    const spine = finger(x, y, len, 10 * s, 0);                     // the main finger
-    for (let i = 1; i < n; i++) {                                   // smaller fingers off its underside
-      const [bx, by] = spine(.12 + i * .16);
-      finger(bx - dir * 2 * s, by + 3 * s, len * (.62 - i * .1), 7 * s * (.9 - i * .12), 2 + i * 2);
-    }
-  };
-  g.lineJoin = 'round';
-  if (s >= .9) { g.strokeStyle = P.deep; g.lineWidth = unit * 2; shape(false); g.stroke(); }   // thin blue outline around the fingers only
-  if (fill !== P.foam) { g.fillStyle = P.steel; shape(true); g.fill(); }                        // textured foam: blue shows through its speckle
-  g.fillStyle = fill; shape(true); g.fill();
-}
 
 // Run fn(px, py) with the canvas in real-pixel space, where (px, py) is the whole pixel under
 // the point (x, y) of the current drawing space. Keeps small details crisp instead of smeared.
@@ -57,12 +17,24 @@ function atPixel(g, x, y, fn) {
 }
 
 // One crisp bubble: n = 2 is a 2×2 dot, n = 3 a little round 3×3 one (uses the current fill colour).
-export function dot(g, x, y, n = 2) {
+function dot(g, x, y, n = 2) {
   atPixel(g, x, y, (px, py) => {
     if (n < 3) { g.fillRect(px, py, n, n); return; }
     const c = g.fillStyle; g.fillStyle = P.pale; g.fillRect(px, py, 3, 3);   // pale-blue corners round it off
     g.fillStyle = c; g.fillRect(px + 1, py, 1, 3); g.fillRect(px, py + 1, 3, 1);
   });
+}
+
+// White bubbles scattered on dark water (the print's "snow" on the blue).
+function bubbles(g, x0, x1, yAt, seed, depth, density) {
+  g.fillStyle = P.foam;
+  const step = 18, k0 = Math.floor(x0 / step), k1 = Math.ceil(x1 / step);
+  for (let k = k0; k <= k1; k++) {
+    if (hsh(k * 1.37 + seed) > density) continue;
+    const bx = k * step + hsh(k * 2.71 + seed) * step, r = hsh(k * 5.17 + seed);
+    const by = yAt(bx) + 8 + Math.pow(r, 1.8) * depth;
+    dot(g, bx - x0, by, hsh(k * 9.3 + seed) > .75 ? 3 : 2);
+  }
 }
 
 // A wavy, roughly horizontal line exactly `thick` pixels thick, drawn one pixel column at a time
@@ -82,133 +54,158 @@ export function waveLine(g, x0, x1, yAt, thick = 1) {
   g.restore();
 }
 
-// Pixel-drawn foam crests for the near sea, reaching right ("#" foam). Each one sits on the water
-// with its top curling forward and over, ending in little hooked tips, like a tiny Hokusai wave.
-const CRESTS = [
-  ['..####....',
-   '.#######..',
-   '####..###.',
-   '###.#...#.',
-   '.##..#....'],
-  ['...#####.....',
-   '.#########...',
-   '#####..####..',
-   '####..#..###.',
-   '####.#..#..#.',
-   '.###..#......'],
-];
-// Draw a crest with a 1-pixel deep-blue outline; (x, y) is where its base meets the water.
-const SCALED_CRESTS = CRESTS.map(rows => scaleGrid(rows));   // redrawn at the world's zoom
-export function crest(g, x, y, big, dir = 1) {
-  const rows = SCALED_CRESTS[big ? 1 : 0], h = rows.length, w = rows[0].length, s = SPRITE_SCALE;
-  const on = (c, r) => r >= 0 && r < h && c >= 0 && c < w && rows[r][c] === '#';
-  atPixel(g, x, y, (px, py) => {
-    const ax = Math.round(3 * s), put = c => px + (dir > 0 ? c : -c) - (dir > 0 ? ax : -ax), top = py - h + Math.round(2 * s);
-    g.fillStyle = P.deep;
-    for (let r = -1; r <= h; r++) for (let c = -1; c <= w; c++)
-      if (!on(c, r) && (on(c - 1, r) || on(c + 1, r) || on(c, r - 1) || on(c, r + 1)) && r < h) g.fillRect(put(c), top + r, 1, 1);
-    g.fillStyle = P.foam;
-    for (let r = 0; r < h; r++) for (let c = 0; c < w; c++) if (on(c, r)) g.fillRect(put(c), top + r, 1, 1);
-  });
-}
-
-// White bubbles/specks scattered on dark water (the print's "snow" on the blue).
-export function bubbles(g, x0, x1, yAt, seed, depth, density) {
-  g.fillStyle = P.foam;
-  const step = 18, k0 = Math.floor(x0 / step), k1 = Math.ceil(x1 / step);
-  for (let k = k0; k <= k1; k++) {
-    if (hsh(k * 1.37 + seed) > density) continue;
-    const bx = k * step + hsh(k * 2.71 + seed) * step, r = hsh(k * 5.17 + seed);
-    const by = yAt(bx) + 8 + Math.pow(r, 1.8) * depth;
-    dot(g, bx - x0, by, hsh(k * 9.3 + seed) > .75 ? 3 : 2);
-  }
-}
-
-// Paper sky with the print's grey band at the top, long cream clouds, and Mt Fuji.
+// Paper sky with the title card's cloud (assets/cloud.png, cut from the chart), a few of them,
+// some flipped, drifting by slowly behind the scenery. Every cell of a cloud is 2×2 pixels.
 // top = how much sky shows above the world (normally TOP).
-export function drawSky(g, camX, fuji = { x: 640, base: 385, s: 1 }, top = TOP) {
-  const gr = g.createLinearGradient(0, -top, 0, 390); gr.addColorStop(0, P.grey2); gr.addColorStop(.15, P.sky); gr.addColorStop(1, P.tan);
-  g.fillStyle = gr; g.fillRect(0, -top, W, H + top);
-  g.fillStyle = P.foam;
-  for (let i = 0; i < 6; i++) {   // puffy clouds: a heap of round billows on a flat base
-    const x = onPixel(((i * 470 - camX * 0.12) % 2820 + 2820) % 2820 - 360), y = onPixel(25 - top + (i * 157) % Math.max(60, 270 + top));   // spread through the visible sky
-    const w = 150 + (i * 53) % 130, n = 5 + (i % 3);
-    g.save(); g.beginPath(); g.rect(x - 60, y - 120, w + 120, 132); g.clip();   // flat underside
-    g.beginPath(); g.roundRect(x - 12, y - 6, w + 24, 18, 9);
-    for (let j = 0; j < n; j++) {   // billows overlap, tallest a little left of centre
-      const a = j / (n - 1), r = (16 + hsh(i * 7.1 + j) * 14) * (1.25 - Math.abs(a - .4) * 1.1);
-      const bx = x + a * w, by = y + 4 - r * .35;
-      g.moveTo(bx + r, by); g.arc(bx, by, r, 0, 7);
-    }
-    g.fill(); g.restore();
+const cloud = new Image(); cloud.src = 'assets/cloud.png';
+export function drawSky(g, camX, top = TOP) {
+  g.fillStyle = P.sky; g.fillRect(0, -top, W, H + top);   // flat paper sky, as in the print
+  if (!cloud.width) return;
+  const cw = cloud.width * px(2), ch = cloud.height * px(2), cell = px(2), span = 1500;
+  g.save(); g.imageSmoothingEnabled = false;
+  for (let i = 0; i < 3; i++) {
+    const x = Math.round((((i * 520 + 140 - camX * 0.12) % span + span) % span - cw) / cell) * cell;
+    const y = Math.round((40 - top + (i * 67) % 90) / cell) * cell;
+    if (i % 2) { g.save(); g.translate(x + cw, y); g.scale(-1, 1); g.drawImage(cloud, 0, 0, cw, ch); g.restore(); }
+    else g.drawImage(cloud, x, y, cw, ch);
   }
-  g.save(); g.translate(fuji.x - camX * 0.05, fuji.base); g.scale(fuji.s, fuji.s);
-  const fg = g.createLinearGradient(0, -145, 0, 0); fg.addColorStop(0, P.grey1); fg.addColorStop(1, P.grey3);
-  g.fillStyle = fg; g.beginPath(); g.moveTo(-230, 0); g.lineTo(-33, -145); g.lineTo(33, -145); g.lineTo(230, 0); g.fill();
-  g.fillStyle = P.foam; g.beginPath(); g.moveTo(-33, -145); g.lineTo(33, -145); g.lineTo(60, -123);
-  for (let i = 0; i <= 8; i++) g.lineTo(60 - i * 15, -123 + (i % 2 ? 12 : 0)); g.fill();
   g.restore();
 }
 
-// The distant sea: horizon water, a great wave looming far off, and mid swells.
-export function drawFar(g, camX, t) {
+// Mt Fuji, drawn in cells the same way as the title card's (see draw_fuji in tools/make_title.py).
+// Each level sees it a different way, after Hokusai's Thirty-six Views of Mount Fuji (levels/*.json,
+// "fuji": { "view": ... }):
+//   grey  - The Great Wave: grey, a white peak whose snow line is ragged, streaks of snow running down
+//   red   - Fine Wind, Clear Morning ("Red Fuji"): rust red, broad and concave, snow only in the
+//           gullies at the top, dark forest round its foot
+//   storm - Rainstorm Beneath the Summit: brown, darkening to black below, the snowy peak bright above the storm
+export const FUJI_VIEWS = {
+  grey:  { snow: .5,  streak: .8,  body: P.grey3, fleck: P.grey2, curve: 1 },
+  red:   { snow: .12, streak: .34, body: P.red,   fleck: P.brown, curve: 1.5, forest: .86, scatter: true },
+  storm: { snow: .16, streak: .3,  body: P.brown, fleck: P.outline, curve: 1.2, scatter: true, dark: .45 },
+};
+// Calls cell(x, r, colour) for every cell of a Fuji `rows` cells tall and `half` cells wide each side
+// at its foot (or [left, right] for a lopsided one); x is measured from the peak, r down from the peak.
+export function fujiCells(cell, rows, half, view = 'grey') {
+  const v = FUJI_VIEWS[view] || FUJI_VIEWS.grey, [hl, hr] = Array.isArray(half) ? half : [half, half];
+  for (let r = 0; r < rows; r++) {
+    const k = (r + .5) / rows, flat = v.curve > 1 ? 1.5 : 0, kk = Math.pow(k, v.curve);   // k: 0 at the peak, 1 at the foot
+    for (let x = Math.floor(-Math.max(.6, kk * hl + flat)); x < Math.ceil(Math.max(.6, kk * hr + flat)); x++) {
+      const m = ((x % 12) + 12) % 12, h = hsh(x * 7.31 + r * 3.17);
+      const snow = k < v.snow + (m % 3 === 0 ? .12 : 0) || (m % 4 === 1 && k < v.streak);
+      let c = snow ? P.white : (v.scatter ? h < .04 : (x + r) % 5 === 0) ? v.fleck : v.body;
+      const edge = v.forest && v.forest + Math.abs(((x % 4) + 4) % 4 - 2) * .012;   // the treeline, in little points
+      if (v.dark && !snow && k > v.dark + (h - .5) * .08) c = h < .03 ? P.navy : P.outline;   // the dark lower slopes
+      if (v.forest && k > edge) c = (((x + Math.floor(r / 2) * 2) % 4 + 4) % 4 === 0) ? P.navy : P.olive;   // the forest, in rows of trees
+      cell(x, r, c);
+    }
+  }
+}
+// Fuji on the level's horizon. It slides with the camera a whole cell at a time.
+export function drawFuji(g, camX, fuji = {}) {
+  const f = { x: 470, base: 392, rows: 26, half: 28, view: 'grey', ...fuji };
+  const u = CELL * PIXEL;                                                  // one cell, in world units
+  const cx = Math.round((f.x - camX * 0.05) / u);                         // the peak's cell column
+  const top = Math.round((f.base + TOP) / u) - f.rows;                     // the peak's cell row (from the screen's top)
+  fujiCells((x, r, c) => { g.fillStyle = c; g.fillRect((cx + x) * u, (top + r) * u - TOP, u, u); }, f.rows, f.half, f.view);
+}
+
+// Distant swells between the haze and the near sea.
+export function drawSwells(g, camX, t) {
+  const sw = sx => { const wx = sx + camX * .5; return 400 + Math.sin(wx * 0.02 - t) * 7 + Math.sin(wx * 0.007) * 6; };
+  g.fillStyle = P.deep; g.beginPath(); g.moveTo(0, H);
+  for (let sx = 0; sx <= W; sx += 8) g.lineTo(sx, sw(sx));
+  g.lineTo(W, H); g.fill();
+  g.fillStyle = P.outline; waveLine(g, 0, W, sw, 2);
+  g.fillStyle = P.pale; waveLine(g, 0, W, sx => sw(sx) + 6, 2);
+  g.fillStyle = P.foam; waveLine(g, 0, W, sx => sw(sx) + 3, 2);
+  g.fillStyle = P.navy; waveLine(g, 0, W, sx => sw(sx) + 12, 2);
+}
+
+// The distant view in the level: Fuji, horizon water, and mid swells.
+export function drawFar(g, camX, t, fuji) {
+  drawFuji(g, camX, fuji);
   const hg = g.createLinearGradient(0, 375, 0, 420); hg.addColorStop(0, P.pale); hg.addColorStop(1, P.steel);
-  g.fillStyle = hg; g.fillRect(0, 375, W, H);
-  const gx = ((900 - camX * 0.12) % 2200 + 2200) % 2200 - 500;
-  drawGreatWave(g, gx, 420, 0.62 * Math.min(1, PIXEL / 2.25), t, true);   // far off: it doesn't grow when the camera zooms in past 2.25
+  g.fillStyle = hg; g.fillRect(0, 380, W, H);
   g.fillStyle = P.deep; g.beginPath(); g.moveTo(0, H);
   const sw = sx => { const wx = sx + camX * .5; return 404 + Math.sin(wx * 0.02 - t) * 10 + Math.sin(wx * 0.007) * 8; };
   for (let sx = 0; sx <= W; sx += 9) g.lineTo(sx, sw(sx));
   g.lineTo(W, H); g.fill();
   g.fillStyle = P.steel; waveLine(g, 0, W, sx => sw(sx) + 9, 1);
-  for (let sx = -((camX * .5) % 150); sx < W; sx += 150) crest(g, sx, sw(sx) + 3, false, 1);
   bubbles(g, camX * .5, camX * .5 + W, x => sw(x - camX * .5), 7, 26, .35);
 }
 
-// Hokusai's wave: a Prussian-blue body, a lighter face streaked with blue bands and white veins,
-// a lip of grasping foam claws, bubbles across the blue, and spray like falling snow.
-export function drawGreatWave(g, x, base, s, t, distant, flip) {
-  g.save(); g.translate(x, base); g.scale(flip ? -s : s, s);
-  const onePx = 1 / Math.abs(g.getTransform().a);   // one art pixel, in this wave's local units
-  const shape = () => {
-    g.beginPath(); g.moveTo(0, 0); g.quadraticCurveTo(70, -120, 36, -230); g.quadraticCurveTo(-10, -222, -80, -262);
-    g.quadraticCurveTo(-10, -370, 160, -350); g.quadraticCurveTo(320, -320, 440, -130); g.quadraticCurveTo(500, -40, 720, 0);
-    g.lineTo(720, 260); g.lineTo(0, 260); g.closePath();
-  };
-  g.fillStyle = P.navy; shape(); g.fill();
-  g.save(); shape(); g.clip();
-  g.fillStyle = P.deep; g.beginPath(); g.moveTo(10, 40); g.quadraticCurveTo(90, -120, 40, -240); g.quadraticCurveTo(160, -150, 230, 40); g.closePath(); g.fill();
-  for (let i = 0; i < 10; i++) {   // bands of blue with thin white veins, following the curl
-    const x0 = 50 + i * 28, x1 = 40 + i * 22;
-    g.lineWidth = onePx * (distant ? 2 : 3); g.strokeStyle = i % 3 === 2 ? P.pale : P.steel;
-    g.beginPath(); g.moveTo(x0, 40); g.quadraticCurveTo(100 + i * 26, -150 + i * 12, x1, -270 + i * 26); g.stroke();
-    if (i % 2 === 0) { g.lineWidth = onePx; g.strokeStyle = P.foam;
-      g.beginPath(); g.moveTo(x0 + 9, 40); g.quadraticCurveTo(109 + i * 26, -150 + i * 12, x1 + 9, -262 + i * 26); g.stroke(); }
+// --- little lives on the water, drawn in pixel space after the scenery has been turned into pixels ---
+// A tiny picture made of letters (see sprite.js): K ink, Y ochre, T tan, n navy, R red, W white.
+const PIX = { K: P.outline, Y: P.ochre, T: P.tan, n: P.navy, R: P.red, W: P.white, G: P.grey3, O: P.olive };
+export function drawPix(g, rows, x, y, flip = false) {
+  rows.forEach((row, r) => [...row].forEach((ch, c) => {
+    if (ch === '.') return;
+    g.fillStyle = PIX[ch]; g.fillRect(x + (flip ? row.length - 1 - c : c), y + r, 1, 1);
+  }));
+}
+// A fishing boat far off on the horizon, like the print's, three rowers bent over their oars.
+const FAR_BOAT = [
+  '.....n...n...n.....',
+  'K....n...n...n...K.',
+  'KYYYYYYYYYYYYYYYYYK',
+  '.KTTTTTTTTTTTTTTTK.',
+  '..KKKKKKKKKKKKKKK..',
+];
+// Gulls, wings up and wings level.
+const GULL = [['K...K', '.K.K.', '..K..'], ['.....', 'KK.KK', '..K..']];
+// The boat bobs on the horizon (slowly passing as the camera moves); gulls wheel across the sky.
+export function drawLife(g, camX, t) {
+  g.save(); g.setTransform(1, 0, 0, 1, 0, 0);
+  const span = 1600 / PIXEL, horizon = Math.round((391 + TOP) / PIXEL);
+  for (let i = 0; i < 2; i++) {
+    const x = Math.round((((i * 900 + 250 - camX * .15 + t * 3) / PIXEL) % span + span) % span) - 20;
+    drawPix(g, FAR_BOAT, x, horizon - 4 + Math.round(Math.sin(t * 1.3 + i * 2) * .8), i % 2 === 1);
   }
-  g.fillStyle = P.navy; g.beginPath(); g.moveTo(300, 0); g.quadraticCurveTo(400, -110, 440, -130); g.lineTo(720, 0); g.fill();
-  g.fillStyle = P.foam;   // bubbles: thick just under the foam, thinning out below
-  for (let i = 0; i < (distant ? 70 : 140); i++) {
-    const bx = -40 + hsh(i * 3.1) * 520, by = -350 + Math.pow(hsh(i * 7.7), 1.6) * 360 + Math.sin(t * 1.5 + i) * 2;
-    dot(g, bx, by, distant ? (hsh(i * 1.9) > .85 ? 2 : 1) : (hsh(i * 1.9) > .75 ? 3 : 2));
+  for (let i = 0; i < 3; i++) {
+    const dir = i % 2 ? -1 : 1, w = LW + 40;
+    const x = Math.round(((((i * 157 + 60 - camX * .3 / PIXEL + dir * t * (9 + i * 3)) % w) + w) % w) - 20);
+    const y = Math.round(28 + i * 19 + Math.sin(t * .7 + i * 2.1) * 6 - TOP_PX * 0);
+    drawPix(g, GULL[Math.floor(t * (3 + i * .7) + i) % 2], x, y);
   }
-  // foam: thick and creamy along the crest, breaking into blue speckle deeper down, as in the print.
-  // Each layer is a stroke along the wave's own edge, clipped to the inside of the wave.
-  const edge = () => { g.beginPath(); g.moveTo(-80, -262); g.quadraticCurveTo(-10, -370, 160, -350); g.quadraticCurveTo(320, -320, 440, -130); g.quadraticCurveTo(500, -40, 720, 0); };
-  g.lineCap = 'round'; g.lineJoin = 'round';
-  for (const [w, level] of [[320, .2], [210, .4], [130, .6], [56, .8]]) { g.lineWidth = w; g.strokeStyle = foam(g, level); edge(); g.stroke(); }
-  g.restore();
-  for (let i = 8; i >= 0; i--) {   // the lip: a row of grasping claws reaching forward, hanging over the curl
-    const a = i / 8, u = 1 - a;
-    const cx = u * u * -80 + 2 * u * a * -10 + a * a * 160, cy = u * u * -262 + 2 * u * a * -370 + a * a * -350;
-    const sz = (2.5 - a * 1.2) * (distant ? .85 : 1);
-    claws(g, cx + Math.sin(i * 2.3 + t * 4) * 2, cy + 8, sz, distant ? 3 : 4, -1, onePx, foam(g, .78));
-  }
-  for (let i = 2; i >= 0; i--) claws(g, -40 + i * 40, -232 + i * 8, 1.5 - i * .25, 3, -1, onePx, foam(g, .78));   // inner fringe
-  if (!distant) { g.fillStyle = P.foam; for (let i = 0; i < 34; i++) { const sx = -140 + hsh(i * 4.3) * 440, sy = -310 - hsh(i * 6.1) * 160 + ((t * 18 + i * 13) % 40); dot(g, sx, sy, 2); } }
   g.restore();
 }
 
-// The near sea: Prussian blue with the print's bands, foam along the surface, bubbles, and a curling crest on every wave.
+// The intro's sea, drawn straight in cells of 2×2 pixels like the title card's chart: an ink outline
+// along the surface, cream and white foam flecked with light blue just under it, then bands of
+// blue that follow the waves down into Prussian blue, with white bubbles. Cells are pinned to the
+// world, so they ride the waves.
+// surf(wx) = the surface's height at world x (game units). Only columns from x0 to x1 (pixels) are drawn.
+export const CELL = 2;
+function seaCell(c, d, t) {
+  const h = hsh(c * 12.99 + d * 78.23);
+  if (d <= 2) return h < .22 ? P.white : h < .36 ? P.pale : P.foam;   // foam along the top
+  const b = (d - 3) * .5 + 1.5 * Math.sin(c * .13 + d * .3 - t * .5) + 1.0 * Math.sin(c * .041 + t * .3);
+  const band = ((Math.floor(b) % 8) + 8) % 8;
+  let col = [P.pale, P.foam, P.steel, P.deep, P.navy, P.deep, P.steel, P.foam][band];
+  if ((col === P.navy || col === P.deep) && h < .03) col = P.white;   // bubbles
+  return col;
+}
+export function drawChartSea(g, camX, t, surf, x0 = 0, x1 = LW) {
+  g.save(); g.setTransform(1, 0, 0, 1, 0, 0);
+  const cam = Math.round(camX / PIXEL), rows = Math.ceil(LH / CELL);
+  const row = c => Math.round((surf((c + .5) * CELL * PIXEL) / PIXEL + TOP_PX) / CELL);   // the surface's cell row in column c
+  const c0 = Math.floor((cam + x0) / CELL), c1 = Math.ceil((cam + x1) / CELL);
+  const tops = []; for (let c = c0 - 2; c <= c1 + 2; c++) tops.push(row(c));
+  const top = c => tops[c - c0 + 2];
+  for (let c = c0; c < c1; c++) {
+    const r0 = top(c), outlineTo = Math.max(r0, top(c - 1) - 1, top(c + 1) - 1), sx = c * CELL - cam;
+    let run = null, start = r0;   // draw each column as runs of one colour
+    for (let r = r0; r <= rows; r++) {
+      const col = r === rows ? null : r <= outlineTo ? P.outline : seaCell(c, r - r0, t);
+      if (col !== run) { if (run) { g.fillStyle = run; g.fillRect(sx, start * CELL, CELL, (r - start) * CELL); } run = col; start = r; }
+    }
+  }
+  g.restore();
+}
+
+// The near sea in the level: Prussian blue with the print's bands, cream foam along the surface,
+// and white bubbles.
 export function drawSea(g, camX, t) {
   const gr = g.createLinearGradient(0, SEA - 20, 0, H); gr.addColorStop(0, P.deep); gr.addColorStop(.45, P.navy); gr.addColorStop(1, P.navy);
   g.fillStyle = gr; g.beginPath(); g.moveTo(0, H);
@@ -218,21 +215,12 @@ export function drawSea(g, camX, t) {
     g.fillStyle = n % 2 ? P.steel : P.pale;
     waveLine(g, 0, W, sx => seaY(sx + camX, t - off * 0.01) + off, 1);
   }
-  const surface = () => { g.beginPath(); for (let sx = 0; sx <= W; sx += 6) { const y = seaY(sx + camX, t); sx ? g.lineTo(sx, y) : g.moveTo(sx, y); } };
-  g.save(); g.beginPath(); g.moveTo(0, H);   // speckled foam churning just under the surface
-  for (let sx = 0; sx <= W; sx += 6) g.lineTo(sx, seaY(sx + camX, t));
-  g.lineTo(W, H); g.clip();
-  for (const [w, level] of [[60, .16], [26, .45]]) { g.lineWidth = w; g.strokeStyle = foam(g, level, -camX, 0); surface(); g.stroke(); }
-  g.restore();
+  // just under the surface: clean bands of cream foam and pale and steel blue
+  for (const [off, thick, c, lag] of [[5, 6, P.foam, 0], [10, 3, P.pale, .04], [14, 2, P.steel, .08], [24, 2, P.foam, .14]]) {
+    g.fillStyle = c; waveLine(g, 0, W, sx => seaY(sx + camX, t - lag) + px(off), thick);
+  }
   g.fillStyle = P.foam; waveLine(g, 0, W, sx => seaY(sx + camX, t), 2);   // white line along the surface
   bubbles(g, camX, camX + W, x => seaY(x, t), 3, 60, .55);
-  const drift = t * 25, k0 = Math.floor((camX + drift - 60) / 105);
-  for (let k = k0; k < k0 + 12; k++) {   // crests ride the waves, unevenly spaced, reaching the way the waves travel
-    const sx = k * 105 - camX - drift + (hsh(k * 3.3) - .5) * 50;
-    if (sx < -60 || sx > W + 60) continue;
-    const big = hsh(k * 7.9);
-    crest(g, sx, seaY(sx + camX, t) + 3, big > .5, 1);
-  }
 }
 
 // Carp streamer (koinobori) = checkpoint. It lifts and flies when reached.

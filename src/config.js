@@ -12,18 +12,15 @@
 //
 // PIXEL is how much of the world one art pixel covers, in game units: it's the camera's zoom.
 // It only changes how big things look; the screen stays 320×240 (4:3) whatever it is.
-//   1.5  = 2× the original size (Ichigo is 24×36 pixels). The screen shows a 480×360 slice of the
+//   1.5  = zoomed in: the screen shows a 480×360 slice of the
 //          world: the bottom of it, where the sea, the wreckage and Ichigo are; the high sky is cropped.
 //   2.25 = shows exactly the world's height (720×540).
 //   3    = zoomed out: 960×720, with extra sky above the world.
-// Values that divide evenly into 3 (1.5, 3) keep Ichigo's pixels perfectly even.
+// (Ichigo is always drawn at their own size, about 18×28 art pixels: see sprite.js.)
 // ---------------------------------------------------------------------------
 export const PIXEL = 2;
 export const px = n => n * PIXEL;                                   // n art pixels, in game units
 export const onPixel = v => Math.round(v / PIXEL) * PIXEL;          // snap a game-unit position to the pixel grid
-// Hand-drawn pixel art (Ichigo, the sea crests) was drawn for PIXEL = 3; it's redrawn this much bigger
-// (on the same pixel grid) so it stays in proportion with the world.
-export const SPRITE_SCALE = 3 / PIXEL;
 
 // The screen is always 240 art pixels tall. The world (where all the gameplay happens) is 540 game
 // units tall, and the screen always shows its bottom (the sea). TOP is the difference: extra sky above
@@ -36,20 +33,17 @@ export const NARROW_LW = 320, WIDE_LW = 428;           // screen width in art pi
 export let LW = NARROW_LW, W = LW * PIXEL;             // current screen width: art pixels / game units
 export function setWidth(lw) { LW = lw; W = LW * PIXEL; }
 export function setWide(wide) { setWidth(wide ? WIDE_LW : NARROW_LW); }
-// A hand-drawn pixel grid (rows of letters) redrawn s times bigger on the same pixel grid.
-export function scaleGrid(rows, s = SPRITE_SCALE) {
-  const h = Math.round(rows.length * s), w = Math.round(rows[0].length * s);
-  return Array.from({ length: h }, (_, r) => Array.from({ length: w }, (_, c) => rows[Math.floor(r / s)][Math.floor(c / s)]).join(''));
-}
 
 export const SEA = 430;                 // resting height of the sea surface (in game units, y grows downward)
 
-// The woodblock palette: colours matched to Hokusai's Great Wave, plus Ichigo's jersey, skin and hair.
-// Every pixel of the world is snapped to one of these.
+// The woodblock palette: the colours of the title card's chart of Hokusai's Great Wave (see
+// tools/make_title.py), plus Ichigo's jersey, skin and hair. Every pixel of the world is snapped to one of these.
 export const P = {
-  navy: '#132a52', deep: '#24466f', steel: '#4f7aa3', pale: '#93b4c9', foam: '#f6f0df',
-  sky: '#ebdcbb', tan: '#dcc6a0', tanD: '#c4a47c', grey1: '#b5ad98', grey2: '#8f8a7a', grey3: '#66625a',
-  ochre: '#d9b56e', olive: '#7f7b52', brown: '#5a4a2a', red: '#b8322a', ink: '#141414', skin: '#e8b88d'
+  navy: '#1f3270', deep: '#3f669c', steel: '#7fa3bf', pale: '#a8c4cc', foam: '#f4ecd8', white: '#fdfbf3',
+  outline: '#0e1430',                                       // the chart's ink outline, where waves meet the sky
+  sky: '#e6cea5', tan: '#dbc8a2', tanD: '#c4a47c',
+  grey0: '#d4d0c4', grey1: '#aeaba0', grey2: '#8a8a84', grey3: '#64666a',   // the haze over the far sea, and Fuji
+  ochre: '#c9a464', olive: '#7f7b52', brown: '#5a4a2a', red: '#b8322a', ink: '#141414', skin: '#e8b88d'
 };
 
 // The novel's cover: pastel rainbow used for big titles.

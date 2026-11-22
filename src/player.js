@@ -25,6 +25,16 @@ export function die() {     // fell in the sea: a new tomorrow
 }
 
 export function puff(x, y, n) { for (let i = 0; i < n; i++) parts.push({ x, y, vx: (Math.random() - .5) * 140, vy: -Math.random() * 120, life: .5, c: P.foam }); }
+// Spray thrown up from both ends of a piece of wreckage when Ichigo lands on it: more for a harder
+// landing, and more from the end that's pushed down.
+function splash(p, hit) {
+  for (const end of [-1, 1]) {
+    const ex = p.cx + end * p.w / 2 * Math.cos(p.ang), ey = seaY(ex, S.T), push = .6 + .4 * Math.sign(PL.u) * end;
+    for (let i = 0; i < Math.round((2 + hit * 7) * push); i++)
+      parts.push({ x: ex + end * Math.random() * 10, y: ey, vx: end * (30 + Math.random() * 90), vy: -120 - Math.random() * 260 * hit,
+                   life: .45 + Math.random() * .3, c: Math.random() < .6 ? P.white : P.pale, s: Math.random() < .35 ? 2 : 1 });
+  }
+}
 export function updateParts(dt) {
   for (const q of parts) { q.vy += 500 * dt; q.x += q.vx * dt; q.y += q.vy * dt; q.life -= dt; }
   for (let i = parts.length - 1; i >= 0; i--) if (parts[i].life <= 0) parts.splice(i, 1);
@@ -78,6 +88,7 @@ export function updatePlayer(dt) {
         if (floating(p)) {   // landing rocks the wreckage and pushes it down
           const hit = Math.min(1, PL.vy / 700);
           p.av += (PL.u / (p.w / 2)) * p.tip * 7 * hit; p.dv += PL.vy * .06 * (1 - p.tip);
+          splash(p, hit);
         }
         PL.vy = 0; puff(PL.x, PL.y, 4);
         if (p.cp && S.checkpoint !== p) S.checkpoint = p;

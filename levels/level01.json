@@ -5,6 +5,7 @@
   "length": 6500,
   "sea": { "base": 5, "grow": 12, "growOver": 5200 },
   "islandTop": 395,
+  "fuji": { "view": "grey" },
   "goalOffset": 380,
   "wreckage": [
     { "type": "plank", "x": 40,   "w": 220, "checkpoint": true },

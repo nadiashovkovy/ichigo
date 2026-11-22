@@ -52,9 +52,10 @@ for (const [x, y, w, h, label, code, grey] of keys) {
 board.insertAdjacentHTML('beforeend', `<span class="status" style="left:calc(var(--k)*${19.5 + PAD_X});top:calc(var(--k)*${PAD_Y})">
   <span><i></i>Num Lock</span><span><i class="on"></i>Caps Lock</span><span><i></i>Scroll Lock</span></span>`);
 
-// --- full screen: the game alone, filling the whole display ---
-// The button sits outside the PC. In full screen the PC disappears (the 'full' class, see style.css)
-// and the game is zoomed to fill the display. Esc (or F) leaves full screen.
+// --- full screen: right up close to the monitor ---
+// The button sits outside the PC. In full screen (the 'full' class, see style.css) the monitor's
+// casing fills the display and the game is zoomed as big as fits inside its bezel. Esc (or F) leaves
+// full screen.
 const fsButton = document.getElementById('fullscreen');
 const page = document.documentElement;
 const fsElement = () => document.fullscreenElement || document.webkitFullscreenElement;
