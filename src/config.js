@@ -71,6 +71,7 @@ export const MOVE = {
   shortHop: 300,      // letting go of jump early cuts the jump to this speed
   airControl: 1300,   // how quickly you can steer in the air
   groundAccel: 2400,  // how quickly Ichigo gets up to speed on a deck
+  sideStepTime: 0.4,  // Sadie's walk: starting from standing, Ichigo first takes 3 short sideways steps this long (the beach only, for now)
 };
 
 // How slippery the floating wreckage is.
@@ -92,4 +93,22 @@ export const WRECKAGE = {
   mat:   { h: 14, fb: 7,  weight: 3, tip: .26, follow: 1, sinkRate: 12 },
   boat:  { h: 36, fb: 20, weight: 2, tip: .05, follow: .4 },
   rock:  { h: 220, fb: 0, weight: 0, tip: 0, follow: 0 },   // solid island: doesn't float
+};
+
+// The beach before the wave (Level 1's prologue, beach.js). Positions are in game units, the same
+// coordinates as drawBeach in beach.js; the sea is to the right.
+export const BEACH = {
+  ground: 412,        // the sand Ichigo walks on
+  left: 70,           // as far left as Ichigo goes (the house)
+  edge: 560,          // the water's edge: walking further stops Ichigo ankle-deep
+  water: 540,         // standing this far right, Ichigo can fill the bucket
+  dig: [414, 456],    // where Ichigo can dig, just right of the sandcastle (they face it to dig)
+  hole: 408,          // the middle of the hole, in front of the castle's gate
+  digTime: 1.5,       // seconds of digging before the hole appears
+  soakTime: 3,        // seconds for a pour to soak away into the sand
+  trip: 470,          // where the shovel lies: walking right past it, Ichigo trips (once)
+  kaachan: 143,       // the house's doorway: Kaa-chan is just inside (her humming and bubbles come from here)
+  fullSlow: 0.8,      // a full bucket slows Ichigo to this share of walking speed (and they can't run)
+  recede: 80,         // how far out the sea pulls back before the wave
+  whiteTime: 2,       // seconds of silent white after the wave
 };

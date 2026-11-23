@@ -3,13 +3,17 @@
 // update everything a little, then draw a frame.
 // ============================================================================
 import { pc } from './pc.js';   // the PC around the game (keyboard, power button); loaded first so the page is complete before sizing
-import { W, PIXEL } from './config.js';
+import { W, PIXEL, BEACH } from './config.js';
 import { S } from './state.js';
 import { present } from './pixel.js';
 import { input } from './input.js';
 import { buildWreckage, updateWreckage } from './wreckage.js';
 import { PL, spawn, updatePlayer, updateParts } from './player.js';
-import { startLevel, drawTitle, drawIntro, drawPlay } from './scenes.js';
+import { startLevel, drawTitle, drawPlay } from './scenes.js';
+import { B, startBeach, updateBeach, drawBeachScene, drawWhite } from './beach.js';
+import { say, updateBubbles } from './bubbles.js';
+import { playLullaby } from './audio.js';
+import { loadSave, save } from './save.js';
 import { prepareDawns } from './dawn.js';
 
 // Which level to load. Later this will be chosen by the game's progress.
@@ -23,7 +27,9 @@ async function loadLevel(path) {
   S.checkpoint = S.plats[0];
 }
 
-let last = performance.now();
+loadSave();   // the words, marks and tomorrows Ichigo carries (save.js)
+
+let last = performance.now(), lastScene = S.scene;
 function frame(now) {
   if (!pc.on) {   // the PC is switched off: the game waits, exactly where it was
     last = now; input.anyPressed = false; requestAnimationFrame(frame); return;
@@ -33,8 +39,9 @@ function frame(now) {
   const pressed = input.anyPressed; input.anyPressed = false;
 
   // move between scenes
-  if (S.scene === 'title' && pressed) { S.scene = 'intro'; S.sceneT = 0; }
-  else if (S.scene === 'intro' && (S.sceneT > 5.2 || (pressed && S.sceneT > .4))) startLevel();
+  if (S.scene === 'title' && pressed) startBeach();
+  else if (S.scene === 'beach') updateBeach(dt, skipped => { if (skipped) startLevel(); else { S.scene = 'white'; S.sceneT = 0; } });
+  else if (S.scene === 'white' && S.sceneT > BEACH.whiteTime) startLevel();
   else if (S.scene === 'end' && pressed && S.sceneT > 2.5) { S.scene = 'title'; S.sceneT = 0; }
 
   // update the world
@@ -44,13 +51,25 @@ function frame(now) {
     if (S.scene === 'dawn' && S.sceneT > 0.9 && S.sceneT - dt <= 0.9) spawn();   // respawn while the sun is up
     if (S.scene === 'dawn' && S.sceneT > 1.7) { S.scene = 'play'; S.sceneT = 0; }
     updateParts(dt);
+    if (S.scene !== 'end') {
+      S.levelT += dt;
+      // Level 1: a second after play fades in, Ichigo calls for their mother. Small and grey: no one answers.
+      if (S.level.number === 1 && S.levelT > 1.5 && S.levelT - dt <= 1.5) say('ichigo', ['kaachan'], { grey: true, small: true, time: 2.5 });
+    }
     const target = Math.max(0, Math.min(S.level.length - W, PL.x - W * 0.38));
     S.camX += (target - S.camX) * Math.min(1, dt * 5);
   }
 
+  updateBubbles(dt);
+  if (S.scene !== lastScene) {   // arriving in a scene
+    if (S.scene === 'dawn') { playLullaby({ notes: 2 }); save(); }   // a new tomorrow: the Lullaby's first two notes
+    if (S.scene === 'end') save();
+    lastScene = S.scene;
+  }
+
   // draw (the camera moves in whole pixels so nothing shimmers)
   const cam = S.camX; S.camX = Math.round(S.camX / PIXEL) * PIXEL;
-  if (S.scene === 'title') drawTitle(); else if (S.scene === 'intro') drawIntro(S.sceneT); else drawPlay();
+  if (S.scene === 'title') drawTitle(); else if (S.scene === 'beach') drawBeachScene(); else if (S.scene === 'white') drawWhite(); else drawPlay();
   S.camX = cam;
   present();
   requestAnimationFrame(frame);
@@ -64,4 +83,4 @@ let resized; addEventListener('resize', () => { clearTimeout(resized); resized =
 
 // Handy for testing in the browser console: window.ichigo.S, window.ichigo.PL …
 import { keys } from "./input.js";
-window.ichigo = { S, PL, input, keys, startLevel, spawn };
+window.ichigo = { S, PL, input, keys, startLevel, spawn, beach: B, save };
