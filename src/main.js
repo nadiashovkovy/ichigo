@@ -10,9 +10,10 @@ import { input } from './input.js';
 import { buildWreckage, updateWreckage } from './wreckage.js';
 import { PL, spawn, updatePlayer, updateParts } from './player.js';
 import { startLevel, drawTitle, drawPlay } from './scenes.js';
-import { B, startBeach, updateBeach, drawBeachScene, drawWhite } from './beach.js';
+import { B, startBeach, updateBeach, drawBeachScene, drawWhite, WAKE_CARDS } from './beach.js';
+import { showCards, cardsActive, updateCards, nextCard, drawCards } from './cards.js';
 import { say, updateBubbles } from './bubbles.js';
-import { playLullaby, music, seaSound } from './audio.js';
+import { playLullaby, music, seaSound, gulls } from './audio.js';
 import { loadSave, save } from './save.js';
 import { prepareDawns } from './dawn.js';
 
@@ -39,13 +40,16 @@ function frame(now) {
   const pressed = input.anyPressed; input.anyPressed = false;
 
   // move between scenes
-  if (S.scene === 'title' && pressed) startBeach();
+  // (while a story card is up, the world waits: see cards.js)
+  const reading = cardsActive();
+  if (reading) updateCards(dt, pressed);
+  else if (S.scene === 'title' && pressed) startBeach();
   else if (S.scene === 'beach') updateBeach(dt, skipped => { if (skipped) startLevel(); else { S.scene = 'white'; S.sceneT = 0; } });
-  else if (S.scene === 'white' && S.sceneT > BEACH.whiteTime) startLevel();
+  else if (S.scene === 'white' && S.sceneT > BEACH.whiteTime) showCards(WAKE_CARDS, startLevel, { paper: true });   // a silence, then the cards on the white
   else if (S.scene === 'end' && pressed && S.sceneT > 2.5) { S.scene = 'title'; S.sceneT = 0; }
 
   // update the world
-  if (S.scene === 'play' || S.scene === 'dawn' || S.scene === 'end') {
+  if (!reading && (S.scene === 'play' || S.scene === 'dawn' || S.scene === 'end')) {
     updateWreckage(S.T, dt, PL);
     if (S.scene === 'play') updatePlayer(dt);
     if (S.scene === 'dawn' && S.sceneT > 0.9 && S.sceneT - dt <= 0.9) spawn();   // respawn while the sun is up
@@ -74,11 +78,13 @@ function frame(now) {
   if (S.scene === 'play' || S.scene === 'dawn') seaSound(.45 + .45 * Math.min(1, PL.x / ((S.level.sea && S.level.sea.growOver) || 5200)));
   else if (S.scene === 'end') seaSound(.25);   // a calm night sea
   else if (S.scene === 'title') seaSound(0);
+  gulls(S.scene === 'play' || (S.scene === 'beach' && B.phase !== 'recede'));   // (they fall silent when the sea pulls back)
 
   // draw (the camera moves in whole pixels so nothing shimmers)
   const cam = S.camX; S.camX = Math.round(S.camX / PIXEL) * PIXEL;
   if (S.scene === 'title') drawTitle(); else if (S.scene === 'beach') drawBeachScene(); else if (S.scene === 'white') drawWhite(); else drawPlay();
   S.camX = cam;
+  drawCards();
   present();
   requestAnimationFrame(frame);
 }
@@ -91,4 +97,4 @@ let resized; addEventListener('resize', () => { clearTimeout(resized); resized =
 
 // Handy for testing in the browser console: window.ichigo.S, window.ichigo.PL …
 import { keys } from "./input.js";
-window.ichigo = { S, PL, input, keys, startLevel, spawn, beach: B, save };
+window.ichigo = { S, PL, input, keys, startLevel, spawn, beach: B, save, cards: { active: cardsActive, next: nextCard } };

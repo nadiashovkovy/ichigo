@@ -36,13 +36,17 @@ If the spec and the script disagree, the spec wins for code and the script wins 
 | `src/art.js`, `src/title.js`, `src/dawn.js` | Scenery, title card, the Hokusai print shown at each new tomorrow |
 | `src/pixel.js`, `src/text.js` | Pixel pipeline (palette snapping), bitmap font and rainbow cover lettering |
 | `src/input.js`, `src/pc.js` | Keyboard and touch; the 1996 PC frame around the game |
+| `src/beach.js`, `src/cards.js` | Level 1's playable beach and the wave; story cards |
+| `src/audio.js` | All sound, synthesised: the Lullaby, music, sea, gulls, the tsunami, falling in |
+| `src/bubbles.js`, `src/icons.js`, `src/people.js`, `src/save.js` | Speech bubbles and their icons; Kaa-chan and Ojii-san (for later levels); the save |
 | `tests/play_level.py` | Headless play-test bot (Playwright) |
 
 Run locally: `python3 -m http.server 8000`, then open http://localhost:8000.
 
 ## Rules of the game's design
 
-- **Wordless.** No text during play except titles, level cards and the tally of tomorrows. Ichigo speaks only the words they have learned, shown as an icon bubble. Other characters speak in pictogram bubbles.
+- **Wordless during play.** No text while the player is playing except titles, level cards and the tally of tomorrows. Ichigo speaks only the words they have learned, shown as an icon bubble. Other characters speak in pictogram bubbles.
+- **Story cards are the exception** (added at Nadia's request): short click-through text cards *between* moments, while the world waits, to tell the story and say what to do (`src/cards.js`). Level 1 has them at the start of the beach and on the white after the wave. Keep them few and short; any key goes on, Esc skips.
 - **Failure is never final.** Every failure is "a new tomorrow": the dawn print, then a retry from the last checkpoint. Never a game-over screen.
 - **Every level needs stakes:** a clock, a hazard, a scarce resource.
 - **Aging changes play.** Each age gains and loses abilities (see the aging table in the script's Through-lines and in the design doc).

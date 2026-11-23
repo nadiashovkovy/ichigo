@@ -19,6 +19,19 @@ import { say, drawBubbles, clearBubbles } from './bubbles.js';
 import { humming, seaSound, waveRumble, waveCrash, silence } from './audio.js';
 import { save, learnWord, gainMark } from './save.js';
 import { updateParts } from './player.js';
+import { showCards } from './cards.js';
+
+// The story cards (cards.js): at the start of the beach, over the scene, and on the white after the wave.
+const INTRO_CARDS = [
+  'ICHIGO IS THREE. THEY LIVE BY THE SEA WITH KAA-CHAN, THEIR MOTHER, IN A HOUSE WITH A STRAW ROOF.',
+  'EVERY EVENING, WHILE KAA-CHAN MENDS THE NETS AND HUMS, ICHIGO PLAYS IN THE SAND WITH A YELLOW BUCKET.',
+  '<- -> WALK.  DOWN ARROW: DIG, FILL THE BUCKET, POUR IT OUT.  DIG A HOLE BY THE SANDCASTLE, THEN FILL IT WITH SEA WATER.',
+];
+export const WAKE_CARDS = [
+  'THE SEA CAME FOR THE VILLAGE, AND TOOK EVERYTHING WITH IT.',
+  'ICHIGO WAKES ON A PLANK IN THE OPEN SEA. FAR OFF, A STONE LANTERN SHINES ON AN ISLAND.',
+  'JUMP FROM WRECK TO WRECK TO REACH IT. DON\'T STAND STILL: WET DECKS TILT, AND ICHIGO SLIDES.',
+];
 
 // Everything about the beach as it plays out. (Exposed on window.ichigo.beach for the test bot.)
 export const B = {};
@@ -32,6 +45,7 @@ export function startBeach() {
   });
   parts.length = 0; clearBubbles();
   S.scene = 'beach'; S.sceneT = 0;
+  showCards(INTRO_CARDS);
 }
 
 const smooth = k => { k = Math.max(0, Math.min(1, k)); return k * k * (3 - 2 * k); };
@@ -96,7 +110,7 @@ export function updateBeach(dt, endBeach) {
   // --- the sea pulls back, then the wave ---
   if (B.phase === 'recede') {
     const t = B.t;
-    B.back = BEACH.recede * smooth(t / 2);   // SOUND: the gulls stop
+    B.back = BEACH.recede * smooth(t / 2);   // (the gulls stop: see main.js)
     if (t > 1.8 && !B.called) { B.called = true; say('kaachan', ['ichigo', 'arrow', 'house'], { time: 2.2 }); }   // from the doorway: "Come here. Now."
     B.waveT = t > 2.5 ? 1.4 + (t - 2.5) : 0;
     if (B.waveT > 1.4 && !B.rumbled) { B.rumbled = true; waveRumble(); }   // the wave rising: a rumble building

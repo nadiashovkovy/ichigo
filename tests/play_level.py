@@ -6,7 +6,7 @@ What it does:
   2. Opens it in a headless Chrome, twice: at the PC's 4:3 size, then in full screen (16:9).
   3. Plays the beach before the wave: walks right to the water (tripping over the shovel on the way,
      and sitting through the plaster), fills the bucket, walks back, digs, pours, and again, until
-     the third pour. Then waits through the wave and the white.
+     the third pour. Then waits through the wave and the white. (Story cards are clicked through.)
   4. Lets a simple "bot" play Level 1: it walks, runs before wide gaps, jumps near the end of each
      piece of wreckage, keeps its balance while waiting for drifting planks, and rests on the boat
      long enough for Ichigo to sit down and look back.
@@ -97,11 +97,19 @@ async def play(browser, wide):
         await page.evaluate("document.documentElement.classList.add('full'); dispatchEvent(new Event('resize'))")
     await page.wait_for_timeout(2500)
     await shot('1-title')
+    # Read the story cards like a quick reader: a press shows the whole card, the next moves on.
+    # (A screenshot of the first of each set is taken on the way.)
+    await page.add_script_tag(content="window._cards = setInterval(() => { const c = ichigo.cards; if (c.active() && !window._holdCards) c.next(); }, 400)")
 
     if SKIP_BEACH:
         await page.evaluate('ichigo.startLevel()')
     else:
-        await page.keyboard.press('Enter'); await page.wait_for_timeout(1500)
+        await page.evaluate('window._holdCards = true')
+        await page.keyboard.press('Enter'); await page.wait_for_timeout(2500)
+        await shot('cards_intro')
+        await page.evaluate('window._holdCards = false')
+        await wait_for(page, '!ichigo.cards.active()', 15)
+        await page.wait_for_timeout(1000)
         await shot('beach_start')
         await page.add_script_tag(content=BEACH_BOT)
         b = 'ichigo.beach'
@@ -110,7 +118,10 @@ async def play(browser, wide):
         if await wait_for(page, f"{b}.phase === 'recede' && {b}.t > 2.0", 90): await shot('sea_pulls_back')
         else: notes.append('the third pour never happened')
         if await wait_for(page, f"{b}.phase === 'recede' && {b}.waveT > 3.9", 15): await shot('wave_over_beach')
-        if await wait_for(page, "ichigo.S.scene === 'white'", 15): await shot('white')
+        if await wait_for(page, "ichigo.S.scene === 'white'", 15):
+            await page.evaluate('window._holdCards = true')
+            if await wait_for(page, 'ichigo.cards.active()', 5): await page.wait_for_timeout(2500); await shot('cards_white')
+            await page.evaluate('window._holdCards = false')
         else: notes.append('no white after the wave')
         await page.evaluate('clearInterval(window._beachBot)')
     if await wait_for(page, "ichigo.S.scene === 'play' && ichigo.S.levelT > 1.9", 15): await shot('kaa_chan_question')

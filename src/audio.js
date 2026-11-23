@@ -6,10 +6,11 @@
 //   • the sea itself: waves washing in and out wherever there's water.
 //   • the tsunami: a rumble as the wave rises, then the crash (cut off by the silence of the white).
 //   • falling in: a splash, a sinking "bloop" and a few bubbles.
+//   • gulls, now and then.
 //
 // Browsers only allow sound after the player has pressed something, so nothing starts until the
 // first key press or tap. M turns the sound off and on (remembered in the save).
-// (Smaller sounds — splashes on the beach, the trip, pouring, the gulls — are still to come; the places
+// (Smaller sounds — splashes on the beach, the trip, pouring — are still to come; the places
 // they will go are marked "SOUND:" in the code.)
 // ============================================================================
 import { S } from './state.js';
@@ -237,4 +238,32 @@ export function playFall() {
     bg.gain.setValueAtTime(.08, t); bg.gain.exponentialRampToValueAtTime(.001, t + .06);
     b.connect(bg); bg.connect(fx); b.start(t); b.stop(t + .08);
   }
+}
+
+// ============================================================================
+// Gulls, now and then: a few raspy cries ("kyow, kyow"), somewhere off to one side. They wheel over
+// the beach until the sea pulls back (then they stop: the script's warning) and over the sea level.
+// ============================================================================
+function gullCry(at, pitch, pan, vol) {
+  const o = ac.createOscillator(), rasp = ac.createOscillator(), rg = ac.createGain();
+  const f = ac.createBiquadFilter(), g = ac.createGain(), p = ac.createStereoPanner ? ac.createStereoPanner() : null;
+  o.type = 'sawtooth';
+  o.frequency.setValueAtTime(pitch * .75, at); o.frequency.linearRampToValueAtTime(pitch, at + .06); o.frequency.exponentialRampToValueAtTime(pitch * .6, at + .28);   // up, then sliding down
+  rasp.frequency.value = 38; rg.gain.value = pitch * .04; rasp.connect(rg); rg.connect(o.frequency);   // the rasp in its throat
+  f.type = 'bandpass'; f.frequency.value = pitch * 1.4; f.Q.value = 2.5;
+  g.gain.setValueAtTime(0, at); g.gain.linearRampToValueAtTime(vol, at + .025); g.gain.exponentialRampToValueAtTime(.001, at + .3);
+  o.connect(f); f.connect(g);
+  if (p) { p.pan.value = pan; g.connect(p); p.connect(master); } else g.connect(master);
+  for (const x of [o, rasp]) { x.start(at); x.stop(at + .35); }
+}
+let nextGull = 0;
+// Call every frame: on = gulls about.
+export function gulls(on) {
+  if (!ac) return;
+  const now = ac.currentTime;
+  if (!on) { nextGull = now + 3 + Math.random() * 4; return; }   // (when they come back, not straight away)
+  if (now < nextGull) return;
+  const n = 2 + Math.floor(Math.random() * 3), pitch = 1300 + Math.random() * 500, pan = Math.random() * 1.6 - .8, vol = .025 + Math.random() * .03;
+  for (let i = 0; i < n; i++) gullCry(now + .05 + i * (.3 + Math.random() * .08), pitch * (1 - i * .04), pan, vol);
+  nextGull = now + 6 + Math.random() * 10;
 }
