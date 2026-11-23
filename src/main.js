@@ -10,10 +10,13 @@ import { input } from './input.js';
 import { buildWreckage, updateWreckage } from './wreckage.js';
 import { PL, spawn, updatePlayer, updateParts } from './player.js';
 import { startLevel, drawTitle, drawPlay } from './scenes.js';
+import { openSettings, updateSettings, drawSettings, onGear } from './settings.js';
+import { startPrologue, drawPrologue } from './prologue.js';
+import { openMenu, updateMenu, drawMenu } from './menu.js';
 import { B, startBeach, updateBeach, drawBeachScene, drawWhite, WAKE_CARDS } from './beach.js';
-import { showCards, cardsActive, updateCards, nextCard, drawCards } from './cards.js';
+import { showCards, cardsActive, updateCards, nextCard, drawCards, clearCards } from './cards.js';
 import { say, updateBubbles } from './bubbles.js';
-import { playLullaby, music, seaSound, gulls } from './audio.js';
+import { playLullaby, music, seaSound, gulls, soundAge } from './audio.js';
 import { loadSave, save } from './save.js';
 import { prepareDawns } from './dawn.js';
 
@@ -31,6 +34,14 @@ async function loadLevel(path) {
 loadSave();   // the words, marks and tomorrows Ichigo carries (save.js)
 
 let last = performance.now(), lastScene = S.scene;
+
+// What the settings panel can do to the game (settings.js).
+const act = {
+  levels: () => { clearCards(); openMenu(); },
+  title: () => { clearCards(); S.scene = 'title'; S.sceneT = 0; },
+  restart: () => { clearCards(); if (S.scene === 'beach' || S.scene === 'white') startBeach(); else startLevel(); },
+  inLevel: () => ['beach', 'white', 'play', 'dawn'].includes(S.scene),
+};
 function frame(now) {
   if (!pc.on) {   // the PC is switched off: the game waits, exactly where it was
     last = now; input.anyPressed = false; requestAnimationFrame(frame); return;
@@ -38,18 +49,30 @@ function frame(now) {
   const dt = Math.max(0.004, Math.min(0.033, (now - last) / 1000)); last = now;
   S.T += dt; S.sceneT += dt;
   const pressed = input.anyPressed; input.anyPressed = false;
+  const key = input.key, click = input.click; input.key = input.click = null;
+  const toTitle = () => { clearCards(); S.scene = 'title'; S.sceneT = 0; };
+  const begin = n => n === 0 ? startPrologue(startBeach) : startBeach();   // Level 0, the prologue, leads into Level 1's beach
 
   // move between scenes
-  // (while a story card is up, the world waits: see cards.js)
-  const reading = cardsActive();
-  if (reading) updateCards(dt, pressed);
-  else if (S.scene === 'title' && pressed) startBeach();
+  // (while the settings or a story card are up, the world waits: see settings.js, cards.js)
+  const reading = cardsActive(), wasOpen = S.settingsOpen;
+  if (S.settingsOpen) updateSettings(dt, key, click, act);
+  else if (onGear(click) || key === 'KeyP' || (key === 'Escape' && !reading && S.scene !== 'levels')) openSettings();
+  else if (reading) updateCards(dt, pressed);
+  else if (S.scene === 'title' && pressed && key !== 'KeyM' && key !== 'KeyF') {   // (M is mute, F full screen: not "any key")
+    // Browsers keep a page silent until a key is pressed. If this press is what woke the sound, it
+    // starts the title's music; the next one begins. (After that, one press begins.)
+    const justWoke = soundAge() < .3 && S.musicOn && !S.muted;
+    if (!justWoke) begin(0);
+  }
+  else if (S.scene === 'levels') updateMenu(dt, key, click, begin, toTitle);
   else if (S.scene === 'beach') updateBeach(dt, skipped => { if (skipped) startLevel(); else { S.scene = 'white'; S.sceneT = 0; } });
   else if (S.scene === 'white' && S.sceneT > BEACH.whiteTime) showCards(WAKE_CARDS, startLevel, { paper: true });   // a silence, then the cards on the white
-  else if (S.scene === 'end' && pressed && S.sceneT > 2.5) { S.scene = 'title'; S.sceneT = 0; }
+  else if (S.scene === 'end' && pressed && S.sceneT > 2.5) toTitle();
 
   // update the world
-  if (!reading && (S.scene === 'play' || S.scene === 'dawn' || S.scene === 'end')) {
+  const waiting = reading || wasOpen || S.settingsOpen;
+  if (!waiting && (S.scene === 'play' || S.scene === 'dawn' || S.scene === 'end')) {
     updateWreckage(S.T, dt, PL);
     if (S.scene === 'play') updatePlayer(dt);
     if (S.scene === 'dawn' && S.sceneT > 0.9 && S.sceneT - dt <= 0.9) spawn();   // respawn while the sun is up
@@ -64,27 +87,33 @@ function frame(now) {
     S.camX += (target - S.camX) * Math.min(1, dt * 5);
   }
 
-  updateBubbles(dt);
+  if (!waiting) updateBubbles(dt);
   if (S.scene !== lastScene) {   // arriving in a scene
     if (S.scene === 'dawn') { playLullaby({ notes: 2, delay: .7 }); save(); }   // a new tomorrow: the Lullaby's first two notes (after the splash)
-    if (S.scene === 'end') save();
+    if (S.scene === 'end') { S.done.add(S.level.number); save(); }   // (unlocking the next level)
     lastScene = S.scene;
   }
 
   // the music and the sea. The music plays on the sea level, held quietly under a new tomorrow's
   // Lullaby; the sea is heard wherever there's water, its waves louder as they grow along the level.
   // (The beach sets its own sea sound; the white is silent.)
-  music(S.scene === 'play' ? 1 : S.scene === 'dawn' ? .25 : 0);
+  const menus = S.scene === 'title' || S.scene === 'levels' || S.scene === 'prologue';
+  // The title's theme on the title and on through Level 0's cards; the sea's music under the cards on
+  // the white after the wave (after its silence), on into the sea level.
+  if (S.scene === 'title' || S.scene === 'prologue') music(1, 'title');
+  else music(S.scene === 'play' ? 1 : S.scene === 'dawn' ? .25 : S.scene === 'white' && reading ? .6 : 0, 'sea');   // (the level list: just the sea)
   if (S.scene === 'play' || S.scene === 'dawn') seaSound(.45 + .45 * Math.min(1, PL.x / ((S.level.sea && S.level.sea.growOver) || 5200)));
   else if (S.scene === 'end') seaSound(.25);   // a calm night sea
-  else if (S.scene === 'title') seaSound(0);
+  else if (S.scene === 'levels' || S.scene === 'prologue') seaSound(S.scene === 'levels' ? .3 : .15);
+  else if (menus) seaSound(0);
   gulls(S.scene === 'play' || (S.scene === 'beach' && B.phase !== 'recede'));   // (they fall silent when the sea pulls back)
 
   // draw (the camera moves in whole pixels so nothing shimmers)
   const cam = S.camX; S.camX = Math.round(S.camX / PIXEL) * PIXEL;
-  if (S.scene === 'title') drawTitle(); else if (S.scene === 'beach') drawBeachScene(); else if (S.scene === 'white') drawWhite(); else drawPlay();
+  if (S.scene === 'title') drawTitle(); else if (S.scene === 'levels') drawMenu(); else if (S.scene === 'prologue') drawPrologue(); else if (S.scene === 'beach') drawBeachScene(); else if (S.scene === 'white') drawWhite(); else drawPlay();
   S.camX = cam;
   drawCards();
+  drawSettings(act);   // (the gear in the corner, always; the panel when it's open)
   present();
   requestAnimationFrame(frame);
 }

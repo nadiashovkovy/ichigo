@@ -6,7 +6,7 @@
 // ============================================================================
 import { W, H, TOP, TOP_PX, LW, LH, SEA, P, PIXEL, px, onPixel, toPx } from './config.js';
 import { seaY } from './sea.js';
-import { scale2x, pixelBuffer, pack } from './pixel.js';
+import { scale2x, pixelBuffer, pack, dither } from './pixel.js';
 
 // Seeded "random" number in 0..1, so things scattered about stay put from frame to frame.
 export const hsh = n => { const v = Math.sin(n * 127.1 + 311.7) * 43758.5453; return v - Math.floor(v); };
@@ -87,9 +87,13 @@ function drawSky(B, camX, top, t) {
 export const FUJI_VIEWS = {
   dusk:  { snow: .45, streak: .7,  body: P.indigo, fleck: P.plum, curve: 1 },   // at dusk, as on the cover: indigo, its snow catching the light
   blue:  { snow: .42, streak: .62, body: P.deep, fleck: P.navy, curve: 1 },   // far off across the water, blue in the haze
-  grey:  { snow: .5,  streak: .8,  body: P.grey3, fleck: P.grey2, curve: 1 },
-  red:   { snow: .12, streak: .34, body: P.red,   fleck: P.rust,  curve: 1.5, forest: .86, scatter: true, shade: P.rust, trees: [P.pine, P.leaf] },
-  storm: { snow: .16, streak: .3,  body: P.wood,  fleck: P.brown, curve: 1.2, scatter: true, dark: .45, shade: P.brown },
+  grey:  { snow: .5,  streak: .8,  body: P.grey3, fleck: P.grey2, curve: 1, grad: P.grey2 },
+  red:   { snow: .12, streak: .34, body: P.red,   fleck: P.rust,  curve: 1.5, forest: .86, scatter: true, shade: P.rust, trees: [P.pine, P.leaf], grad: P.fadeRed },
+  storm: { snow: .16, streak: .3,  body: P.wood,  fleck: P.brown, curve: 1.2, scatter: true, dark: .45, shade: P.brown, grad: P.fadeOchre },
+  navy:  { snow: .2,  streak: .5,  body: P.navy,  fleck: P.white, curve: 1, scatter: true, grad: P.fadeBlue },   // Tago Bay: deep blue, snow speckling its upper slopes
+  ochre: { snow: .14, streak: .42, body: P.ochre, fleck: P.tanD,  curve: 1, shade: P.tanD, grad: P.fadeOchre },   // Misaka: ochre in the sun, snow in its gullies
+  mist:  { snow: 0,   streak: 0,   body: P.pale,  fleck: P.pale,  curve: 1, cap: .3, capColor: P.steel, grad: P.paper },   // Kajikazawa: pale in the mist, blue at its top
+  snowy: { snow: .62, streak: .95, body: P.deep,  fleck: P.steel, curve: 1 },   // Shichirigahama: almost all snow, streaked blue
 };
 // Calls cell(x, r, colour) for every cell of a Fuji `rows` cells tall and `half` cells wide each side
 // at its foot (or [left, right] for a lopsided one); x is measured from the peak, r down from the peak.
@@ -109,6 +113,8 @@ export function fujiCells(cell, rows, half, view = 'grey', sc = 1) {
       if (v.dark && !snow && k > v.dark + (h - .5) * .08) c = h < .03 ? P.navy : P.outline;   // the dark lower slopes
       const [dark, light] = v.trees || [P.navy, P.olive];
       if (v.forest && k > edge) c = (((X + Math.floor(R / 2) * 2) % 4 + 4) % 4 === 0) ? dark : light;   // the forest, in rows of trees
+      if (v.cap && !snow && k < v.cap) c = v.capColor;   // (a darker top)
+      if (v.grad && c === v.body && dither(x & 255, r) < Math.max(0, (k - .35) / .65) * .8) c = v.grad;   // the flank fading toward its foot (bokashi), in dithered steps
       cell(x, r, c);
     }
   }

@@ -18,6 +18,7 @@ export const SP = {
   W: P.foam,                                       // collar trim and the number
   B: '#a37b45', D: '#5a4128',                      // wooden flip-flops
   Y: '#f2c53d', y: '#b98b22', h: '#6b6b70',        // the yellow bucket and its handle
+  w: P.white,                                      // the glint on the bucket's rim
 };
 const OUTLINE = '#0b1428';   // the night-blue ink of the cover's line-art
 const FRAME_W = 44;          // frame width in art pixels
@@ -69,15 +70,15 @@ const TORSO = [
   '........SSrrRRRRRRRRRRRRRRRRRRrrSS..........',
   '........SSSrRRRRRRRRRRRRRRRRRRrSSS..........',
   '........SSSSRRRRRRRRRRRRRRRRRRSSSSh.........',
-  '.........SSSRRRRRRRRRRRRRRRRRRSSSShhhhhh....',
-  '..........rrRRRRRRRRRRRRRRRRRRrr..h.....hh..',
-  '..........rrRRRRRRRRRRRRRRRRRRrr..h.......h.',
-  '..........rrRRRRRRRRRRRRRRRRRRrr..yyyyyyyyy.',
-  '..........rrRRRRRRRRRRRRRRRRRRrr..YeYYYYYYy.',
-  '..........rrRRRRRRRRRRRRRRRRRRrr..YeYYYYYYy.',
-  '..........rrrRRRRRRRRRRRRRRRRrrr...YeYYYYy..',
-  '..........rrrrrRRRRRRRRRRRRrrrrr...YYYYYYy..',
-  '...........rrrrrRRRRRRRRRRrrrrr.....yyyyy...',
+  '.........SSSRRRRRRRRRRRRRRRRRRSSSShh.....hh.',
+  '..........rrRRRRRRRRRRRRRRRRRRrr..yyyyyyyyyy',
+  '..........rrRRRRRRRRRRRRRRRRRRrr..YweYYYYYYy',
+  '..........rrRRRRRRRRRRRRRRRRRRrr..YeYYYYYYYy',
+  '..........rrRRRRRRRRRRRRRRRRRRrr..YeYYYYYYYy',
+  '..........rrRRRRRRRRRRRRRRRRRRrr...YeYYYYYy.',
+  '..........rrrRRRRRRRRRRRRRRRRrrr...YYYYYYYy.',
+  '..........rrrrrRRRRRRRRRRRRrrrrr...YYYYYYYy.',
+  '...........rrrrrRRRRRRRRRRrrrrr.....yyyyyy..',
 ];
 const LEGS = {
   stand: [
@@ -113,16 +114,16 @@ const BALANCE = [
   '..........rrRRLLRRRRRRRRRRRRRRRrr...........',
   '...SSSSSssrrRRLLRRRRRRRRRRRRRRRrrrssSSSSS...',
   '..SSSSSSssrrRRLLRRRRRRRRRRRRRRRRrrssSSSSSS..',
-  '..ss......rrRRLLRRRRRRRRRRRRRRRRrr.....h....',
-  '..ss......rrRRLLRRRRRRRRRRRRRRRrr.....h.h...',
-  '..........rrRRRRRRRRRRRRRRRRRRRrr....h...h..',
-  '..........rrRRRRRRRRRRRRRRRRRRrr....yyyyyyy.',
-  '..........rrRRRRRRRRRRRRRRRRRRrr....YeYYYYy.',
-  '..........rrRRRRRRRRRRRRRRRRRRrr....YeYYYYy.',
-  '..........rrRRRRRRRRRRRRRRRRRRrr.....YeYYy..',
-  '..........rrRRRRRRRRRRRRRRRRRRrr......yyy...',
-  '..........rrRRRRRRRRRRRRRRRRRRrr......yyyyy.',
-  '..........rrRRRRRRRRRRRRRRRRRRrr.......yy...',
+  '..ss......rrRRLLRRRRRRRRRRRRRRRRrr......h...',
+  '..ss......rrRRLLRRRRRRRRRRRRRRRrr......h.h..',
+  '..........rrRRRRRRRRRRRRRRRRRRRrr.....h...h.',
+  '..........rrRRRRRRRRRRRRRRRRRRrr....yyyyyyyy',
+  '..........rrRRRRRRRRRRRRRRRRRRrr....YweYYYYy',
+  '..........rrRRRRRRRRRRRRRRRRRRrr....YeYYYYYy',
+  '..........rrRRRRRRRRRRRRRRRRRRrr....YeYYYYYy',
+  '..........rrRRRRRRRRRRRRRRRRRRrr.....YYYYYy.',
+  '..........rrRRRRRRRRRRRRRRRRRRrr.....YYYYYy.',
+  '..........rrRRRRRRRRRRRRRRRRRRrr......yyyy..',
   '..........rrRRRRRRRRRRRRRRRRRRrr............',
   '..........rrRRRRRRRRRRRRRRRRRRrr............',
   '..........rrRRRRRRRRRRRRRRRRRRrr............',
@@ -235,7 +236,10 @@ const FRAMES = {
   dig2: [...Array(6).fill('.'.repeat(FRAME_W)), ...HEAD, ...DIG2],
   sit: [...HEAD, ...SIT],
 };
-const HOLDS_BUCKET = ['stand', 'step1', 'step2', 'balance', 'sit'];   // frames where the bucket hangs upright (it can show water)
+const HOLDS_BUCKET = ['stand', 'step1', 'step2', 'balance', 'sit'];   // frames where the bucket hangs upright (it can show water, and the shovel)
+// The red shovel, standing in the bucket blade up (its handle down inside): drawn from the rim up.
+const SPADE = ['.RR.', 'RRRR', 'RRRR', 'RRRr', '.RRr', '..R.', '..R.', '..R.'];
+const SPADE_C = { R: P.red, r: P.rust };
 // Damage that stays with Ichigo, added one by one with each fall: [rows below the collar, column,
 // colour (or null to tear a hole)], each mark a 2×2 block. Measured from the collar so it lands in
 // the same place in every frame.
@@ -257,9 +261,10 @@ const MARKS = {
   'chin-scar':    [[-3, 27, P.tan, 2, 1]],                             // what's left of it
   'pout':         [[-6, 28, 'S', 3, 1], [-6, 29, 'm', 1, 1], [-5, 28, 'm', 1, 1], [-5, 29, 'S', 1, 1], [-5, 30, 'm', 1, 1], [-5, 31, 'S', 1, 1]],   // the lip wobbling (every other frame)
 };
-// Which permanent marks to draw, from S.marks. The chin shows its plaster in Level 1 and its scar after.
+// Which permanent marks to draw, from S.marks (the chin shows its plaster in Level 1 and its scar
+// after), and the shovel Ichigo carries in the bucket.
 export function markIds() {
-  const ids = [];
+  const ids = ['shovel'];
   if (S.marks.has('chin')) ids.push(S.level && S.level.number === 1 ? 'chin-plaster' : 'chin-scar');
   return ids;
 }
@@ -280,7 +285,7 @@ export function outline(grid) {
 // Shrink a grid of colours to k of its size: each new pixel takes the colour that covers most of
 // the old pixels under it (see-through only if that's at least half of them; on a tie, the small
 // details win: eye, catchlight, mouth, eyebrow).
-const DETAIL = [SP.E, SP.e, SP.m, P.red, P.pink, P.rose, P.tan, SP.K];   // (the chin's marks are details too)
+const DETAIL = [SP.E, SP.e, SP.m, P.red, P.pink, P.rose, P.tan, P.rust, SP.K];   // (the chin's marks are details too)
 export function small(grid, k = .75) {
   const h = grid.length, w = grid[0].length, H = Math.round(h * k), W = Math.round(w * k), out = [];
   for (let y = 0; y < H; y++) {
@@ -339,9 +344,13 @@ function picture(frame, scars, mini, [hx, hy] = [0, 0], marks = []) {
       const y = collar + dr + dy, x = c + dx;
       if (grid[y] && grid[y][x]) grid[y][x] = SP[col] || col;
     }
-  if (marks.includes('water') && HOLDS_BUCKET.includes(frame)) {   // a full bucket: water showing inside its rim
-    const y = rows.findIndex(r => r.includes('yyyyy')), x0 = rows[y].indexOf('yyyyy'), x1 = rows[y].lastIndexOf('y');
-    for (let x = x0 + 1; x < x1; x++) grid[y][x] = x === x0 + 2 ? P.aqua : P.sea;
+  if (HOLDS_BUCKET.includes(frame)) {
+    const y = rows.findIndex(r => r.includes('yyyyy')), x0 = rows[y].indexOf('yyyyy'), x1 = rows[y].lastIndexOf('y');   // the bucket's rim
+    if (marks.includes('water')) for (let x = x0 + 1; x < x1; x++) grid[y][x] = x === x0 + 2 ? P.aqua : P.sea;   // a full bucket: water inside its rim
+    if (marks.includes('shovel')) SPADE.forEach((r, j) => [...r].forEach((ch, i) => {   // the shovel standing in it
+      const yy = y - SPADE.length + j, xx = x1 - 4 + i;
+      if (ch !== '.' && grid[yy] && xx < grid[yy].length) grid[yy][xx] = SPADE_C[ch];
+    }));
   }
   const k = mini ? .75 : 1;
   if (mini) grid = small(grid, k);

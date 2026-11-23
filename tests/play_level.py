@@ -3,7 +3,9 @@ Automated play-test for Ichigo.
 
 What it does:
   1. Serves the game from this folder on a local web server.
-  2. Opens it in a headless Chrome, twice: at the PC's 4:3 size, then in full screen (16:9).
+  2. Opens it in a headless Chrome, twice: at the PC's 4:3 size, then in full screen (16:9). Opens
+     the settings (P) on the title, its controls page, and the list of all levels from it; then
+     begins: Level 0's cards, then Level 1.
   3. Plays the beach before the wave: walks right to the water (tripping over the shovel on the way,
      and sitting through the plaster), fills the bucket, walks back, digs, pours, and again, until
      the third pour. Then waits through the wave and the white. (Story cards are clicked through.)
@@ -99,14 +101,31 @@ async def play(browser, wide):
     await shot('1-title')
     # Read the story cards like a quick reader: a press shows the whole card, the next moves on.
     # (A screenshot of the first of each set is taken on the way.)
-    await page.add_script_tag(content="window._cards = setInterval(() => { const c = ichigo.cards; if (c.active() && !window._holdCards) c.next(); }, 400)")
+    # (It stops once at the first card on the beach, for a screenshot.)
+    await page.add_script_tag(content="""window._cards = setInterval(() => { const c = ichigo.cards;
+      if (ichigo.S.scene === 'beach' && !window._sawIntro) { window._sawIntro = window._holdCards = true; }
+      if (c.active() && !window._holdCards) c.next(); }, 400)""")
+    # the settings (P), its controls page, and the list of all levels from it; then back to the title
+    async def keys_(*ks):
+        for k in ks: await page.keyboard.press(k); await page.wait_for_timeout(120)
+    await keys_('KeyP'); await page.wait_for_timeout(400); await shot('settings')
+    if not await page.evaluate('ichigo.S.settingsOpen'): notes.append("P didn't open the settings")
+    await keys_('ArrowDown', 'Enter'); await page.wait_for_timeout(400); await shot('controls')
+    await keys_('Enter', 'ArrowDown', 'Enter'); await page.wait_for_timeout(800)   # (back from the controls, still on CONTROLS: one down is ALL LEVELS)
+    await shot('levels')
+    if await page.evaluate("ichigo.S.scene") != 'levels': notes.append("the settings didn't open the level list")
+    await page.keyboard.press('Escape'); await page.wait_for_timeout(500)
 
     if SKIP_BEACH:
-        await page.evaluate('ichigo.startLevel()')
+        await page.evaluate('window._sawIntro = true; ichigo.startLevel()')
     else:
         await page.evaluate('window._holdCards = true')
-        await page.keyboard.press('Enter'); await page.wait_for_timeout(2500)
-        await shot('cards_intro')
+        await page.keyboard.press('Enter'); await page.wait_for_timeout(3500)
+        await shot('prologue')   # Level 0
+        await page.evaluate('window._holdCards = false')
+        if await wait_for(page, "ichigo.S.scene === 'beach' && window._holdCards", 30):
+            await page.wait_for_timeout(2500); await shot('cards_intro')
+        else: notes.append('Level 0 never led to the beach')
         await page.evaluate('window._holdCards = false')
         await wait_for(page, '!ichigo.cards.active()', 15)
         await page.wait_for_timeout(1000)
@@ -141,6 +160,11 @@ async def play(browser, wide):
     await shot('5-end')
     fallen = await page.evaluate('window._fallen')
     saved = await page.evaluate("localStorage.getItem('ichigo.save')")
+    if result:   # finishing Level 1 unlocks Level 2 in the list
+        await page.keyboard.press('Enter'); await page.wait_for_timeout(800)
+        await page.keyboard.press('KeyP'); await page.wait_for_timeout(300)
+        for k in ['ArrowDown', 'ArrowDown', 'Enter']: await page.keyboard.press(k); await page.wait_for_timeout(120)
+        await page.wait_for_timeout(800); await shot('levels_after')
     await ctx.close()
     return dict(errors=errors, notes=notes, fallen=fallen, result=result, save=json.loads(saved) if saved else None)
 
@@ -159,7 +183,7 @@ async def main():
         print('Page errors:', r['errors'] or 'none')
         for n in r['notes']: print('Problem:', n)
         print('Bot fell in at x =', r['fallen'] or 'never')
-        if r['result']: print(f"Bot reached the lantern with {r['result']['deaths']} tomorrows.")
+        if r['result']: print(f"Bot reached the lantern, falling in {r['result']['deaths']} times.")
         else: print('Bot did NOT reach the lantern within 3 minutes.'); ok = False
         print('Save:', r['save'])
         if not SKIP_BEACH:

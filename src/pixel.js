@@ -63,8 +63,12 @@ export function beginTop() { tg.setTransform(1 / PIXEL, 0, 0, 1 / PIXEL, 0, TOP 
 export function pixelSpace(g) { g.setTransform(1, 0, 0, 1, 0, 0); }
 
 // --- snap to palette with ordered dithering ---
-const PAL = Object.values(P).map(h => [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)]);
+// (The aged pigments are only for the prints, which are drawn in exact colours: the world isn't snapped to them.)
+const PAL = Object.entries(P).filter(([k]) => !/^(fade|paper)/.test(k)).map(([, h]) => h).map(h => [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)]);
 const BAYER = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
+// The ordered-dither threshold at pixel (x, y), between 0 and 1: to blend two colours in pixel art,
+// use the second where dither(x, y) < how much of it there should be. (Used for the prints' gradients.)
+export const dither = (x, y) => (BAYER[((y & 3) << 2) | (x & 3)] + .5) / 16;
 const LUT = new Uint8Array(32768);   // lookup table: any colour → nearest palette colour
 for (let r = 0; r < 32; r++) for (let g = 0; g < 32; g++) for (let b = 0; b < 32; b++) {
   let best = 0, bd = 1e9; const R = r * 8 + 4, G = g * 8 + 4, B = b * 8 + 4;

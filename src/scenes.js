@@ -5,7 +5,7 @@
 import { W, H, TOP, LW, LH, TOP_PX, PIXEL, P, px, onPixel, toPx } from './config.js';
 import { S, parts } from './state.js';
 import { lg, tg, topC, beginWorld, beginTop, pixelSpace, quantize, scale2x } from './pixel.js';
-import { pixelText, drawCover } from './text.js';
+import { pixelText, drawCover, LETTER, LINE } from './text.js';
 import { inLeft, inRight } from './input.js';
 import { seaY } from './sea.js';
 import { drawScenery, drawSea, drawLife, drawPix, drawFloatingKoinobori } from './art.js';
@@ -13,6 +13,7 @@ import { floating, drawWreckage, updateWreckage } from './wreckage.js';
 import { PL, spawn } from './player.js';
 import { drawSprite, spriteHeight, markIds } from './sprite.js';
 import { drawBubbles, clearBubbles } from './bubbles.js';
+import { drawIcon, iconSize } from './icons.js';
 import { drawTitleArt } from './title.js';
 import { drawDawn } from './dawn.js';
 
@@ -35,10 +36,7 @@ export function drawTitle() {
   const [cover, ys] = wide ? [60, [8, 82, 106, 124, 142, 166]] : [72, [10, 96, 124, 142, 160, 188]];
   drawCover('ICHIGO', cover, tx, ys[0]);
   pixelText('A CHILD OF THE SEA', tx, ys[1], P.navy, 'center');
-  pixelText('<- -> MOVE', tx, ys[2], P.ink, 'center');   // short lines, clear of the wave's claws
-  pixelText('SHIFT RUN', tx, ys[3], P.ink, 'center');
-  pixelText('SPACE JUMP', tx, ys[4], P.ink, 'center');
-  if (Math.sin(S.T * 4) > -0.3) pixelText('PRESS ANY KEY', tx, ys[5], P.red, 'center');
+  if (Math.sin(S.T * 4) > -0.3) pixelText('PRESS ANY KEY', tx, ys[3], P.red, 'center');   // (short lines, clear of the wave's claws)
 }
 
 // Play (also used under the 'dawn' and 'end' overlays).
@@ -56,21 +54,20 @@ export function drawPlay() {
   if (S.level.number === 1 && S.levelT < 8) { const x = W + 60 - (S.levelT - .5) / 6 * (W + 160); drawFloatingKoinobori(tg, x - camX, seaY(x, T), T); }
   tg.restore();
   if (S.scene === 'play' && S.sceneT < 0.5) { tg.globalAlpha = 1 - S.sceneT / 0.5; tg.fillStyle = P.night; tg.fillRect(0, -TOP, W, H + TOP); tg.globalAlpha = 1; }
-  if (S.scene === 'end') drawEndBg(tg, S.sceneT);
   pixelSpace(tg); quantize(tg); lg.drawImage(topC, 0, 0);
   if (S.scene === 'dawn') drawDawn(lg, S.sceneT, S.deaths - 1);   // a new tomorrow: a different Hokusai print each fall (dawn.js)
-  const showIchigo = !(S.scene === 'dawn' && S.sceneT < 1.45) && S.scene !== 'end' && !(S.scene === 'play' && S.sceneT < 0.25);
+  const showIchigo = !(S.scene === 'dawn' && S.sceneT < 1.45) && !(S.scene === 'play' && S.sceneT < 0.25);
   if (showIchigo) {
     const moving = PL.ground && Math.abs(PL.vu) > 20 && (inLeft() || inRight());
     const wobbly = PL.ground && floating(PL.ground) && Math.abs(PL.ground.ang) > .14;   // arms out to balance
-    const frame = PL.sitting ? 'sit' : !PL.ground ? 'jump' : moving ? ['stand', 'step1', 'stand', 'step2'][Math.floor(PL.anim / 1.6) % 4] : wobbly ? 'balance' : 'stand';
+    const frame = PL.sitting || S.scene === 'end' ? 'sit' : !PL.ground ? 'jump' : moving ? ['stand', 'step1', 'stand', 'step2'][Math.floor(PL.anim / 1.6) % 4] : wobbly ? 'balance' : 'stand';
     // the hair moves with Ichigo: streaming back in the air and lifting as they fall; flicking back and
     // bouncing a little with each step (more when running); swaying as they balance
     const step = Math.floor(PL.anim / 1.6) % 2, running = Math.abs(PL.vu) > 220;
-    const hair = PL.sitting ? [0, 0] : !PL.ground ? [1, PL.vy > 150 ? 2 : 0] : moving ? [(running ? 1 : 0) + step, step] : wobbly ? [Math.sin(S.T * 4) > 0 ? 1 : 0, 0] : [0, 0];
+    const hair = PL.sitting || S.scene === 'end' ? [0, 0] : !PL.ground ? [1, PL.vy > 150 ? 2 : 0] : moving ? [(running ? 1 : 0) + step, step] : wobbly ? [Math.sin(S.T * 4) > 0 ? 1 : 0, 0] : [0, 0];
     // (sitting on the boat a while, Ichigo looks back the way they came)
-    const face = PL.sitting && PL.idle > 5 ? -1 : PL.face;
-    drawSprite(lg, frame, (PL.x - camX) / PIXEL, PL.y / PIXEL + TOP_PX, face, Math.min(5, S.deaths), hair, markIds());
+    const face = PL.sitting && PL.ground && PL.ground.type === 'boat' && PL.idle > 5 ? -1 : PL.face;
+    drawSprite(lg, frame, (PL.x - camX) / PIXEL, PL.y / PIXEL + TOP_PX, face, Math.min(5, S.deaths), hair, PL.getUp > 0 ? [...markIds(), 'pout'] : markIds());   // (lip out: stubbornly not getting up)
     const sh = PL.sitting ? Math.round(46 * (PIXEL > 1.1 ? .75 : 1)) : spriteHeight();
     drawBubbles(lg, { ichigo: [Math.round((PL.x - camX) / PIXEL), Math.round(PL.y / PIXEL + TOP_PX) - sh] });
   }
@@ -82,23 +79,32 @@ export function drawPlay() {
   if (S.scene === 'end') drawEndFg(S.sceneT);
 }
 
-function drawEndBg(g, t) {
-  g.globalAlpha = Math.min(1, t / 1.5); g.fillStyle = P.indigo; g.fillRect(0, -TOP, W, H + TOP);   // dusk over a calm night sea
-  g.fillStyle = P.rosewood; g.fillRect(0, 380, W, 40);
-  g.fillStyle = P.abyss; g.fillRect(0, 420, W, 120);
-  g.fillStyle = P.aqua; g.fillRect(0, 420, W, px(2));
-  g.globalAlpha = 1;
-}
+// The level's end: the world stays, Ichigo sitting by the lantern; a panel
+// like the story cards' (night, edged in pale ink) says which level is done, how it went, and any
+// word Ichigo learned. All in the pixel font.
 function drawEndFg(t) {
   if (t < 1) return;
-  const L = S.level;
-  const sea = Math.round((420 + TOP) / PIXEL);   // the sea's surface, in pixels: Ichigo stands just above it
-  const head = sea - 4 - spriteHeight();   // top of Ichigo's head; the words sit above it
-  drawCover(`${L.number} / 15`, 60, LW / 2, Math.max(16, head - 200));
-  pixelText(`LEVEL ${NUMBER_WORDS[L.number]}: ${L.name}`, LW / 2, head - 88, P.mist, 'center', P.night);
-  pixelText(S.deaths ? 'TOMORROWS: ' + S.deaths : 'NOT ONE TOMORROW NEEDED', LW / 2, head - 36, P.aqua, 'center', P.night);
-  drawSprite(lg, 'stand', LW / 2, sea - 4, 1, Math.min(5, S.deaths), [0, 0], markIds());
-  if (t > 2.5 && Math.sin(S.T * 4) > -0.3) pixelText('PRESS ANY KEY', LW / 2, sea + 40, P.mist, 'center', P.night);
+  const L = S.level, learned = (L.learns || []).filter(w => S.words.includes(w));   // (the words this level teaches: levels/*.json)
+  const lines = [
+    [`LEVEL ${NUMBER_WORDS[L.number]} DONE`, P.gold],
+    [L.name.toUpperCase(), P.mist],
+    null,
+    [S.deaths ? `ICHIGO FELL IN THE SEA ${S.deaths === 1 ? 'ONCE' : S.deaths + ' TIMES'}` : 'ICHIGO NEVER FELL IN', P.aqua],
+  ];
+  const s = iconSize(true), w = Math.min(LW - 40, 440), pad = 16;
+  const h = pad * 2 + lines.length * LINE + (learned.length ? s + 12 : 0) + 30, x = Math.round((LW - w) / 2), y = 28;
+  lg.fillStyle = P.mist; lg.fillRect(x - 2, y - 2, w + 4, h + 4);
+  lg.fillStyle = P.night; lg.fillRect(x, y, w, h);
+  lines.forEach((ln, i) => ln && pixelText(ln[0], LW / 2, y + pad + i * LINE, ln[1], 'center'));
+  let yy = y + pad + lines.length * LINE + 6;
+  if (learned.length) {   // the words learned, as their pictures
+    const ICON = { 'kaa-chan': 'kaachan' }, label = 'LEARNED:', lw = label.length * LETTER + 8, total = lw + learned.length * (s + 6);
+    let xx = Math.round(LW / 2 - total / 2);
+    pixelText(label, xx, yy + (s - 14) / 2, P.mist); xx += lw;
+    for (const wd of learned) { drawIcon(lg, ICON[wd] || wd, xx, yy); xx += s + 6; }
+    yy += s + 12;
+  }
+  if (t > 2.5 && Math.sin(S.T * 4) > -0.3) pixelText('PRESS ANY KEY', LW / 2, y + h - pad - 10, P.grey1, 'center');
 }
 
 // Wordless HUD: tally marks for each tomorrow, and the voyage so far: a little boat (Ichigo in red)

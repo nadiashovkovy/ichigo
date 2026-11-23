@@ -10,6 +10,7 @@ import { P, LW, LH } from './config.js';
 import { lg, pixelSpace } from './pixel.js';
 import { pixelText, LETTER, LINE } from './text.js';
 import { keys } from './input.js';
+import { S } from './state.js';
 
 const SPEED = 45;   // letters a second
 const C = { list: [], i: 0, t: 0, done: null, paper: false };
@@ -17,10 +18,13 @@ const C = { list: [], i: 0, t: 0, done: null, paper: false };
 // list: the cards' texts. done: what to do after the last one. paper: drawn on the white of the
 // screen (after the wave) instead of in a panel over the scene.
 export function showCards(list, done, { paper = false } = {}) {
+  if (!S.cardsOn) { if (done) done(); return; }   // (story cards turned off in settings)
   Object.assign(C, { list, i: 0, t: 0, done, paper });
 }
 export const cardsActive = () => C.list.length > 0;
+export const cardIndex = () => C.i;   // which card is showing
 
+export function clearCards() { C.list = []; C.done = null; }   // (leaving for the title or the level list)
 function finish() { const done = C.done; C.list = []; C.done = null; if (done) done(); }
 // The next step: show the whole card if it's still typing, else go on to the next card.
 export function nextCard() {

@@ -1,8 +1,12 @@
 // ============================================================================
 // dawn.js — after a fall, a new tomorrow dawns as one of Hokusai's Thirty-six Views of Mount Fuji,
 // a different print each fall (in turn), recreated cell by cell with the game's own palette:
-//   Fine Wind, Clear Morning ("Red Fuji") · Goten-yama Hill, Shinagawa on the Tōkaidō · Rainstorm
-//   Beneath the Summit · Ejiri in Suruga Province · Under Mannen Bridge at Fukagawa
+//   Fine Wind, Clear Morning ("Red Fuji") · Kajikazawa in Kai Province · Goten-yama Hill, Shinagawa on
+//   the Tōkaidō · At Sea off Kazusa · Rainstorm Beneath the Summit · Ejiri in Suruga Province · Tago Bay
+//   near Ejiri · Under Mannen Bridge at Fukagawa · Reflection in Lake at Misaka
+// (All recreated by hand, in code, from the prints: no images.) They share one palette and one look:
+// a thin night-blue band at the top of every sky (Hokusai's shading), flat shapes edged in a darker
+// colour, tiny people. Each has a small animation of its own (live).
 // Each comes in from the top like a print being laid down, and lifts off the same way. A small
 // title label sits in the corner, as on the prints. (The two great close-ups of the mountain, Red Fuji
 // and the Rainstorm, are kept apart in the order.)
@@ -15,9 +19,40 @@
 import { LW, LH, P } from './config.js';
 import { hsh, fujiCells } from './art.js';
 import { pixelText, LETTER } from './text.js';
-import { scale2x, pack } from './pixel.js';   // (pack: a colour as a 32-bit pixel, for painting into ImageData)
+import { scale2x, pack, dither } from './pixel.js';   // (pack: a colour as a 32-bit pixel, for painting into ImageData)
 
 const C = 1;   // pixels per cell
+
+// Age: the prints as they are now, not as they left the printer. Each pigment has faded toward its aged
+// colour (config.js), some more than others: [aged colour, how much]. Pure white was never printed at
+// all: it's the paper, yellowed. The fading is uneven, in soft patches, as ink sank into the paper
+// differently; the paper is toned darker toward its edges; and there are fibres and specks in it.
+// Mixed in with ordered dithering, so the colours stay the palette's.
+const AGE = new Map([
+  [P.white, [P.paper, 1]], [P.foam, [P.paper, .5]], [P.sky, [P.paper, .3]], [P.tan, [P.paper, .2]],
+  [P.navy, [P.fadeNavy, .5]], [P.deep, [P.fadeBlue, .45]], [P.steel, [P.fadeSky, .35]], [P.pale, [P.fadeSky, .3]],
+  [P.teal, [P.fadeSky, .3]], [P.sea, [P.fadeBlue, .35]], [P.red, [P.fadeRed, .5]], [P.rust, [P.fadeRed, .2]],
+  [P.grass, [P.fadeGreen, .45]], [P.leaf, [P.fadeGreen, .25]], [P.gold, [P.fadeOchre, .5]], [P.ochre, [P.fadeOchre, .35]],
+  [P.outline, [P.fadeInk, .45]], [P.pink, [P.paper, .35]],
+]);
+// Smooth noise, 0..1: random values on a grid, blended smoothly between (so fading comes in soft patches).
+function soft(x, y, seed) {
+  const x0 = Math.floor(x), y0 = Math.floor(y), fx = x - x0, fy = y - y0, u = fx * fx * (3 - 2 * fx), v = fy * fy * (3 - 2 * fy);
+  const h = (i, j) => hsh((x0 + i) * 7.13 + (y0 + j) * 31.7 + seed);
+  return (h(0, 0) * (1 - u) + h(1, 0) * u) * (1 - v) + (h(0, 1) * (1 - u) + h(1, 1) * u) * v;
+}
+const PAPERY = new Set([P.paper, P.foam, P.sky, P.tan, P.white]);
+function aged(c, x, y, cw, ch) {
+  const fibre = hsh(x * 12.9898 + y * 78.233);
+  if (fibre < .006 && PAPERY.has(c)) return fibre < .002 ? P.tanD : P.grey0;   // a fibre or speck in the paper
+  if (fibre < .003 && (c === P.navy || c === P.deep)) return P.fadeSky;     // a worn spot in the ink
+  const a = AGE.get(c);
+  if (!a) return c;
+  const patch = soft(x / 28, y / 22, 3.7) * .5 + soft(x / 70, y / 55, 1.3) * .5;   // (soft, cloud-like patches)
+  const edge = Math.max(0, 1 - Math.min(x, y, cw - 1 - x, ch - 1 - y) / (cw * .05));
+  const f = Math.min(1, a[1] * (.5 + patch) + edge * .45);
+  return dither(x, y) < f ? a[0] : c;
+}
 
 // The canvas for one print: cell(x, y, colour) paints a cell, if the dawn has reached it yet (or
 // always, with all: for painting the still part of a print once into its cache).
@@ -35,7 +70,7 @@ function canvas(g, t, a, all = false) {
   };
   const cell = (x, y, c) => {
     x = Math.round(x); y = Math.round(y);
-    if (x >= 0 && x < cw && y >= 0 && y < ch && show(x, y)) { if (buf) buf[y * cw + x] = pack(c); else { g.fillStyle = c; g.fillRect(x * C, y * C, C, C); } }
+    if (x >= 0 && x < cw && y >= 0 && y < ch && show(x, y)) { c = aged(c, x, y, cw, ch); if (buf) buf[y * cw + x] = pack(c); else { g.fillStyle = c; g.fillRect(x * C, y * C, C, C); } }
   };
   const blot = (x, y, c) => {   // a fleck the size of a design cell
     for (let dy = 0; dy < S(1); dy++) for (let dx = 0; dx < S(1); dx++) cell(Math.round(x) + dx, Math.round(y) + dy, c);
@@ -48,19 +83,26 @@ function canvas(g, t, a, all = false) {
     for (let y = Math.floor(cy - r); y <= cy + r; y++) for (let x = Math.floor(cx - r); x <= cx + r; x++)
       if ((x - cx) ** 2 + (y - cy) ** 2 <= r * r) cell(x, y, c);
   };
-  // bands of colour from the top, each a list of [down to design row, colour]; band edges are
-  // stitched together a cell at a time, like the title card's chart
+  // bands of colour from the top, each a list of [down to design row, colour], blended into each
+  // other in soft dithered gradients, like the wiped bokashi shading of the prints' skies and water
   const bands = (list, from = 0, to = ch) => {
-    for (let y = from; y < to; y++) for (let x = 0; x < cw; x++) {
-      const b = y + ((x + y) % 2) * 2 - 1;
-      cell(x, y, (list.find(([end]) => b < end * s) || list[list.length - 1])[1]);
+    const Z = 3.5 * s;   // (half the height of each blend)
+    for (let y = from; y < to; y++) {
+      let i = list.findIndex(([end]) => y < end * s); if (i < 0) i = list.length - 1;
+      const end = list[i][0] * s, start = i ? list[i - 1][0] * s : -1e9;
+      for (let x = 0; x < cw; x++) {
+        let c = list[i][1];
+        if (i < list.length - 1 && y > end - Z) { if (dither(x, y) < (y - (end - Z)) / (2 * Z)) c = list[i + 1][1]; }
+        else if (i > 0 && y < start + Z) { if (dither(x, y) < (start + Z - y) / (2 * Z)) c = list[i - 1][1]; }
+        cell(x, y, c);
+      }
     }
   };
   const fuji = (px, top, rows, half, view) => fujiCells((x, r, c) => cell(px + x, top + r, c), rows, half, view, Math.max(1, Math.round(s / 2)));
   return { cw, ch, s, S, cell, blot, line, disc, bands, fuji, span, flush: () => img && g.putImageData(img, 0, 0) };
 }
 
-// --- the five prints ---
+// --- the prints ---
 // draw(k) paints the still picture (once, into a cache); live(k, t), if there is one, paints what
 // moves, every frame, over it.
 const PRINTS = [
@@ -78,6 +120,15 @@ const PRINTS = [
       }
     }
     fuji(Math.round(cw * .6), ch - S(74), S(74), [Math.round(cw * .75), Math.round(cw * .5)], 'red');
+  }, live: (k, t) => {
+    const { cw, s, S, cell } = k;
+    for (let i = 0; i < 5; i++) {   // a few more little clouds drifting slowly across the morning sky: paper streaks, pale beneath
+      const n = S(4 + i % 3), x0 = Math.round(((hsh(i * 4.3) * cw + t * (3 + i % 3) * s) % (cw + S(20))) - S(10)), y0 = S(18 + hsh(i * 6.1) * 40);
+      for (let j = 0; j < n; j++) {
+        cell(x0 + j, y0, P.white); if (j >= S(1) && j < n - S(1)) cell(x0 + j, y0 - S(1), P.white);
+        cell(x0 + j, y0 + S(1), P.pale);
+      }
+    }
   } },
   { title: 'GOTEN-YAMA HILL, SHINAGAWA ON THE TOKAIDO', draw: (k) => {
     // Cherry-blossom time on Goten-yama: tall thin cherry trees, their blossom in flat scalloped pink
@@ -188,7 +239,7 @@ const PRINTS = [
     // a gust on the marsh road: travellers bent into the wind on the dike, a clump of thin trees bowed
     // over, a hat and papers whirled away; Fuji a bare white outline far off, a village on the horizon
     const { cw, ch, s, S, cell, line, bands } = k;
-    bands([[5, P.deep], [12, P.steel], [20, P.pale], [999, P.sky]]);
+    bands([[3, P.navy], [7, P.deep], [12, P.steel], [20, P.pale], [999, P.sky]]);
     const ground = x => S(72) + Math.round(Math.sin(x / s * .03) * 3 * s + x * .04);
     const fx = Math.round(cw * .24), rows = S(26), half = S(34), fTop = ground(fx) - rows + 1;   // Fuji, just an outline, standing on the marsh
     for (let r = 0; r < rows; r++) {
@@ -238,7 +289,7 @@ const PRINTS = [
   { title: 'UNDER MANNEN BRIDGE AT FUKAGAWA', draw: (k, t) => {
     // the great arch of the bridge over the river, boats beneath it, Fuji small in the distance
     const { cw, ch, s, S, cell, bands, fuji } = k;
-    bands([[8, P.deep], [22, P.steel], [999, P.pale]], 0, S(70));
+    bands([[3, P.navy], [8, P.deep], [22, P.steel], [999, P.pale]], 0, S(70));
     fuji(Math.round(cw * .5), S(52), S(18), S(16), 'grey');
     for (let x = 0; x < cw; x++) {   // the far bank
       for (let y = S(69); y < S(70); y++) cell(x, y, P.grey3);
@@ -272,7 +323,219 @@ const PRINTS = [
       }
     }
   } },
+  { title: 'KAJIKAZAWA IN KAI PROVINCE', draw: (k) => {
+    // A fisherman on the tip of a rock leans out over the rapids, his lines fanned down into the
+    // water; a boy crouches behind him. The rock, Prussian blue, climbs from the lower left; below,
+    // the river churns white. Long lines of current cross the misty water, and Fuji rises pale out of
+    // the mist, only its top in blue. A thin band of peach cloud on the horizon.
+    const { cw, ch, s, S, cell, line, bands, fuji } = k;
+    const X = f => Math.round(cw * f);
+    bands([[3, P.navy], [8, P.steel], [14, P.pale], [999, P.foam]]);
+    for (const [f0, f1, y] of [[0, .42, 26], [.56, 1, 24], [.12, .5, 29]])   // peach cloud, in thin streaks
+      for (let x = X(f0); x < X(f1); x++) cell(x, S(y), P.pink);
+    fuji(X(.64), S(14), S(20), [S(30), S(26)], 'mist');
+    for (let y = S(34); y < ch; y++) for (let x = 0; x < cw; x++) cell(x, y, P.foam);   // the misty water
+    for (const [y, sag] of [[44, 3], [49, 2], [55, 4], [60, 3], [66, 2], [72, 3]])   // long lines of current
+      for (let x = 0; x < cw; x++) cell(x, S(y) + Math.round(Math.sin(x / cw * Math.PI) * sag * s), P.deep);
+    rough(k, S(70), ch, 3.1, X(.25), cw);   // the rapids, lower right
+    // the rock: from the lower left up to its tip, then a cliff falling away beneath it
+    const top = x => S(64) - Math.round((x / cw) * 22 * s) + Math.round(Math.sin(x / s * .3) * s + Math.abs(Math.sin(x / s * .11)) * 3 * s);   // rugged
+    const cliff = y => X(.58) - Math.round((y - S(56)) / (ch - S(56)) * cw * .3 + Math.abs(Math.sin(y / s * .23)) * 4 * s + hsh(Math.floor(y / S(4))) * 3 * s);   // jagged
+    for (let y = S(55); y < ch; y++) for (let x = 0; x < cliff(y); x++) {
+      if (y < top(x)) continue;
+      const edge = y - top(x) < s || cliff(y) - x <= s, stroke = (x + Math.round(y * 1.6) + Math.round(hsh(Math.floor(y / S(3))) * 9 * s)) % S(9);
+      cell(x, y, edge ? P.outline : y - top(x) < S(3) ? P.steel : stroke < s ? P.navy : stroke < 2 * s && hsh(Math.floor(x / s) * 1.3) < .5 ? P.steel : P.deep);   // carved in diagonal strokes
+    }
+    rough(k, S(96), ch, 7.7, 0, X(.3));   // foam breaking at the rock's foot
+    const tx = X(.57), ty = top(tx);
+    drawFigure(cell, X(.45), top(X(.45)) - 1, 'boy');
+    drawFigure(cell, tx - S(3), ty - 1, 'fisher');
+  }, live: (k, t) => {
+    const { cw, ch, s, S, line, blot } = k;
+    const X = f => Math.round(cw * f), tx = X(.57), ty = S(64) - Math.round(.57 * 22 * s) + Math.round(Math.sin(tx / s * .3) * s + Math.abs(Math.sin(tx / s * .11)) * 3 * s);
+    for (const [i, [fx, y]] of [[.72, 96], [.8, 98], [.9, 100], [.98, 96], [1.04, 92]].entries())   // his lines, fanned out, swaying in the current
+      line(tx + S(2), ty - S(4), X(fx) + Math.round(Math.sin(t * 1.6 + i) * 2 * s), S(y), P.outline);
+    for (let i = 0; i < 14; i++) {   // spray thrown up where the rapids break on the rock
+      const p = (t * .7 + i / 14) % 1, x = X(.3 + hsh(i * 2.9) * .45) + Math.round(p * 6 * s), y = S(96 - hsh(i * 5.1) * 22) - Math.round(Math.sin(p * Math.PI) * 9 * s);
+      if (p < .85) blot(x, y, i % 3 ? P.white : P.pale);
+    }
+  } },
+  { title: 'AT SEA OFF KAZUSA', draw: (k) => {
+    // A great cargo ship, red-hulled, its deck heaped with green, sails out to sea under a white sail
+    // billowing from a tall mast; a second ship close behind. The sea darkens from pale at the
+    // horizon to deep blue, ruffled with little waves; Fuji is a white speck on the far shore.
+    const { cw, ch, s, S, cell, line, bands, fuji } = k;
+    const X = f => Math.round(cw * f);
+    bands([[4, P.navy], [12, P.deep], [24, P.steel], [36, P.pale], [999, P.foam]], 0, S(46));
+    for (let x = 0; x < cw; x++) cell(x, S(45), P.steel);   // the far shore
+    fuji(X(.36), S(40), S(5), S(6), 'snowy');
+    bands([[52, P.pale], [62, P.steel], [80, P.deep], [999, P.navy]], S(46), ch);   // the sea, darkening toward us
+    for (let i = 0; i < 90; i++) {   // little waves
+      const y = S(48) + Math.floor(Math.pow(hsh(i * 3.3), .7) * (ch - S(48))), x = Math.floor(hsh(i * 5.1) * cw), n = S(2 + (y / ch) * 3);
+      for (let j = 0; j < n; j++) cell(x + j, y - (j === Math.floor(n / 2) ? 1 : 0), y < S(62) ? P.white : P.pale);
+    }
+    const hull = (x0, x1, deckY, keelY, bowRise, c, dark) => {   // a hull: deck to keel, its bow sweeping up on the left
+      for (let x = x0; x < x1; x++) {
+        const f = (x - x0) / (x1 - x0), lift = f < .18 ? Math.round((1 - f / .18) ** 2 * bowRise) : 0;
+        const kl = keelY - Math.round(Math.max(0, .12 - f) * 60 * s) - Math.round(Math.max(0, f - .9) * 50 * s);
+        for (let y = deckY - lift; y <= kl; y++) {
+          const edge = y === deckY - lift || y === kl || x === x0 || x === x1 - 1;
+          cell(x, y, edge ? P.outline : (y - deckY) % S(4) === 0 || (x - x0) % S(8) === 0 ? dark : c);   // the planking
+        }
+      }
+    };
+    // the second ship, behind, with its small sail
+    hull(X(.66), X(.98), S(70), S(90), S(6), P.red, P.rust);
+    for (let y = S(28); y < S(70); y++) cell(X(.9), y, P.brown);
+    for (let y = S(32); y < S(56); y++) for (let x = X(.84); x < X(.9); x++) cell(x, y, x === X(.84) || y === S(32) ? P.outline : P.white);
+    // the ship: the cargo heaped on deck, the hull, a dark knob at the bow
+    for (let x = X(.5); x < X(.9); x++) { const t = S(64) - Math.round(Math.sin((x - X(.5)) / (X(.4)) * Math.PI) * 4 * s);
+      for (let y = t; y < S(72); y++) cell(x, y, y === t ? P.leaf : hsh(x * 3 + y * 7) < .3 ? P.leaf : P.grass); }
+    hull(X(.06), X(.9), S(72), S(100), S(14), P.red, P.rust);
+    for (let o = 0; o < S(2); o++) line(X(.07) + o, S(58), X(.1) + o, S(66), P.outline);
+    for (let x = X(.3); x < X(.5); x++) for (let y = S(66); y < S(72); y++) cell(x, y, (x + y) % S(3) ? P.rust : P.outline);   // the deckhouse
+    // the mast, its yard, and the great white sail billowing out, shaded blue along its curve
+    for (let o = 0; o < S(1.5); o++) line(X(.63) + o, S(4), X(.63) + o, S(72), o ? P.wood : P.outline);
+    for (let o = 0; o < S(1); o++) line(X(.5), S(7) + o, X(.76), S(5) + o, P.outline);
+    for (let y = S(8); y < S(60); y++) {
+      const f = (y - S(8)) / S(52), bulge = Math.sin(f * Math.PI) * cw * .07, l = Math.round(X(.53) - bulge), r = X(.62);
+      for (let x = l; x <= r; x++) cell(x, y, x === l ? P.outline : x - l < S(3) ? P.steel : P.white);
+    }
+    for (const [x1, y1] of [[.1, 60], [.95, 66], [.42, 70]]) line(X(.63), S(6), X(x1), S(y1), P.outline);   // rigging
+  }, live: (k, t) => {
+    const { cw, ch, s, S, cell } = k;
+    for (let i = 0; i < 24; i++) {   // glints on the little waves, running past the ship
+      const y = S(48) + Math.floor(Math.pow(hsh(i * 7.7), .7) * (ch - S(48))), x = Math.round(((hsh(i * 2.1) * cw - t * (4 + (y / ch) * 8) * s) % cw + cw) % cw);
+      if (y > S(70) && y < S(101) && x > cw * .05 && x < cw * .9) continue;   // (not over the hull)
+      for (let j = 0; j < S(2); j++) cell(x + j, y, P.white);
+    }
+  } },
+  { title: 'TAGO BAY NEAR EJIRI', draw: (k) => {
+    // Two long boats are rowed through a heaving sea toward Tago Bay, their rowers standing at the oars.
+    // Beyond, the sandy shore and its villages among green trees, and Fuji, huge and deep blue, snow
+    // speckled over its upper slopes, its foot in flowing green hills.
+    const { cw, ch, s, S, cell, line, disc, bands, fuji } = k;
+    const X = f => Math.round(cw * f);
+    bands([[6, P.navy], [14, P.deep], [26, P.pale], [999, P.foam]], 0, S(44));
+    fuji(X(.66), S(6), S(34), [S(46), S(54)], 'navy');
+    for (let x = 0; x < cw; x++) {   // the green hills at its foot, in flowing bands
+      const t = S(36) + Math.round(Math.sin(x / s * .05) * 3 * s + Math.sin(x / s * .17) * s);
+      for (let y = t; y < S(46); y++) cell(x, y, y === t ? P.leaf : (y + Math.floor(x / S(9))) % S(3) ? P.grass : P.leaf);
+    }
+    for (let y = S(46); y < S(64); y++) for (let x = 0; x < cw; x++) cell(x, y, y < S(48) ? P.tan : P.sky);   // the sandy bay
+    for (let i = 0; i < 26; i++) {   // trees and villages along the shore
+      const fx = .3 + hsh(i * 2.1) * .7, y = S(52 + hsh(i * 3.7) * 8), r = S(2.5 + hsh(i * 5.3) * 2.5);
+      if (hsh(i * 7.7) < .3) { for (let x = 0; x < S(5); x++) for (let d = 0; d < S(2); d++) cell(X(fx) + x, y + d, d ? P.tanD : P.grey1); }
+      else clump(k, X(fx), y, r * 1.5, P.grass, P.leaf, P.gold, i * 4.3);
+    }
+    for (let x = 0; x < cw; x++) for (let y = S(62); y < S(67); y++) cell(x, y, y < S(64) ? P.wood : P.brown);   // the dark wet shore
+    rough(k, S(66), ch, 5.3);
+    // the boats: long, pale wood, pointing up into the bay, a rower standing at each
+    const boat = (x0, y0, x1, y1, w) => {
+      const n = Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0));
+      for (let i = 0; i <= n; i++) {
+        const f = i / n, x = Math.round(x0 + (x1 - x0) * f), y = Math.round(y0 + (y1 - y0) * f), half = Math.round(w * Math.min(1, f * 4, (1 - f) * 6));
+        for (let d = -half; d <= half; d++) cell(x, y + d, Math.abs(d) === half ? P.outline : d < 0 ? P.gold : P.ochre);
+      }
+    };
+    boat(X(.62), S(70), X(.97), S(108), S(4));
+    boat(X(.1), S(56), X(.66), S(114), S(6));
+    drawFigure(cell, X(.15), S(60), 'rower'); line(X(.17), S(54), X(.1), S(84), P.outline);   // poling
+    drawFigure(cell, X(.68), S(73), 'rower');
+    for (const fx of [.38, .48]) drawFigure(cell, X(fx), S(84 + (fx - .38) * 120), 'rower');
+  }, live: (k, t) => {
+    const { cw, s, S, blot } = k;
+    for (let i = 0; i < 18; i++) {   // spray flung up off the crests as the boats ride through
+      const p = (t * .6 + i / 18) % 1, x = Math.round(cw * (.05 + hsh(i * 3.7) * .9) + p * 5 * s), y = S(80 + hsh(i * 2.3) * 34) - Math.round(Math.sin(p * Math.PI) * 8 * s);
+      if (p < .8) blot(x, y, i % 4 ? P.white : P.pale);
+    }
+  } },
+  { title: 'REFLECTION IN LAKE AT MISAKA', draw: (k) => {
+    // Fuji, ochre in summer with snow in its gullies, stands above green hills and a village at the
+    // lake's edge; in the still lake its reflection lies upside down, white with snow, and not quite
+    // where it should be. A small boat drifts on the lake.
+    const { cw, ch, s, S, cell, disc, bands, fuji } = k;
+    const X = f => Math.round(cw * f);
+    bands([[4, P.navy], [12, P.deep], [24, P.steel], [999, P.pale]], 0, S(60));
+    fuji(X(.5), S(14), S(36), [S(36), S(40)], 'ochre');
+    // green hills rolling down to the lake on both sides, Fuji between them; dark trees along their ridges
+    const ridge = x => { const f = x / cw;
+      return f < .45 ? S(34 + f * 50 + Math.sin(f * 30) * 2) : S(62 - (f - .45) * 76 + Math.sin(f * 24) * 2.5); };
+    for (let x = 0; x < cw; x++) for (let y = Math.max(0, ridge(x)); y < S(60); y++)
+      cell(x, y, y - ridge(x) < s || (y - ridge(x) + Math.round(Math.sin(x / s * .08) * 2 * s)) % S(7) === 0 ? P.leaf : P.grass);   // flowing bands down the slopes
+    for (let i = 0; i < 46; i++) {
+      const fx = hsh(i * 3.3), top = ridge(X(fx)), y = top + S(hsh(i * 5.7) * 12);
+      if (y > S(58)) continue;
+      clump(k, X(fx), y, S(2.5 + hsh(i) * 2.5), i % 3 ? P.pine : P.leaf, P.outline, P.leaf, i * 1.9);
+    }
+    for (let i = 0; i < 7; i++) for (let x = 0; x < S(6); x++) for (let d = 0; d < S(3); d++)   // the village by the water
+      cell(X(.42 + i * .035) + x - d, S(54) + d, d === 0 ? P.brown : P.tan);
+    for (let y = S(60); y < ch; y++) for (let x = 0; x < cw; x++) cell(x, y, y === S(60) ? P.steel : P.pale);   // the still lake
+    // the reflection: Fuji upside down, white with snow, set a little to the left
+    const deep = ch - S(62);   // (it hangs down from the shore, its peak near the bottom)
+    fujiCells((x, r, c) => cell(X(.34) + x, S(62) + deep - 1 - r, c === P.white ? P.white : P.steel), deep, [S(34), S(30)], 'grey', Math.max(1, Math.round(s / 2)));
+    for (let i = 0; i < 4; i++) clump(k, X(.16 + i * .2), S(62), S(3), P.grass, P.leaf, P.gold, i * 6.1);   // islets
+  }, live: (k, t) => {
+    const { cw, s, S, cell } = k;
+    const x = Math.round(cw * .82 - ((t * 2 * s) % (cw * .6)));   // the boat drifting slowly across the still lake
+    boat(cell, x, S(100), true, S);
+    for (let j = 0; j < S(10); j++) if (j % S(3) < S(2)) cell(x + S(16) + j, S(101) + Math.round(Math.sin(t * 2 + j) * .5), P.white);   // its wake
+  } },
 ];
+// The order they come in, one each fall. (The two great close-ups of the mountain, Red Fuji and the
+// Rainstorm, are kept apart.)
+const ORDER = ['FINE WIND, CLEAR MORNING', 'KAJIKAZAWA IN KAI PROVINCE', 'GOTEN-YAMA HILL, SHINAGAWA ON THE TOKAIDO', 'AT SEA OFF KAZUSA',
+  'RAINSTORM BENEATH THE SUMMIT', 'EJIRI IN SURUGA PROVINCE', 'TAGO BAY NEAR EJIRI', 'UNDER MANNEN BRIDGE AT FUKAGAWA',
+  'REFLECTION IN LAKE AT MISAKA'];
+PRINTS.sort((a, b) => ORDER.indexOf(a.title) - ORDER.indexOf(b.title));
+
+// A clump of foliage, after the prints: a cluster of round puffs drawn as one shape, its scalloped
+// edge in a darker colour, the inside flat, with a few lighter flecks (like the blossom on Goten-yama).
+// r: its size (cells); seed: so each clump is its own shape.
+function clump(k, cx, cy, r, inside, edge, fleck, seed) {
+  const at = new Set(), cells = [];
+  for (let j = 0; j < 7; j++) {
+    const a = j * .9 + hsh(seed + j * 1.9) * .6, d = j ? .45 + hsh(seed + j * 3.3) * .3 : 0;
+    const px = cx + Math.cos(a) * d * r, py = cy + Math.sin(a) * d * r * .6, pr = r * (.42 + hsh(seed + j * 5.1) * .2);
+    for (let y = Math.floor(py - pr * .8); y <= py + pr * .8; y++) for (let x = Math.floor(px - pr); x <= px + pr; x++)
+      if (((x - px) / pr) ** 2 + ((y - py) / (pr * .8)) ** 2 <= 1 && !at.has(x + ',' + y)) { at.add(x + ',' + y); cells.push([x, y]); }
+  }
+  for (const [x, y] of cells) {
+    const rim = !at.has(x + ',' + (y + 1)) || !at.has(x + 1 + ',' + y) || !at.has(x - 1 + ',' + y) || !at.has(x + ',' + (y - 1));
+    k.cell(x, y, rim ? edge : hsh(x * 1.71 + y * 3.13) < .06 ? fleck : inside);
+  }
+}
+
+// A rough sea, after Hokusai: rolling Prussian-blue swells, each crest edged in ink and riding white
+// foam that curls forward in little clawed fingers. Rows of swells from the back (top) forward, each
+// nearer one bigger, between rows top and bottom and columns x0 to x1. (seed: each print's sea its own.)
+function rough(k, top, bottom, seed, x0 = 0, x1 = k.cw) {
+  const { s, cell } = k;
+  for (let y = top; y < bottom; y++) for (let x = x0; x < x1; x++) cell(x, y, P.deep);
+  const n = Math.max(2, Math.round((bottom - top) / (10 * s))), band = (bottom - top) / n;
+  for (let i = 0; i < n; i++) {
+    const cy = top + (i + .5) * band, amp = (2 + i * 1.2) * s, len = (16 + i * 7) * s, off = hsh(seed + i * 1.3) * len;
+    const crest = x => { const f = (((x + off) / len) % 1 + 1) % 1; return { f, y: Math.round(cy - Math.sin(f * Math.PI) * amp) }; };
+    for (let x = x0; x < x1; x++) {
+      const { f, y } = crest(x);
+      for (let yy = y; yy < Math.min(bottom, cy + amp + band); yy++) {   // the swell's face: ink edge, a lit band, then deep blue, streaked
+        const d = yy - y;
+        const streak = d >= 4 * s && (Math.floor(yy / s) + Math.floor(x / (3 * s))) % 5 === 0;   // (lines of light in the water)
+        cell(x, yy, d < s ? P.outline : d < 2 * s ? P.steel : streak ? P.steel : dither(x, yy) < Math.min(1, (d - 2 * s) / (7 * s)) ? P.navy : P.deep);   // lit under the crest, darkening (bokashi)
+      }
+      if (f > .25 && f < .75) for (let d = 1; d <= Math.round(s * (1 + Math.sin((f - .25) * 2 * Math.PI) * 1.5)); d++) cell(x, y - d, P.white);   // foam riding the crest
+    }
+    for (let j = 0; j < (x1 - x0) / (5 * s); j++) {   // its claws: fingers of foam reaching forward off the crest
+      const x = Math.round(x0 + j * 5 * s + hsh(seed * 3 + i * 7 + j) * 3 * s), { f, y } = crest(x);
+      if (f < .35 || f > .7) continue;
+      for (let c = 0; c < 3; c++) {
+        const fx = x + Math.round(c * s * 1.2), fy = y - Math.round(s * (2.2 + Math.sin(c * 1.7)));
+        for (let o = 0; o < Math.max(1, Math.round(s * .8)); o++) { cell(fx + o, fy, P.white); cell(fx + o, fy + 1, P.white); }
+        cell(fx, fy - 1, P.outline);
+      }
+    }
+  }
+}
 
 // A small boat on the river, two figures in it (sizes in design cells, scaled by S).
 function boat(cell, x, y, flip, S) {
@@ -298,8 +561,13 @@ const FIGURES = Object.fromEntries(Object.entries({
   sitBlue:  ['.KK..', '.SS..', 'bbbb.', 'bbbbb', 'bbbbbb'],
   sitGreen: ['.KK..', '.SS..', 'gggg.', 'ggggg', 'gggggg'],
   walker: ['..YYY', '.YYYYY', '..KK.', '.nnK.', 'nnn..', '.nnn.', '.n.n.', 'K..K.'],
+  // Kajikazawa: the fisherman, leaning out in a red jacket patterned white, and the boy crouched behind
+  fisher: ['...KK..', '..RRRS.', '.RWRRRS', 'RRRWR..', '.nn....', '.n.n...', 'n...n..'],
+  boy:    ['.KK.', 'RRRS', 'RRRR', 'nnnn'],
+  // Tago Bay: a rower standing at the oar
+  rower:  ['.YY.', '.KK.', 'SnnS', '.nn.', '.nn.', '.n.n'],
 }).map(([k, rows]) => [k, scale2x(rows.map(r => r.padEnd(Math.max(...rows.map(q => q.length)), '.')))]));
-const FIG_COL = { Y: P.ochre, K: P.outline, n: P.navy, R: P.red, S: P.skin, b: P.deep, g: P.leaf };
+const FIG_COL = { Y: P.ochre, K: P.outline, n: P.navy, R: P.red, S: P.skin, b: P.deep, g: P.leaf, W: P.white };
 const FIGURES4 = Object.fromEntries(Object.entries(FIGURES).map(([k, rows]) => [k, scale2x(rows)]));
 function drawFigure(cell, x, bottom, kind) {
   const rows = (figureScale > 2 ? FIGURES4 : FIGURES)[kind];
@@ -339,4 +607,11 @@ export function drawDawn(g, t, n) {
     g.fillStyle = P.foam; g.fillRect(10, 10, w, 22);
     pixelText(print.title, 16, 14, P.navy);
   }
+}
+
+// A print, whole and still, filling the screen (Level 0 shows them, as the game's inspiration).
+export const PRINT_TITLES = PRINTS.map(p => p.title);
+export function drawPrint(g, i, t = 0) {   // (t: time, for its animation)
+  g.drawImage(still(i), 0, 0);
+  if (PRINTS[i].live) PRINTS[i].live(canvas(g, 1 + t, 1), 1 + t);
 }

@@ -57,6 +57,10 @@ export const P = {
   night: '#0b1428', indigo: '#373a79', plum: '#352d56', violet: '#4e395d', mauve: '#80595f',   // the sky, from the top down
   rosewood: '#7f383e', ember: '#d8453a',                     // the sunset glow, and the red flecks in the clouds
   ocean: '#1e5e89', abyss: '#123744', aqua: '#afd6df', mist: '#d7eaed',   // the sea, its foam lines; pale light
+  // the same pigments, aged: the Hokusai prints (dawn.js) as they are now, nearly two hundred years on.
+  // Their whites have yellowed to old paper, and their inks have softened and faded unevenly.
+  paper: '#efe2c3', fadeNavy: '#34466e', fadeBlue: '#5d7ba0', fadeSky: '#a0b5bd',
+  fadeRed: '#c45c40', fadeGreen: '#93a26c', fadeOchre: '#d3b37c', fadeInk: '#30344a',
 };
 
 // The novel's cover: pastel rainbow used for big titles.
@@ -71,6 +75,8 @@ export const MOVE = {
   shortHop: 300,      // letting go of jump early cuts the jump to this speed
   airControl: 1300,   // how quickly you can steer in the air
   groundAccel: 2400,  // how quickly Ichigo gets up to speed on a deck
+  bored: [5, 5],      // left alone on a deck this long (5 to 10 s), Ichigo sits down, bored (they still slide!)
+  stubborn: 0.45,     // and told to move, stays sitting this long first, lip out
   sideStepTime: 0.4,  // Sadie's walk: starting from standing, Ichigo first takes 3 short sideways steps this long (the beach only, for now)
 };
 
@@ -111,4 +117,6 @@ export const BEACH = {
   fullSlow: 0.8,      // a full bucket slows Ichigo to this share of walking speed (and they can't run)
   recede: 80,         // how far out the sea pulls back before the wave
   whiteTime: 2,       // seconds of silent white after the wave
+  bored: [6, 5],      // left alone this long (6 to 11 s), Ichigo sits down in the sand, bored
+  stubborn: 0.45,     // and told to move, stays sitting this long first
 };

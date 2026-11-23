@@ -60,7 +60,9 @@ const fsButton = document.getElementById('fullscreen');
 const page = document.documentElement;
 const fsElement = () => document.fullscreenElement || document.webkitFullscreenElement;
 const fsSupported = page.requestFullscreen || page.webkitRequestFullscreen;
-function toggleFullscreen() {
+export const canFullscreen = !!fsSupported;
+export const isFullscreen = () => !!fsElement();
+export function toggleFullscreen() {
   if (fsElement()) (document.exitFullscreen || document.webkitExitFullscreen).call(document);
   else (page.requestFullscreen || page.webkitRequestFullscreen).call(page);
 }
