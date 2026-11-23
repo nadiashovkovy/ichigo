@@ -12,7 +12,7 @@ import { PL, spawn, updatePlayer, updateParts } from './player.js';
 import { startLevel, drawTitle, drawPlay } from './scenes.js';
 import { B, startBeach, updateBeach, drawBeachScene, drawWhite } from './beach.js';
 import { say, updateBubbles } from './bubbles.js';
-import { playLullaby } from './audio.js';
+import { playLullaby, music, seaSound } from './audio.js';
 import { loadSave, save } from './save.js';
 import { prepareDawns } from './dawn.js';
 
@@ -62,10 +62,18 @@ function frame(now) {
 
   updateBubbles(dt);
   if (S.scene !== lastScene) {   // arriving in a scene
-    if (S.scene === 'dawn') { playLullaby({ notes: 2 }); save(); }   // a new tomorrow: the Lullaby's first two notes
+    if (S.scene === 'dawn') { playLullaby({ notes: 2, delay: .7 }); save(); }   // a new tomorrow: the Lullaby's first two notes (after the splash)
     if (S.scene === 'end') save();
     lastScene = S.scene;
   }
+
+  // the music and the sea. The music plays on the sea level, held quietly under a new tomorrow's
+  // Lullaby; the sea is heard wherever there's water, its waves louder as they grow along the level.
+  // (The beach sets its own sea sound; the white is silent.)
+  music(S.scene === 'play' ? 1 : S.scene === 'dawn' ? .25 : 0);
+  if (S.scene === 'play' || S.scene === 'dawn') seaSound(.45 + .45 * Math.min(1, PL.x / ((S.level.sea && S.level.sea.growOver) || 5200)));
+  else if (S.scene === 'end') seaSound(.25);   // a calm night sea
+  else if (S.scene === 'title') seaSound(0);
 
   // draw (the camera moves in whole pixels so nothing shimmers)
   const cam = S.camX; S.camX = Math.round(S.camX / PIXEL) * PIXEL;

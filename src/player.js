@@ -8,6 +8,7 @@ import { S, parts } from './state.js';
 import { input, inLeft, inRight, inRun, inJump, inUse } from './input.js';
 import { seaY } from './sea.js';
 import { floating, deckY } from './wreckage.js';
+import { playFall } from './audio.js';
 
 export const PL = { x: 0, y: 0, vx: 0, vy: 0, ground: null, u: 0, vu: 0, face: 1, coyote: 0, anim: 0, hw: 10, jumpHeld: false, grace: 0,
                     idle: 0, sitting: false };   // idle: seconds without input; sitting: resting on the boat
@@ -22,6 +23,7 @@ export function spawn() {   // stand Ichigo in the middle of the last checkpoint
 export function die() {     // fell in the sea: a new tomorrow
   if (S.scene !== 'play') return;
   S.deaths++; S.tomorrows++; S.scene = 'dawn'; S.sceneT = 0;
+  playFall();   // splash, bloop, bubbles
   for (let i = 0; i < 18; i++) parts.push({ x: PL.x, y: seaY(PL.x, S.T), vx: (Math.random() - .5) * 220, vy: -150 - Math.random() * 200, life: .8, c: P.foam });
 }
 

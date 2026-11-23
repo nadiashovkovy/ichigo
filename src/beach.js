@@ -16,7 +16,7 @@ import { input, inLeft, inRight, inRun, inUse, keys } from './input.js';
 import { drawScenery, drawChartSea, CELL, hsh } from './art.js';
 import { drawSprite, spriteHeight } from './sprite.js';
 import { say, drawBubbles, clearBubbles } from './bubbles.js';
-import { humming, stopHumming } from './audio.js';
+import { humming, seaSound, waveRumble, waveCrash, silence } from './audio.js';
 import { save, learnWord, gainMark } from './save.js';
 import { updateParts } from './player.js';
 
@@ -28,7 +28,7 @@ export function startBeach() {
     x: 436, v: 0, face: -1, anim: 0, side: 0, moving: false, seated: true,   // Ichigo: sitting by the castle until the first step
     full: false, dug: 0, hole: false, holeWater: 0, pours: 0, pouring: 0, digging: false,
     tripped: false, cut: false, plaster: false, pout: false, splash: 0,
-    back: 0, waveT: 0, canSkip: S.seenWave, said: 0, called: false,
+    back: 0, waveT: 0, canSkip: S.seenWave, said: 0, called: false, rumbled: false, crashed: false,
   });
   parts.length = 0; clearBubbles();
   S.scene = 'beach'; S.sceneT = 0;
@@ -99,13 +99,17 @@ export function updateBeach(dt, endBeach) {
     B.back = BEACH.recede * smooth(t / 2);   // SOUND: the gulls stop
     if (t > 1.8 && !B.called) { B.called = true; say('kaachan', ['ichigo', 'arrow', 'house'], { time: 2.2 }); }   // from the doorway: "Come here. Now."
     B.waveT = t > 2.5 ? 1.4 + (t - 2.5) : 0;
+    if (B.waveT > 1.4 && !B.rumbled) { B.rumbled = true; waveRumble(); }   // the wave rising: a rumble building
+    if (B.waveT > 4.4 && !B.crashed) { B.crashed = true; waveCrash(); }     // and the crash
     if (B.waveT > 1.4 && !dir) B.face = 1;                                       // Ichigo faces the wave
     const skip = B.canSkip && t > 2.5 && (keys.Enter || keys.Space || keys.Escape);   // (later playthroughs only)
-    if (B.waveT >= 5 || skip) { S.seenWave = true; save(); stopHumming(); clearBubbles(); endBeach(skip); return; }
+    if (B.waveT >= 5 || skip) { S.seenWave = true; save(); silence(); clearBubbles(); endBeach(skip); return; }   // cut to silence
   }
 
   // Kaa-chan hums inside as she mends (louder the nearer Ichigo is to the house), until the sea pulls back
   humming(B.phase !== 'recede', Math.max(.12, 1 - Math.abs(B.x - BEACH.kaachan) / 420));
+  // the waves on the shore: louder nearer the water; going quiet as the sea pulls back
+  seaSound((.25 + .75 * Math.max(0, Math.min(1, (B.x - 200) / 360))) * (1 - B.back / BEACH.recede));
   updateParts(dt);
 }
 
