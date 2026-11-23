@@ -2,9 +2,9 @@
    drawn here in plain CSS (smooth, not pixelated). The game itself and the mouse pointer are the only
    pixel art on the page.
 
-   Sizes: src/pixel.js sets --sw × --sh, the screen's size (an exact whole-number zoom of the game's
-   320×240 pixels). Everything about the monitor is measured in --u, 1% of the screen's width, so the
-   whole PC scales together (src/pixel.js measures the whole PC to decide how big it can be). */
+   Sizes: src/pixel.js sets --sw × --sh, the screen's size (a zoom of the game's 640×480 pixels, or
+   640×360 in full screen; whole-number where it fits). Everything about the monitor is measured in --u,
+   1% of the screen's width, so the whole PC scales together (src/pixel.js measures the whole PC to decide how big it can be). */
 :root { --sw: 960px; --sh: 720px; --u: calc(var(--sw) / 100); --k: calc(var(--u) * 3.8); --gap: calc(var(--k) * .1); }   /* --k: one keyboard key */
 
 /* The pixel-art pointer, a classic Windows-style arrow (assets/cursor.png, drawn at 2× and 4×). */

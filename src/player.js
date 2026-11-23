@@ -78,7 +78,7 @@ export function updatePlayer(dt) {
     PL.x = Math.max(10, Math.min(S.level.length - 10, PL.x + PL.vx * dt)); PL.y += PL.vy * dt;
     if (PL.vy >= 0) for (const p of S.plats) {   // land on a (tilted) deck from above
       const half = p.w / 2 * Math.cos(p.ang);
-      if (Math.abs(PL.x - p.cx) > half + PL.hw * .5) continue;
+      if (Math.abs(PL.x - p.cx) > half + PL.hw * .8) continue;   // (a little grace at the edges)
       const before = p.pcy + (prevX - p.pcx) * Math.tan(p.pang), now = deckY(p, PL.x);
       if (prevY <= before + 8 && PL.y >= now) {
         PL.ground = p;

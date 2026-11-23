@@ -10,6 +10,7 @@ import { input } from './input.js';
 import { buildWreckage, updateWreckage } from './wreckage.js';
 import { PL, spawn, updatePlayer, updateParts } from './player.js';
 import { startLevel, drawTitle, drawIntro, drawPlay } from './scenes.js';
+import { prepareDawns } from './dawn.js';
 
 // Which level to load. Later this will be chosen by the game's progress.
 const LEVEL_FILE = 'levels/level01.json';
@@ -55,9 +56,11 @@ function frame(now) {
   requestAnimationFrame(frame);
 }
 
-loadLevel(LEVEL_FILE).then(() => requestAnimationFrame(frame)).catch(err => {
+loadLevel(LEVEL_FILE).then(() => { requestAnimationFrame(frame); prepareDawns(); }).catch(err => {
   document.body.insertAdjacentHTML('beforeend', `<pre style="position:fixed;top:10px;left:10px;color:#b8322a">${err.message}\nIf you opened index.html straight from your computer, run a small local server instead (see README).</pre>`);
 });
+
+let resized; addEventListener('resize', () => { clearTimeout(resized); resized = setTimeout(prepareDawns, 300); });   // (full screen has its own size of print)
 
 // Handy for testing in the browser console: window.ichigo.S, window.ichigo.PL …
 import { keys } from "./input.js";

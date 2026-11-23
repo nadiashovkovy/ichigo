@@ -1,11 +1,13 @@
 // ============================================================================
 // text.js — lettering.
-//   • pixelText: a hand-made 5×7 bitmap font for small text (every letter is exact pixels).
+//   • pixelText: a hand-made 5×7 bitmap font for small text, drawn at double detail (10×14 pixels,
+//     its diagonals rounded off by Scale2x).
+//   Lettering keeps its size in pixels on both screens.
 //   • drawCover: big titles in the style of the novel's cover — chunky letters (Bungee font),
 //     a pastel rainbow, and stacked echoes outlined in black.
 // ============================================================================
 import { P, RAINBOW } from './config.js';
-import { lg } from './pixel.js';
+import { lg, scale2x } from './pixel.js';
 
 let fontsReady = false;
 const cache = new Map();
@@ -24,20 +26,24 @@ const GLYPHS = {
   9:[14,17,17,15,1,2,12],':':[0,12,12,0,12,12,0],'/':[1,1,2,4,8,16,16],'-':[0,0,0,31,0,0,0],'<':[2,4,8,16,8,4,2],
   '>':[8,4,2,1,2,4,8],'.':[0,0,0,0,0,12,12],'!':[4,4,4,4,4,0,4],',':[0,0,0,0,12,4,8],"'":[4,4,8,0,0,0,0],' ':[0,0,0,0,0,0,0]
 };
+// Each glyph at double detail: 14 rows of 10 letters ('#' = ink).
+const BIG = {};
+const glyph = ch => BIG[ch] || (BIG[ch] = scale2x((GLYPHS[ch] || GLYPHS[' ']).map(row => [...Array(5)].map((_, b) => row & (16 >> b) ? '#' : '.').join(''))));
+export const LETTER = 12, LINE = 18;   // a letter's width with its gap, and a line's height (pixels)
 export function pixelText(txt, x, y, col = P.ink, align = 'left', shadow = null) {
   txt = String(txt).toUpperCase();
   const key = txt + col + shadow;
   let c = cache.get(key);
   if (!c) {
-    c = document.createElement('canvas'); c.width = txt.length * 6 + 1; c.height = 8;
+    c = document.createElement('canvas'); c.width = txt.length * LETTER + 2; c.height = 16;
     const g = c.getContext('2d');
     const paint = (colour, o) => { g.fillStyle = colour;
-      [...txt].forEach((ch, i) => (GLYPHS[ch] || GLYPHS[' ']).forEach((row, r) => { for (let b = 0; b < 5; b++) if (row & (16 >> b)) g.fillRect(i * 6 + b + o, r + o, 1, 1); })); };
-    if (shadow) paint(shadow, 1);
+      [...txt].forEach((ch, i) => glyph(ch).forEach((row, r) => { for (let b = 0; b < 10; b++) if (row[b] === '#') g.fillRect(i * LETTER + b + o, r + o, 1, 1); })); };
+    if (shadow) paint(shadow, 2);
     paint(col, 0);
     cache.set(key, c);
   }
-  const w = txt.length * 6 - 1;
+  const w = txt.length * LETTER - 2;
   const ax = align === 'center' ? x - (w >> 1) : align === 'right' ? x - w : x;
   lg.drawImage(c, Math.round(ax), Math.round(y));
 }
