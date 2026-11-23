@@ -11,7 +11,7 @@ import { P, PIXEL } from './config.js';
 
 const SP = {
   K: '#14131f', H: '#3b4a7a',                      // hair, and the blue sheen on it
-  S: '#f1c49b', s: '#c98d66', b: '#e9a487', m: '#a8523f',   // skin, skin shadow, blush, mouth
+  S: '#f1c49b', s: '#c98d66', m: '#a8523f',        // skin, skin shadow, mouth
   E: '#14131f', e: '#fdfbf3',                      // eye, and the light in it
   R: '#d2302a', r: '#8c2320', L: '#ec5a44', n: '#d2302a',   // jersey, its shadow, its light ('n' marks where the 15 goes)
   W: P.foam,                                       // collar trim and the number
@@ -23,7 +23,7 @@ const FRAME_W = 44;          // frame width in art pixels
 const ANCHOR = 22;           // the body's centre column (Ichigo's x)
 
 // Every row is 44 letters wide (the body sits in the middle 36; arms and bucket can reach past it).
-const HEAD = [   // the bowl cut, a little ruffled (after the game's cover)
+const HEAD = [   // the bowl cut, a little ruffled (after the game's cover); the face puzzled: a slanting eyebrow, a wavy mouth
   '..............KKKKK..KKKK...................',
   '............KKKKKKKKKKKKKKK.................',
   '..........KKKKKKKKKKKKKKHHKKKK..............',
@@ -38,16 +38,16 @@ const HEAD = [   // the bowl cut, a little ruffled (after the game's cover)
   '......KKKKKKKKKKKKKKKKKKKKKKKKKKKKKK........',
   '......KKKKKKKKKKKKKKKKKKKKKKKKKKKKKK........',
   '......KKKKKKKKKKKKKKKKKKKKKKKKKKKKKKK.......',
-  '......KKKKKKKKKKKKKKKKKSSSSSSSSSSSSKKK......',
-  '......KKKKKKKKKKKKKKKSSSSSSSSSSSSSSSKK......',
+  '......KKKKKKKKKKKKKKKKKSSSSSSSSKKSSKKK......',
+  '......KKKKKKKKKKKKKKKSSSSSSSSKKSSSSSKK......',
   '......KKKKKKKKKKKKKKKSSSSSSSSSeESSSS........',
   '......KKKKKKKKKKKKKSSSSSSSSSSSEESSSS........',
   '......KKKKKKKKKKKKSsSSSSSSSSSSEESSSS........',
   '.......KKKKKKKKKKsSsSSSSSSSSSSEESSSS........',
-  '.......KKKKKKKKKKssSsSSSSSSbbbSSSSSS........',
-  '.........KKKKKKKssSSSSSSSSSbbbSSSSS.........',
-  '.........KKKKKKKssSSSSSSSSSSSSmmSs..........',
-  '...........KKKKsssSSSSSSSSSSSSSss...........',
+  '.......KKKKKKKKKKssSsSSSSSSSSSSSSSSS........',
+  '.........KKKKKKKssSSSSSSSSSSSSSSSSS.........',
+  '.........KKKKKKKssSSSSSSSSSSmSmSSs..........',
+  '...........KKKKsssSSSSSSSSSSSmSms...........',
   '..............ssssSSSSSSSSSSSSSss...........',
   '...............ssssSSSSSSSSSSSs.............',
   '.................ssSSSSSSs..................',
@@ -131,8 +131,8 @@ const BALANCE = [
 ];
 // arms flung up (below the top of the head)
 const JUMP = [
-  '..SSs....KKKKKKKssSSSSSSSSSSSSSSSs...Sss....',
-  '..SSSss....KKKKsssSSSSSSSSSSSSSss...Ssss....',
+  '..SSs....KKKKKKKssSSSSSSSSSSmSmSSs...Sss....',
+  '..SSSss....KKKKsssSSSSSSSSSSSmSms...Ssss....',
   '...SSss.......ssssSSSSSSSSSSSSSss..SSss.....',
   '.....SSss......ssssSSSSSSSSSSSs..SSss.......',
   '.....SSss........ssSSSSSSs.......SSss.......',
@@ -240,8 +240,8 @@ function outline(grid) {
 }
 // Shrink a grid of colours to k of its size: each new pixel takes the colour that covers most of
 // the old pixels under it (see-through only if that's at least half of them; on a tie, the small
-// details win: eye, catchlight, mouth, blush).
-const DETAIL = [SP.E, SP.e, SP.m, SP.b];
+// details win: eye, catchlight, mouth, eyebrow).
+const DETAIL = [SP.E, SP.e, SP.m, SP.K];
 function small(grid, k = .75) {
   const h = grid.length, w = grid[0].length, H = Math.round(h * k), W = Math.round(w * k), out = [];
   for (let y = 0; y < H; y++) {
@@ -261,11 +261,30 @@ function small(grid, k = .75) {
 }
 
 // A frame with its scars painted in and its outline added: a grid of colours (null = see-through).
+// Ichigo's hair moving with them: blown back behind them by dx pixels at the crown (less further
+// down), and lifted by dy pixels (as they fall, or bounce on a step). It only ever grows outward, so
+// it never opens a hole in the bowl cut. (Two empty rows are added on top of every frame, for it to
+// lift into.)
+function windswept(rows, dx, dy) {
+  const g = [Array(FRAME_W).fill('.'), Array(FRAME_W).fill('.'), ...rows.map(r => [...r])];
+  const hair = ch => ch === 'K' || ch === 'H', top = g.findIndex(r => r.some(hair));
+  if (dx) for (let r = top; r < top + 11; r++) {   // the back of the hair (frames face right, so the left edge) flicks out
+    const L = g[r].findIndex(hair), ext = Math.round(dx * (1 - (r - top) / 11) + (r % 3 === 0 ? .4 : 0));
+    for (let x = Math.max(0, L - ext); x < L; x++) g[r][x] = 'K';
+  }
+  if (dy) for (let c = 0; c < FRAME_W; c++) {   // the crown lifts, a strand at a time
+    const t = g.findIndex(r => hair(r[c]));
+    if (t < 0 || t > top + 3) continue;
+    for (let y = t - Math.min(2, dy - (c % 4 === 0 ? 1 : 0)); y < t; y++) g[y][c] = 'K';
+  }
+  return g.map(r => r.join(''));
+}
+
 const cache = new Map();
-function picture(frame, scars, mini) {
-  const key = frame + scars + mini;
+function picture(frame, scars, mini, [hx, hy] = [0, 0]) {
+  const key = [frame, scars, mini, hx, hy].join();
   if (cache.has(key)) return cache.get(key);
-  const rows = FRAMES[frame];
+  const rows = windswept(FRAMES[frame], hx, hy);
   const collar = rows.findIndex(r => r.includes('W'));
   let grid = rows.map(r => [...r].map(ch => ch === '.' ? null : SP[ch]));
   let number = null;
@@ -284,9 +303,10 @@ function picture(frame, scars, mini) {
 const mini = () => PIXEL > 1.1;   // full screen: draw Ichigo at 3/4 size
 export const spriteHeight = () => picture('stand', 0, mini()).grid.length;
 
-// x = centre, y = feet, in art pixels. face = 1 (right) or -1 (left).
-export function drawSprite(g, frame, x, y, face, scars) {
-  const { grid, number, anchor, digits } = picture(frame, scars, mini()), h = grid.length, w = grid[0].length;
+// x = centre, y = feet, in art pixels. face = 1 (right) or -1 (left). hair = [how far it's blown
+// back, how far it's lifted], in pixels (see windswept).
+export function drawSprite(g, frame, x, y, face, scars, hair) {
+  const { grid, number, anchor, digits } = picture(frame, scars, mini(), hair), h = grid.length, w = grid[0].length;
   const ox = Math.round(x), oy = Math.round(y) - h + 1;   // the outline under the feet hangs one pixel below
   const col = c => face > 0 ? ox + c - anchor : ox + anchor - c;
   for (let r = 0; r < h; r++) for (let c = 0; c < w; c++) {

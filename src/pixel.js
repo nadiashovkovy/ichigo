@@ -41,7 +41,8 @@ function resize() {
   if (lo.width !== LW || lo.height !== LH) { lo.width = topC.width = LW; lo.height = topC.height = LH; }
   const edge = 2 * (.016 + .006 + .008);
   const [sx, sy] = full ? [1 + edge, 1 + edge * LW / LH] : setupScale(), margin = full ? 1 : .96;
-  const fit = Math.min(innerWidth * margin / (LW * sx), innerHeight * margin / (LH * sy)) * dpr;
+  const footer = full ? 0 : (document.getElementById('footer')?.offsetHeight || 0);   // (the page's footer takes a strip off the bottom)
+  const fit = Math.min(innerWidth * margin / (LW * sx), (innerHeight - footer) * margin / (LH * sy)) * dpr;
   k = fit >= 1 && Math.floor(fit) >= fit * .85 ? Math.floor(fit) : fit;   // whole-number zoom, unless that wastes too much room
   cv.width = Math.round(LW * k); cv.height = Math.round(LH * k);
   const sw = cv.width / dpr, sh = cv.height / dpr;

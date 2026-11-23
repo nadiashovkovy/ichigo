@@ -15,7 +15,7 @@ html, body, canvas, .tb {
 }
 
 html, body { margin: 0; height: 100%; overflow: hidden; touch-action: none; -webkit-user-select: none; user-select: none; }
-body { display: flex; align-items: center; justify-content: center; background: #163F9F; }
+body { display: flex; align-items: center; justify-content: center; background: #163F9F; box-sizing: border-box; padding-bottom: 30px; }   /* (room for the footer) */
 
 /* The PC: monitor on a stand, with the keyboard in front of it. */
 .pc { position: relative; display: flex; flex-direction: column; align-items: center; }
@@ -158,6 +158,13 @@ button.power { border: 0; margin: 0; font: inherit; cursor: inherit; }   /* (a r
 .full .monitor { position: fixed; inset: 0; padding: 0; border-radius: 0; display: flex; align-items: center; justify-content: center;
   box-shadow: inset 0 0 calc(var(--u) * 4) rgba(0, 0, 0, .22); }
 .full .bezel { padding: calc(var(--u) * 1.6); }
+
+/* The footer, along the bottom of the page (hidden in full screen). */
+#footer { position: fixed; left: 0; right: 0; bottom: 0; height: 30px; display: flex; align-items: center; justify-content: center;
+  font: 500 12px/1 -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif; letter-spacing: .02em;
+  color: rgba(255, 255, 255, .6); pointer-events: none; }
+.full body { padding-bottom: 0; }
+.full #footer { display: none; }
 
 /* On-screen buttons for touch devices. */
 #touch { position: fixed; left: 0; right: 0; bottom: 14px; display: none; justify-content: space-between; padding: 0 14px; pointer-events: none; }

@@ -155,7 +155,11 @@ export function drawPlay() {
     const moving = PL.ground && Math.abs(PL.vu) > 20 && (inLeft() || inRight());
     const wobbly = PL.ground && floating(PL.ground) && Math.abs(PL.ground.ang) > .14;   // arms out to balance
     const frame = !PL.ground ? 'jump' : moving ? ['stand', 'step1', 'stand', 'step2'][Math.floor(PL.anim / 1.6) % 4] : wobbly ? 'balance' : 'stand';
-    drawSprite(lg, frame, (PL.x - camX) / PIXEL, PL.y / PIXEL + TOP_PX, PL.face, Math.min(5, S.deaths));
+    // the hair moves with Ichigo: streaming back in the air and lifting as they fall; flicking back and
+    // bouncing a little with each step (more when running); swaying as they balance
+    const step = Math.floor(PL.anim / 1.6) % 2, running = Math.abs(PL.vu) > 220;
+    const hair = !PL.ground ? [1, PL.vy > 150 ? 2 : 0] : moving ? [(running ? 1 : 0) + step, step] : wobbly ? [Math.sin(S.T * 4) > 0 ? 1 : 0, 0] : [0, 0];
+    drawSprite(lg, frame, (PL.x - camX) / PIXEL, PL.y / PIXEL + TOP_PX, PL.face, Math.min(5, S.deaths), hair);
   }
   for (const q of parts) if (q.life > 0.05) {   // (a particle's size s is in 2-unit steps)
     const n = toPx(2 * (q.s || 1));
