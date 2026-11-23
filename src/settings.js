@@ -1,8 +1,8 @@
 // ============================================================================
 // settings.js — the settings panel, always within reach: a little gear in the bottom-right corner of
 // the screen (click or tap it), or P (or Esc). The game waits while it's open.
-// In it: resume; the controls; the list of all levels; restart the level; music, sound effects and
-// volume; story cards on or off; full screen; quit to the title; erase the save.
+// In it: resume; the controls; the list of all levels; restart the level; all sound on/off (as M does),
+// music, sound effects and volume; story cards on or off; full screen; quit to the title; erase the save.
 // Arrows choose (left and right change a setting too), Enter does it, P or Esc closes; or click.
 // Drawn like the story cards and the level list: a night panel edged in pale ink, the pixel font.
 // ============================================================================
@@ -55,6 +55,7 @@ function rows(act) {
   if (S.scene !== 'levels') list.push(['ALL LEVELS', () => { close(); act.levels(); }]);
   if (act.inLevel()) list.push(['RESTART LEVEL', () => { close(); act.restart(); }]);
   list.push(
+    [`ALL SOUND: ${onOff(!S.muted)}`, flip('muted'), flip('muted')],   // (the same as M)
     [`MUSIC: ${onOff(S.musicOn)}`, flip('musicOn'), flip('musicOn')],
     [`SOUND EFFECTS: ${onOff(S.sfxOn)}`, flip('sfxOn'), flip('sfxOn')],
     [`VOLUME: ${Math.round(S.volume * 100)}%`, () => vol(S.volume >= 1 ? -3 : 1), vol],

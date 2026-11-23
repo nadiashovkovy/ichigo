@@ -172,7 +172,7 @@ export function music(level, song = 'sea') {
     const m0 = M.arps[chord][i];
     if (m0 && !M.thin(bar, i)) pluck(hz(m0), nextStep, i === 0 ? M.pluck[0] : M.pluck[1], musicBus);   // (the sea's is sparser in bars 9–12)
     if (i === 0) bass(hz(M.bass[chord]), nextStep, STEP * 8, musicBus);
-    if (i === 0 && bar === 0) templeBell(hz(38 + 12), nextStep, .12, musicBus, 8);                  // each round opens with a temple bell,
+    if (i === 0 && bar === 0) templeBell(hz(57), nextStep, .18, musicBus, 8);                  // each round opens with a temple bell,
     if (i === 0 && bar === 8) sho([62, 64, 69, 71], nextStep, STEP * 8 * 4, musicBus, .018);       // and a shō breathes under the quiet bars
     for (const [at, m, len] of M.lines[bar] || []) if (at === i) note(hz(m), nextStep, len * STEP, musicBus, M.flute);
     nextStep += STEP; step++;
@@ -347,14 +347,15 @@ function titleTheme() {
   if (!titleOut) { titleOut = ac.createGain(); titleOut.connect(musicBus); nextRound = ac.currentTime + .1; }
   if (ac.currentTime < nextRound - .2) return;
   const t = nextRound, o = titleOut;
-  templeBell(hz(45), t, .3, o);                                   // A2
-  sho([62, 64, 69, 71, 76], t + .5, 10, o);                       // D E A B E: a cluster in the Lullaby's scale
-  rin(hz(86), t + 7, .05, o);
-  for (const [at, m, len] of [[9, 74, 1.6], [10.6, 76, 1], [11.6, 71, 2.4], [14, 69, 3]]) note(hz(m), t + at, len, o, .08);
-  templeBell(hz(43), t + 16, .25, o);                             // G2
-  sho([67, 69, 74, 76, 81], t + 16.5, 10, o);
-  rin(hz(81), t + 24, .045, o);
-  for (const [at, m, len] of [[25, 69, 1.2], [26.2, 71, 1.2], [27.4, 74, 3.5]]) note(hz(m), t + at, len, o, .08);
+  // (pitched where laptop speakers can carry it: a temple bell's hum is lower still)
+  templeBell(hz(57), t, .45, o);                                  // A3
+  sho([62, 64, 69, 71, 76], t + .5, 10, o, .045);                 // D E A B E: a cluster in the Lullaby's scale
+  rin(hz(86), t + 7, .08, o);
+  for (const [at, m, len] of [[9, 74, 1.6], [10.6, 76, 1], [11.6, 71, 2.4], [14, 69, 3]]) note(hz(m), t + at, len, o, .12);
+  templeBell(hz(55), t + 16, .4, o);                              // G3
+  sho([67, 69, 74, 76, 81], t + 16.5, 10, o, .045);
+  rin(hz(81), t + 24, .075, o);
+  for (const [at, m, len] of [[25, 69, 1.2], [26.2, 71, 1.2], [27.4, 74, 3.5]]) note(hz(m), t + at, len, o, .12);
   nextRound = t + TITLE_ROUND;
 }
 function stopTitle() { if (titleOut) { titleOut.disconnect(); titleOut = null; } }
