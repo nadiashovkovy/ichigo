@@ -8,8 +8,9 @@
 // to keep their size in the world: see small().
 // ============================================================================
 import { P, PIXEL } from './config.js';
+import { S } from './state.js';
 
-const SP = {
+export const SP = {
   K: '#14131f', H: '#3b4a7a',                      // hair, and the blue sheen on it
   S: '#f1c49b', s: '#c98d66', m: '#a8523f',        // skin, skin shadow, mouth
   E: '#14131f', e: '#fdfbf3',                      // eye, and the light in it
@@ -205,6 +206,25 @@ const DIG2 = [
   '......DDBBBBBB........DDBBBBBB......yyyyy...',
   '......DDBBBBB..........DBBBBB........yy.....',
 ];
+// sitting in the sand (or on the boat's thwart), legs out in front, the bucket in their lap
+const SIT = [
+  '.............rRRRRWWWWWWRRRRr...............',
+  '...........rrRRRRRRWWWWRRRRRRrr.............',
+  '...........rrRLLnRRRRRRRRRRRRrr.............',
+  '.........rrRRLLLRRRRRRRRRRRRRRRrr...........',
+  '.........rrRLLLRRRRRRRRRRRRRRRRrr...........',
+  '........rrRRLLRRRRRRRRRRRRRRRRRRrr..........',
+  '........rrRRLLRRRRRRRRRRRRRRRRRRrr..........',
+  '........rrrRLLRRRRRRRRRRRRRRRRRRrSS.........',
+  '........rrRRRRRRRRRRRRRRRRRRRRRRSSSS........',
+  '.......rrRRRRRRRRRRRRRRRRRRRRRRSSShhhhh.....',
+  '.......rrRRRRRRRRRRRRRRRRRRRRRrSSyyyyyyyy...',
+  '......rrRRRRRRRRRRRRRRRRRRRRRRrSSYeYYYYYy...',
+  '......rrrRRRRRRRRRRRRRRRRRRRRrrSSYeYYYYYy...',
+  '......rrrrrRRRRRRRRRRRRRRRRRRrrrSYYYYYYy....',
+  '.......rrrrrrRRRRRRRRRRRRRRRrrSSSyyyyyySSBB.',
+  '........rrrrrrrrrrrrrrrrrrrrrSSSSSSSSSSsDBB.',
+];
 const FRAMES = {
   stand: [...HEAD, ...TORSO, ...LEGS.stand],
   step1: [...HEAD, ...TORSO, ...LEGS.step1],
@@ -213,7 +233,9 @@ const FRAMES = {
   jump: [...HEAD.slice(0, 22), ...JUMP],
   dig1: [...Array(6).fill('.'.repeat(FRAME_W)), ...HEAD, ...DIG1],
   dig2: [...Array(6).fill('.'.repeat(FRAME_W)), ...HEAD, ...DIG2],
+  sit: [...HEAD, ...SIT],
 };
+const HOLDS_BUCKET = ['stand', 'step1', 'step2', 'balance', 'sit'];   // frames where the bucket hangs upright (it can show water)
 // Damage that stays with Ichigo, added one by one with each fall: [rows below the collar, column,
 // colour (or null to tear a hole)], each mark a 2×2 block. Measured from the collar so it lands in
 // the same place in every frame.
@@ -224,6 +246,23 @@ const SCARS = [
   [[20, 14, null], [20, 22, null], [20, 28, null]],   // the hem torn ragged
   [[8, 12, 'W']],                             // a bandage
 ];
+// Permanent marks: they stay with Ichigo from level to level (S.marks, kept in the save), unlike the
+// fall marks above. Same [rows below the collar, column, colour] as SCARS, plus an optional size
+// (width, height; 2×2 if left out). Some marks look different over time: the chin is a red cut, then
+// a strawberry plaster for the rest of Level 1, then a pale scar from Level 2 on.
+// A few other touches use the same table: Ichigo's lip wobbling, and water in the bucket.
+const MARKS = {
+  'chin-cut':     [[-4, 27, P.red]],                                   // just fallen on the shovel
+  'chin-plaster': [[-4, 26, P.pink, 3, 2], [-4, 27, P.red, 1, 1]],     // Kaa-chan's strawberry plaster
+  'chin-scar':    [[-3, 27, P.tan, 2, 1]],                             // what's left of it
+  'pout':         [[-6, 28, 'S', 3, 1], [-6, 29, 'm', 1, 1], [-5, 28, 'm', 1, 1], [-5, 29, 'S', 1, 1], [-5, 30, 'm', 1, 1], [-5, 31, 'S', 1, 1]],   // the lip wobbling (every other frame)
+};
+// Which permanent marks to draw, from S.marks. The chin shows its plaster in Level 1 and its scar after.
+export function markIds() {
+  const ids = [];
+  if (S.marks.has('chin')) ids.push(S.level && S.level.number === 1 ? 'chin-plaster' : 'chin-scar');
+  return ids;
+}
 
 // Ichigo's number: big (6×10 digits, for the full-size sprite) and small (3×5, for the 3/4 one).
 const FIFTEEN = ['..##..######', '.###..##....', '####..##....', '..##..#####.', '..##..######', '..##......##',
@@ -231,7 +270,7 @@ const FIFTEEN = ['..##..######', '.###..##....', '####..##....', '..##..#####.',
 const FIFTEEN_SMALL = ['.#.###', '##.#..', '.#.##.', '.#...#', '.#.##.'];
 
 // Add a one-pixel outline around a grid of colours (null = see-through), padding it by a pixel.
-function outline(grid) {
+export function outline(grid) {
   const w = grid[0].length, out = [Array(w).fill(null), ...grid.map(r => [...r]), Array(w).fill(null)], h = out.length;
   const filled = (x, y) => y >= 0 && y < h && x >= 0 && x < w && out[y][x] && out[y][x] !== OUTLINE;
   for (let y = 0; y < h; y++) for (let x = 0; x < w; x++)
@@ -241,8 +280,8 @@ function outline(grid) {
 // Shrink a grid of colours to k of its size: each new pixel takes the colour that covers most of
 // the old pixels under it (see-through only if that's at least half of them; on a tie, the small
 // details win: eye, catchlight, mouth, eyebrow).
-const DETAIL = [SP.E, SP.e, SP.m, SP.K];
-function small(grid, k = .75) {
+const DETAIL = [SP.E, SP.e, SP.m, P.red, P.pink, P.tan, SP.K];   // (the chin's marks are details too)
+export function small(grid, k = .75) {
   const h = grid.length, w = grid[0].length, H = Math.round(h * k), W = Math.round(w * k), out = [];
   for (let y = 0; y < H; y++) {
     out.push([]);
@@ -281,8 +320,9 @@ function windswept(rows, dx, dy) {
 }
 
 const cache = new Map();
-function picture(frame, scars, mini, [hx, hy] = [0, 0]) {
-  const key = [frame, scars, mini, hx, hy].join();
+// marks: ids from MARKS to paint on, plus 'water' for a full bucket.
+function picture(frame, scars, mini, [hx, hy] = [0, 0], marks = []) {
+  const key = [frame, scars, mini, hx, hy, marks.join('+')].join();
   if (cache.has(key)) return cache.get(key);
   const rows = windswept(FRAMES[frame], hx, hy);
   const collar = rows.findIndex(r => r.includes('W'));
@@ -294,6 +334,15 @@ function picture(frame, scars, mini, [hx, hy] = [0, 0]) {
       const y = collar + dr + dy, x = c + dx;
       if (grid[y] && grid[y][x]) grid[y][x] = col === null ? null : (SP[col] || col);
     }
+  for (const id of marks) for (const [dr, c, col, w = 2, h = 2] of MARKS[id] || [])
+    for (let dy = 0; dy < h; dy++) for (let dx = 0; dx < w; dx++) {
+      const y = collar + dr + dy, x = c + dx;
+      if (grid[y] && grid[y][x]) grid[y][x] = SP[col] || col;
+    }
+  if (marks.includes('water') && HOLDS_BUCKET.includes(frame)) {   // a full bucket: water showing inside its rim
+    const y = rows.findIndex(r => r.includes('yyyyy')), x0 = rows[y].indexOf('yyyyy'), x1 = rows[y].lastIndexOf('y');
+    for (let x = x0 + 1; x < x1; x++) grid[y][x] = x === x0 + 2 ? P.aqua : P.sea;
+  }
   const k = mini ? .75 : 1;
   if (mini) grid = small(grid, k);
   const pic = { grid: outline(grid), anchor: Math.floor(ANCHOR * k), digits: mini ? FIFTEEN_SMALL : FIFTEEN,
@@ -305,8 +354,9 @@ export const spriteHeight = () => picture('stand', 0, mini()).grid.length;
 
 // x = centre, y = feet, in art pixels. face = 1 (right) or -1 (left). hair = [how far it's blown
 // back, how far it's lifted], in pixels (see windswept).
-export function drawSprite(g, frame, x, y, face, scars, hair) {
-  const { grid, number, anchor, digits } = picture(frame, scars, mini(), hair), h = grid.length, w = grid[0].length;
+// marks: what else to paint on (see MARKS; usually markIds(), plus 'water' when the bucket is full).
+export function drawSprite(g, frame, x, y, face, scars, hair, marks) {
+  const { grid, number, anchor, digits } = picture(frame, scars, mini(), hair, marks), h = grid.length, w = grid[0].length;
   const ox = Math.round(x), oy = Math.round(y) - h + 1;   // the outline under the feet hangs one pixel below
   const col = c => face > 0 ? ox + c - anchor : ox + anchor - c;
   for (let r = 0; r < h; r++) for (let c = 0; c < w; c++) {
