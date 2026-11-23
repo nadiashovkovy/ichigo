@@ -264,3 +264,16 @@ export function drawKoinobori(g, x, y, on, t) {
   g.fillStyle = P.mist; g.fillRect(-9, 3, 6, 6); g.fillStyle = P.night; g.fillRect(-7, 5, 3, 3);   // its eye
   g.restore();
 }
+
+// A carp streamer torn loose from the village, floating on the sea (Level 1's opening): lying on the
+// water, head first as it drifts left, rocking a little. Scenery only. (x, y: its head, on the surface.)
+export function drawFloatingKoinobori(g, x, y, t) {
+  const wav = Math.sin(t * 5) * 2;
+  g.save(); g.translate(x, y - 5); g.rotate(Math.sin(t * 1.3) * .08); g.scale(-1, 1);   // (drawn like the flying one, turned to lie flat)
+  g.fillStyle = P.wood; g.fillRect(0, 2, 12, px(2));                                   // a stub of its broken pole
+  g.fillStyle = P.aqua;
+  g.beginPath(); g.moveTo(0, 0); g.quadraticCurveTo(-18, -4 + wav, -40, -1 + wav); g.lineTo(-31, 4 + wav); g.lineTo(-40, 10 + wav); g.quadraticCurveTo(-18, 12 + wav, 0, 10); g.closePath(); g.fill();
+  g.fillStyle = P.ocean; g.fillRect(-30, 3 + wav, 14, 3); g.fillRect(-22, 6 + wav, 10, 2);   // its scales
+  g.fillStyle = P.mist; g.fillRect(-9, 2, 6, 6); g.fillStyle = P.night; g.fillRect(-7, 4, 3, 3);   // its eye
+  g.restore();
+}

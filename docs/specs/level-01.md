@@ -138,4 +138,27 @@ Update `tests/play_level.py`:
 
 ## Build notes
 
-*(Claude Code fills this in: what was built, changes from the spec and why, screenshots worth looking at, open questions for the next spec.)*
+**Kaa-chan and Ojii-san are not on the beach (Nadia's call after the first build).** Their sprites were built (task 4, `src/people.js`, kept for Levels 8 and 15), but the beach doesn't draw them. Kaa-chan is just inside the house: her humming and her pictogram bubbles come from the doorway (`BEACH.kaachan`). In the trip, the plaster simply appears on Ichigo's chin at about 2.2 s; Ichigo turns toward the house, and the bubbles follow. There's no walk over, kneel, nose tap or dropped net. Ojii-san and his bench are gone. The script's beach beats with them on screen need rewriting to match.
+
+**Built (all 10 tasks).** Flow is now `title → beach → white → play`. New files: `src/beach.js` (the beach, the trip, the pull-back and the wave; the wave and beach drawing moved here from `scenes.js`, so `scenes.js` got shorter), `src/people.js`, `src/bubbles.js`, `src/icons.js`, `src/audio.js`, `src/save.js`. Beach positions and timings are in `BEACH` in `config.js`; Sadie's walk is `MOVE.sideStepTime`.
+
+**Test results** (`python tests/play_level.py`, which now runs once at 4:3 and once in full screen): no page errors at either size. The beach bot trips, fills, digs and pours three times, and the wave and white follow. The save ends with `words: ['kaa-chan']`, `marks: ['chin']`, `seenWave: true`. The bot reaches the lantern every time.
+
+**Changes from the spec, and why**
+- *Falls:* the bot now falls 0–1 times, not "about 4". Baseline first: the unchanged `main` gives 1–2 falls, so 4 was already out of date. With the boat rest turned off, this branch also gives 1 fall. The 0 in the full test comes from the 6.5 s the bot now rests on the boat, which changes where the drifting planks are when it moves on. Platforming code is unchanged, except that sitting Ichigo doesn't slide.
+- *Plaster:* 3×2 `P.pink` with one `P.red` fleck vanished into the skin, so its lower row is `P.rose`.
+- *`MARKS` format:* `[row, column, colour, width, height]`, size optional (2×2 like `SCARS`). The chin has three ids: `chin-cut`, `chin-plaster`, `chin-scar`. `markIds()` in `sprite.js` picks plaster vs scar from `S.level.number`. The same table holds the lip wobble (`pout`). `drawSprite` takes a `marks` list; `'water'` there shows water in the bucket.
+- *Skipping the wave* (later playthroughs) is on Enter, Space or Esc, not any key: the player still moves Ichigo during the wave, and an arrow key shouldn't skip it.
+- *The start:* Ichigo begins sitting by the castle (the script's "sits in the sand … digs") and stands at the first step.
+- *Tomorrows:* `S.deaths` stays per level for the HUD; a new `S.tomorrows` counts every tomorrow ever and is what the save holds.
+- *Test bot:* the venv here had a newer Playwright than the installed browsers; `CHROME_PATH` pointing at the installed headless Chromium works.
+
+**Screenshots worth looking at:** `tests/screens/trip_plaster.png` (the bubble over the house), `sea_pulls_back.png`, `wave_over_beach.png`, `kaa_chan_question.png`, `boat_sit.png` (and `_wide` versions).
+
+**Open questions**
+- *Scale, for when the adults come back:* Ichigo is already taller than the house's doorway, and Kaa-chan at 1.6× is nearly as tall as the house wall.
+- *The greyed Kaa-chan face* (grey1/grey2 only) looks a little skull-like at small size, because of the dark eye sockets. Maybe allow `P.grey0` for skin?
+- *No on-screen hint for the use key* other than the ▼ marker (which suggests ↓). The title still lists only move, run, jump.
+- *Kaa-chan's poses* in `people.js` (kneel, the net in her lap) are a first pass and could use an art pass before Level 8.
+- *The fish* on the bared sand are 4×2 as specified, and hard to spot.
+- *Sound* other than the Lullaby is marked `SOUND:` in the code (splash, thup, gulls stopping, pouring).

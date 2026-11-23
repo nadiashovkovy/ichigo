@@ -107,9 +107,7 @@ export const BEACH = {
   digTime: 1.5,       // seconds of digging before the hole appears
   soakTime: 3,        // seconds for a pour to soak away into the sand
   trip: 470,          // where the shovel lies: walking right past it, Ichigo trips (once)
-  kaachan: 143,       // Kaa-chan's place on the house step
-  ojiisan: 300,       // Ojii-san's bench, by the boat
-  near: 56,           // how close Ichigo must be for Kaa-chan or Ojii-san to notice them
+  kaachan: 143,       // the house's doorway: Kaa-chan is just inside (her humming and bubbles come from here)
   fullSlow: 0.8,      // a full bucket slows Ichigo to this share of walking speed (and they can't run)
   recede: 80,         // how far out the sea pulls back before the wave
   whiteTime: 2,       // seconds of silent white after the wave

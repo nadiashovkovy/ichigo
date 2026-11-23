@@ -253,7 +253,7 @@ const SCARS = [
 // A few other touches use the same table: Ichigo's lip wobbling, and water in the bucket.
 const MARKS = {
   'chin-cut':     [[-4, 27, P.red]],                                   // just fallen on the shovel
-  'chin-plaster': [[-4, 26, P.pink, 3, 2], [-4, 27, P.red, 1, 1]],     // Kaa-chan's strawberry plaster
+  'chin-plaster': [[-4, 26, P.pink, 3, 2], [-3, 26, P.rose, 3, 1], [-4, 28, P.red, 1, 1]],   // Kaa-chan's strawberry plaster (its rose edge keeps it from vanishing into the skin)
   'chin-scar':    [[-3, 27, P.tan, 2, 1]],                             // what's left of it
   'pout':         [[-6, 28, 'S', 3, 1], [-6, 29, 'm', 1, 1], [-5, 28, 'm', 1, 1], [-5, 29, 'S', 1, 1], [-5, 30, 'm', 1, 1], [-5, 31, 'S', 1, 1]],   // the lip wobbling (every other frame)
 };
@@ -280,7 +280,7 @@ export function outline(grid) {
 // Shrink a grid of colours to k of its size: each new pixel takes the colour that covers most of
 // the old pixels under it (see-through only if that's at least half of them; on a tie, the small
 // details win: eye, catchlight, mouth, eyebrow).
-const DETAIL = [SP.E, SP.e, SP.m, P.red, P.pink, P.tan, SP.K];   // (the chin's marks are details too)
+const DETAIL = [SP.E, SP.e, SP.m, P.red, P.pink, P.rose, P.tan, SP.K];   // (the chin's marks are details too)
 export function small(grid, k = .75) {
   const h = grid.length, w = grid[0].length, H = Math.round(h * k), W = Math.round(w * k), out = [];
   for (let y = 0; y < H; y++) {

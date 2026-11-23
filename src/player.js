@@ -5,22 +5,23 @@
 // ============================================================================
 import { W, MOVE, DECK, P } from './config.js';
 import { S, parts } from './state.js';
-import { input, inLeft, inRight, inRun, inJump } from './input.js';
+import { input, inLeft, inRight, inRun, inJump, inUse } from './input.js';
 import { seaY } from './sea.js';
 import { floating, deckY } from './wreckage.js';
 
-export const PL = { x: 0, y: 0, vx: 0, vy: 0, ground: null, u: 0, vu: 0, face: 1, coyote: 0, anim: 0, hw: 10, jumpHeld: false, grace: 0 };
+export const PL = { x: 0, y: 0, vx: 0, vy: 0, ground: null, u: 0, vu: 0, face: 1, coyote: 0, anim: 0, hw: 10, jumpHeld: false, grace: 0,
+                    idle: 0, sitting: false };   // idle: seconds without input; sitting: resting on the boat
 
 export function spawn() {   // stand Ichigo in the middle of the last checkpoint
   const p = S.checkpoint;
   for (const q of S.plats) { q.sink = 0; q.av = 0; q.dv = 0; q.dy = 0; }
-  PL.ground = p; PL.u = 0; PL.vu = 0; PL.vx = PL.vy = 0; PL.face = 1; PL.grace = DECK.graceAfterRespawn;
+  PL.ground = p; PL.u = 0; PL.vu = 0; PL.vx = PL.vy = 0; PL.face = 1; PL.grace = DECK.graceAfterRespawn; PL.idle = 0; PL.sitting = false;
   PL.x = p.cx; PL.y = p.cy;
 }
 
 export function die() {     // fell in the sea: a new tomorrow
   if (S.scene !== 'play') return;
-  S.deaths++; S.scene = 'dawn'; S.sceneT = 0;
+  S.deaths++; S.tomorrows++; S.scene = 'dawn'; S.sceneT = 0;
   for (let i = 0; i < 18; i++) parts.push({ x: PL.x, y: seaY(PL.x, S.T), vx: (Math.random() - .5) * 220, vy: -150 - Math.random() * 200, life: .8, c: P.foam });
 }
 
@@ -45,6 +46,10 @@ export function updatePlayer(dt) {
   const target = dir * (inRun() ? MOVE.run : MOVE.walk);
   if (dir) PL.face = dir;
   input.jumpBuffer -= dt; PL.coyote -= dt; PL.grace -= dt;
+  // On the boat, a moment without input and Ichigo sits down with the bucket in their lap (see
+  // drawPlay; after 5 s they look back). Any input stands them up. Sitting, they don't slide.
+  PL.idle = dir || inJump() || inRun() || inUse() || input.jumpBuffer > 0 ? 0 : PL.idle + dt;
+  PL.sitting = !!PL.ground && PL.ground.type === 'boat' && PL.idle > 1;
 
   if (PL.ground) {
     const p = PL.ground, half = p.w / 2;
@@ -53,7 +58,7 @@ export function updatePlayer(dt) {
     else PL.vu -= Math.sign(PL.vu) * Math.min(Math.abs(PL.vu), (floating(p) ? DECK.wetFriction : MOVE.groundAccel) * dt);
     // slide downhill on a tilted deck
     const pull = DECK.slide * Math.sin(p.ang);
-    if (floating(p) && PL.grace <= 0 && (Math.abs(pull) > DECK.grip || Math.abs(PL.vu) > 5)) PL.vu += pull * dt;
+    if (floating(p) && !PL.sitting && PL.grace <= 0 && (Math.abs(pull) > DECK.grip || Math.abs(PL.vu) > 5)) PL.vu += pull * dt;
     PL.u += PL.vu * dt;
     const pvx = (p.cx - p.pcx) / dt, pvy = (p.cy - p.pcy) / dt;   // how the deck itself is moving
     if (input.jumpBuffer > 0) {                  // jump: keep the deck's momentum
