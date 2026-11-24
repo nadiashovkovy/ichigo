@@ -2,7 +2,7 @@
 
 **Script:** `docs/levels-and-script.md`, section "Level 1: The Great Wave".
 **Branch:** `level-01-beach-prologue`
-**Status:** ready to build
+**Status:** built (PR #2 and Nadia's follow-up commits). Since then: text is allowed during play, and the screen is 16:9 only.
 
 ## Why this update
 
