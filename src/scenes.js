@@ -67,7 +67,7 @@ export function drawPlay() {
     const hair = PL.sitting || S.scene === 'end' ? [0, 0] : !PL.ground ? [1, PL.vy > 150 ? 2 : 0] : moving ? [(running ? 1 : 0) + step, step] : wobbly ? [Math.sin(S.T * 4) > 0 ? 1 : 0, 0] : [0, 0];
     // (sitting on the boat a while, Ichigo looks back the way they came)
     const face = PL.sitting && PL.ground && PL.ground.type === 'boat' && PL.idle > 5 ? -1 : PL.face;
-    drawSprite(lg, frame, (PL.x - camX) / PIXEL, PL.y / PIXEL + TOP_PX, face, Math.min(5, S.deaths), hair, PL.getUp > 0 ? [...markIds(), 'pout'] : markIds());   // (lip out: stubbornly not getting up)
+    drawSprite(lg, frame, (PL.x - camX) / PIXEL, PL.y / PIXEL + TOP_PX, face, Math.min(5, S.deaths), hair, PL.sulk > 0 ? [...markIds(), 'pout'] : markIds());   // (lip out: made to get up)
     const sh = PL.sitting ? Math.round(46 * (PIXEL > 1.1 ? .75 : 1)) : spriteHeight();
     drawBubbles(lg, { ichigo: [Math.round((PL.x - camX) / PIXEL), Math.round(PL.y / PIXEL + TOP_PX) - sh] });
   }

@@ -87,6 +87,7 @@ function frame(now) {
     S.camX += (target - S.camX) * Math.min(1, dt * 5);
   }
 
+  if (waiting) { input.jumpBuffer = 0; input.usePressed = false; }   // (a key that turned a card mustn't also make Ichigo hop or dig)
   if (!waiting) updateBubbles(dt);
   if (S.scene !== lastScene) {   // arriving in a scene
     if (S.scene === 'dawn') { playLullaby({ notes: 2, delay: .7 }); save(); }   // a new tomorrow: the Lullaby's first two notes (after the splash)

@@ -21,7 +21,7 @@ Today the flow is `title → intro (5.2 s wave cutscene) → play`. After this u
 ### 1. A "use" button
 
 - Add an `inUse()` input in `src/input.js`: ArrowDown, KeyS or KeyE, plus a new touch button (`data-k="use"`, label `●`) in `index.html` next to run and jump.
-- Ichigo can't jump on the beach (they're three and on sand; it keeps the beach calm). Jump does nothing there.
+- On the beach, jump is only a tiny hop (they're three and on sand; it keeps the beach calm): a few pixels, with a puff of sand. No hopping while digging, pouring, tripping or carrying a full bucket.
 
 ### 2. The beach scene (`S.scene = 'beach'`)
 
@@ -119,7 +119,7 @@ Update `tests/play_level.py`:
 ## Acceptance checks
 
 - [ ] From the title, a key press goes to the playable beach, not straight to the cutscene.
-- [ ] On the beach Ichigo walks with Sadie's sideways start, can't jump, and can dig, fill and pour with the use button, on keyboard and on the touch button.
+- [ ] On the beach Ichigo walks with Sadie's sideways start, can only do a tiny hop, and can dig, fill and pour with the use button, on keyboard and on the touch button.
 - [ ] The trip always happens once, before the first fill. The plaster stays on the chin for the rest of Level 1, including after falls and in the end card.
 - [ ] Kaa-chan and Ojii-san are drawn in the game's pixel style with outlines and palette colours, and react when Ichigo is near.
 - [ ] Bubbles show pictures only. There's no text on screen during the beach or play apart from the HUD.
@@ -141,6 +141,10 @@ Update `tests/play_level.py`:
 **Kaa-chan and Ojii-san are not on the beach (Nadia's call after the first build).** Their sprites were built (task 4, `src/people.js`, kept for Levels 8 and 15), but the beach doesn't draw them. Kaa-chan is just inside the house: her humming and her pictogram bubbles come from the doorway (`BEACH.kaachan`). In the trip, the plaster simply appears on Ichigo's chin at about 2.2 s; Ichigo turns toward the house, and the bubbles follow. There's no walk over, kneel, nose tap or dropped net. Ojii-san and his bench are gone. The script's beach beats with them on screen need rewriting to match.
 
 **After the first build (Nadia's requests):**
+- *A tiny hop on the beach* replaces "can't jump" (task 1 and its acceptance check are updated): `BEACH.hop` and `BEACH.hopGravity`. It teaches the jump key somewhere safe; before, the first jump was over open sea. Hopping over the shovel still trips Ichigo. Space no longer skips the wave on later playthroughs (Enter still does), since Space hops. The controls card says SPACE: HOP.
+- *Sitting never takes control away.* Ichigo still sits down bored, but any key (move, jump, use) gets them up and acts at once, on the beach and on the sea. The 0.45 s stubborn wait is gone; only the lip stays out that long (`sulk`).
+- *Always 16:9*, with only the monitor around the game: no 4:3 size and no keyboard. The play-test runs once now, so the "both sizes" notes here are out of date.
+- *The PC's power button* also stops the sound.
 - *Story cards* (`src/cards.js`), which break the old "wordless" rule on purpose; CLAUDE.md now says so. Three cards open the beach: who Ichigo is, Kaa-chan, and the controls and goal (dig a hole, fill it with sea water). Three more come on the white after the wave: the village is gone, the lantern island, how to cross. The white is still 2 s of silence before them. Any key goes on, Esc skips. The world waits while a card is up. The script's beats may want rewriting around them.
 - *Level 0, a prologue* (`src/prologue.js`), comes before the beach: four story cards: what Ichigo is (a game from Gabrielle Zevin's novel, made by Sadie and Sam), the premise, and that this is a fan-made version. Each card sits over a Hokusai print (the Great Wave, then dawn prints), with a caption.
 - *The title* no longer lists the keys. It shows PRESS ANY KEY and "L: ALL LEVELS" (or click it), and has its own music: slower and higher, the flute playing the Lullaby. It plays on through the list and Level 0. Browsers only allow sound after the first key press, so on a first visit the title is silent until a key starts Level 0. Back at the title later, you hear it.

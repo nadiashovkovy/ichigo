@@ -11,12 +11,12 @@ import { floating, deckY } from './wreckage.js';
 import { playFall } from './audio.js';
 
 export const PL = { x: 0, y: 0, vx: 0, vy: 0, ground: null, u: 0, vu: 0, face: 1, coyote: 0, anim: 0, hw: 10, jumpHeld: false, grace: 0,
-                    idle: 0, sitting: false, boredAt: 0, getUp: 0 };   // idle: seconds without input; sitting: on the boat, or bored; getUp: stubbornly not yet
+                    idle: 0, sitting: false, boredAt: 0, sulk: 0 };   // idle: seconds without input; sitting: on the boat, or bored; sulk: just made to get up, lip out
 
 export function spawn() {   // stand Ichigo in the middle of the last checkpoint
   const p = S.checkpoint;
   for (const q of S.plats) { q.sink = 0; q.av = 0; q.dv = 0; q.dy = 0; }
-  PL.ground = p; PL.u = 0; PL.vu = 0; PL.vx = PL.vy = 0; PL.face = 1; PL.grace = DECK.graceAfterRespawn; PL.idle = 0; PL.sitting = false; PL.getUp = 0;
+  PL.ground = p; PL.u = 0; PL.vu = 0; PL.vx = PL.vy = 0; PL.face = 1; PL.grace = DECK.graceAfterRespawn; PL.idle = 0; PL.sitting = false; PL.sulk = 0;
   PL.x = p.cx; PL.y = p.cy;
 }
 
@@ -44,19 +44,15 @@ export function updateParts(dt) {
 }
 
 export function updatePlayer(dt) {
-  let dir = (inRight() ? 1 : 0) - (inLeft() ? 1 : 0);
+  const dir = (inRight() ? 1 : 0) - (inLeft() ? 1 : 0);
   // Sitting down. On the boat, a moment without input and Ichigo sits with the bucket in their lap
   // (after 5 s they look back: see drawPlay). Anywhere else, left alone a while, they sit down bored,
-  // and a tilted deck still slides them off (only the boat is safe). Told to move, they're stubborn:
-  // they stay sitting a moment, lip out (PL.getUp), before standing.
+  // and a tilted deck still slides them off (only the boat is safe). Any key gets them up
+  // at once, so sitting never costs the player control; only the lip stays out a moment (PL.sulk).
   const wants = dir || inJump() || inRun() || inUse() || input.jumpBuffer > 0;
-  if (PL.sitting && wants) {
-    if (!(PL.getUp > 0)) PL.getUp = MOVE.stubborn;
-    PL.getUp -= dt;
-    if (PL.getUp > 0) { dir = 0; input.jumpBuffer = 0; }
-    else { PL.getUp = 0; PL.sitting = false; PL.idle = 0; }
-  } else {
-    if (!wants) PL.getUp = 0;
+  PL.sulk = Math.max(0, PL.sulk - dt);
+  if (PL.sitting && wants) { PL.sitting = false; PL.idle = 0; PL.sulk = MOVE.sulk; }
+  else {
     PL.idle = wants ? 0 : PL.idle + dt;
     if (!PL.boredAt) PL.boredAt = MOVE.bored[0] + Math.random() * MOVE.bored[1];
     const sit = !!PL.ground && ((PL.ground.type === 'boat' && PL.idle > 1) || PL.idle > PL.boredAt);

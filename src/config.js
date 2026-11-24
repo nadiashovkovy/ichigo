@@ -72,7 +72,7 @@ export const MOVE = {
   airControl: 1300,   // how quickly you can steer in the air
   groundAccel: 2400,  // how quickly Ichigo gets up to speed on a deck
   bored: [5, 5],      // left alone on a deck this long (5 to 10 s), Ichigo sits down, bored (they still slide!)
-  stubborn: 0.45,     // and told to move, stays sitting this long first, lip out
+  sulk: 0.45,         // any key gets them up at once, but their lip stays out this long
   sideStepTime: 0.4,  // Sadie's walk: starting from standing, Ichigo first takes 3 short sideways steps this long (the beach only, for now)
 };
 
@@ -114,5 +114,7 @@ export const BEACH = {
   recede: 80,         // how far out the sea pulls back before the wave
   whiteTime: 2,       // seconds of silent white after the wave
   bored: [6, 5],      // left alone this long (6 to 11 s), Ichigo sits down in the sand, bored
-  stubborn: 0.45,     // and told to move, stays sitting this long first
+  sulk: 0.45,         // any key gets them up at once, but their lip stays out this long
+  hop: 150,           // a tiny hop: how fast Ichigo leaves the sand,
+  hopGravity: 1100,   // and how fast they come down (about 8 pixels high, a quarter of a second)
 };

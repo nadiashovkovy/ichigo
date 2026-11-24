@@ -25,7 +25,7 @@ import { showCards } from './cards.js';
 const INTRO_CARDS = [
   'ICHIGO LIVES BY THE SEA WITH KAA-CHAN, THEIR MOTHER, IN A HOUSE WITH A STRAW ROOF.',
   'EVERY EVENING, WHILE KAA-CHAN MENDS THE NETS AND HUMS, ICHIGO PLAYS IN THE SAND WITH A BUCKET AND SHOVEL.',
-  '<- -> WALK.  DOWN ARROW: DIG, FILL THE BUCKET, POUR IT OUT.  DIG A HOLE BY THE SANDCASTLE, THEN FILL IT WITH SEA WATER.',
+  '<- -> WALK.  SPACE: HOP.  DOWN ARROW: DIG, FILL THE BUCKET, POUR IT OUT.  DIG A HOLE BY THE SANDCASTLE, THEN FILL IT WITH SEA WATER.',
 ];
 export const WAKE_CARDS = [
   'THE SEA CAME FOR THE VILLAGE, AND TOOK EVERYTHING WITH IT.',
@@ -38,12 +38,13 @@ export const B = {};
 export function startBeach() {
   Object.assign(B, {
     phase: 'play', t: 0,   // 'play' → 'trip' (the fall and the plaster) → 'play' → 'recede' (the sea pulls back, the wave)
-    x: 436, v: 0, face: -1, anim: 0, side: 0, moving: false, seated: true,   // Ichigo: sitting by the castle until the first step
+    x: 436, v: 0, face: -1, anim: 0, side: 0, moving: false, seated: true,   // Ichigo: sitting by the castle until the player does something
+    y: 0, vy: 0, air: false, sulk: 0,   // y: how high off the sand, hopping
     full: false, dug: 0, hole: false, holeWater: 0, pours: 0, pouring: 0, digging: false,
     tripped: false, cut: false, plaster: false, pout: false, splash: 0,
     back: 0, waveT: 0, canSkip: S.seenWave, said: 0, called: false, rumbled: false, crashed: false,
   });
-  parts.length = 0; clearBubbles();
+  parts.length = 0; clearBubbles(); input.jumpBuffer = 0; input.usePressed = false;
   S.scene = 'beach'; S.sceneT = 0;
   showCards(INTRO_CARDS);
 }
@@ -53,7 +54,7 @@ const mini = () => PIXEL > 1.1;
 
 // What "use" would do where Ichigo stands now (or null).
 function action() {
-  if (B.phase !== 'play' || B.seated) return null;
+  if (B.phase !== 'play' || B.seated || B.air) return null;
   const atDig = B.x >= BEACH.dig[0] && B.x <= BEACH.dig[1];
   if (!B.full && B.x >= BEACH.water) return 'fill';
   if (B.full && B.hole && atDig) return 'pour';
@@ -64,18 +65,16 @@ function action() {
 export function updateBeach(dt, endBeach) {
   B.t += dt;
   const control = B.phase !== 'trip';
-  let dir = control ? (inRight() ? 1 : 0) - (inLeft() ? 1 : 0) : 0;
-  // Ichigo is stubborn: left alone a while, they sit down, bored; told to move, they stay put a moment
-  // (lip out) before getting up.
-  if (B.seated && dir) { if (!(B.getUp > 0)) B.getUp = BEACH.stubborn; B.getUp -= dt; if (B.getUp > 0) dir = 0; else { B.getUp = 0; B.seated = false; } }
-  else if (!dir) B.getUp = 0;
-  B.idle = dir || inUse() || B.phase !== 'play' ? 0 : (B.idle || 0) + dt;
+  const dir = control ? (inRight() ? 1 : 0) - (inLeft() ? 1 : 0) : 0;
+  // Left alone a while, Ichigo sits down, bored. Any key gets them up at once (the lip stays out a moment).
+  const wants = control && (dir || inUse() || input.usePressed || input.jumpBuffer > 0);
+  if (B.seated && wants) { B.seated = false; B.sulk = BEACH.sulk; }
+  B.sulk = Math.max(0, B.sulk - dt);
+  B.idle = wants || B.air || B.phase !== 'play' ? 0 : (B.idle || 0) + dt;
   if (!B.seated && B.idle > (B.boredAt || (B.boredAt = BEACH.bored[0] + Math.random() * BEACH.bored[1]))) { B.seated = true; B.boredAt = 0; }
-  // (no jumping on the beach: Ichigo is three, on sand)
-  input.jumpBuffer = 0;
 
   // --- walking, with Sadie's sideways start ---
-  if (dir && !B.moving) { B.moving = true; B.side = MOVE.sideStepTime; B.seated = false; }
+  if (dir && !B.moving) { B.moving = true; B.side = MOVE.sideStepTime; }
   if (!dir) { B.moving = false; B.side = 0; B.v = 0; }
   const speed = B.full ? MOVE.walk * BEACH.fullSlow : (inRun() ? MOVE.run : MOVE.walk);   // a full bucket: slower, no running (it would slop)
   if (dir) {
@@ -88,7 +87,7 @@ export function updateBeach(dt, endBeach) {
   }
   const edge = BEACH.edge + B.back;
   B.x = Math.max(BEACH.left, Math.min(edge, B.x + B.v * dt));
-  if (B.x >= edge - 1 && dir > 0 && B.back < 1 && (B.splash -= dt) < 0) {   // ankle-deep: a little splash
+  if (B.x >= edge - 1 && dir > 0 && !B.air && B.back < 1 && (B.splash -= dt) < 0) {   // ankle-deep: a little splash
     B.splash = .18;   // SOUND: a small splash
     for (let i = 0; i < 4; i++) parts.push({ x: B.x + B.face * 6, y: BEACH.ground - 2, vx: (Math.random() - .3) * 80, vy: -80 - Math.random() * 90, life: .4, c: Math.random() < .5 ? P.white : P.aqua });
   }
@@ -97,9 +96,24 @@ export function updateBeach(dt, endBeach) {
   // --- the trip: the first time Ichigo walks right past the shovel ---
   if (B.phase === 'play' && !B.tripped && B.x > BEACH.trip && dir > 0) {
     B.tripped = true; B.phase = 'trip'; B.t = 0; B.cut = true; B.v = 0; B.moving = false;   // SOUND: thup
+    B.y = B.vy = 0; B.air = false;   // (a hop doesn't clear the shovel: it catches their toe)
     for (let i = 0; i < 10; i++) parts.push({ x: B.x + 6, y: BEACH.ground - 2, vx: (Math.random() - .5) * 120, vy: -40 - Math.random() * 90, life: .5, c: P.tanD });
   }
   if (B.phase === 'trip') updateTrip();
+
+  // --- a tiny hop: Ichigo is three, on sand. (Not while digging or pouring, nor with a full bucket: it would slop.) ---
+  if (B.air) {
+    B.vy -= BEACH.hopGravity * dt; B.y += B.vy * dt;
+    if (B.y <= 0) {   // landing: a puff of sand, or a splash at the water's edge
+      B.y = B.vy = 0; B.air = false;
+      const wet = B.x > BEACH.edge - 12 && B.back < 1;
+      for (let i = 0; i < 6; i++) parts.push({ x: B.x, y: BEACH.ground - 2, vx: (Math.random() - .5) * 110, vy: -30 - Math.random() * 60, life: .35, c: !wet ? P.tanD : Math.random() < .5 ? P.white : P.aqua });
+    }
+  }
+  const canHop = control && !B.full && !(B.pouring > 0) && !(action() === 'dig' && inUse());
+  if (!canHop || B.phase === 'trip') input.jumpBuffer = 0;
+  else if (input.jumpBuffer > 0 && !B.air) { B.air = true; B.vy = BEACH.hop; input.jumpBuffer = 0; }
+  input.jumpBuffer = Math.max(0, input.jumpBuffer - dt);   // (a press just before landing still counts)
 
   // --- use: dig, fill, pour ---
   const act = action();
@@ -122,7 +136,7 @@ export function updateBeach(dt, endBeach) {
     if (B.waveT > 1.4 && !B.rumbled) { B.rumbled = true; waveRumble(); }   // the wave rising: a rumble building
     if (B.waveT > 4.4 && !B.crashed) { B.crashed = true; waveCrash(); }     // and the crash
     if (B.waveT > 1.4 && !dir) B.face = 1;                                       // Ichigo faces the wave
-    const skip = B.canSkip && t > 2.5 && (keys.Enter || keys.Space);   // (later playthroughs only)
+    const skip = B.canSkip && t > 2.5 && keys.Enter;   // (later playthroughs only; not Space, which hops)
     if (B.waveT >= 5 || skip) { S.seenWave = true; save(); silence(); clearBubbles(); endBeach(skip); return; }   // cut to silence
   }
 
@@ -275,18 +289,19 @@ export function drawBeachScene() {
   // Ichigo
   const step = Math.floor(B.anim / 1.6) % 2, running = Math.abs(B.v) > 220;
   const sitting = B.seated || (B.phase === 'trip' && B.t < 4.2);
-  const frame = sitting ? 'sit' : B.pouring > 0 ? 'dig1' : B.digging ? (Math.sin(S.T * 10) > 0 ? 'dig1' : 'dig2')
+  const frame = sitting ? 'sit' : B.air ? 'balance' : B.pouring > 0 ? 'dig1' : B.digging ? (Math.sin(S.T * 10) > 0 ? 'dig1' : 'dig2')
               : B.moving && B.side > 0 ? 'balance' : B.moving ? ['stand', 'step1', 'stand', 'step2'][Math.floor(B.anim / 1.6) % 4] : 'stand';
-  const hair = B.moving && B.side <= 0 ? [(running ? 1 : 0) + step, step] : [0, 0];
-  const marks = [B.plaster ? 'chin-plaster' : B.cut ? 'chin-cut' : null, B.pout || B.getUp > 0 ? 'pout' : null, B.full ? 'water' : null,
+  // (hopping, the arms-out pose: the jump one, for the sea, has no bucket)
+  const hair = B.air ? [0, B.vy < 0 ? 2 : 0] : B.moving && B.side <= 0 ? [(running ? 1 : 0) + step, step] : [0, 0];
+  const marks = [B.plaster ? 'chin-plaster' : B.cut ? 'chin-cut' : null, B.pout || B.sulk > 0 ? 'pout' : null, B.full ? 'water' : null,
                  B.tripped && !(B.phase === 'trip' && B.t < 4.2) ? 'shovel' : null].filter(Boolean);   // (after the fall, Ichigo picks the shovel up)
-  const ix = X(B.x);
-  drawSprite(lg, frame, ix, ground, B.face, 0, hair, marks);
-  if (B.x > BEACH.edge - 12 && back < 1) {   // ankle-deep: the foam over Ichigo's feet
+  const ix = X(B.x), feet = ground - Math.round(B.y / PIXEL);
+  drawSprite(lg, frame, ix, feet, B.face, 0, hair, marks);
+  if (B.x > BEACH.edge - 12 && back < 1 && !B.air) {   // ankle-deep: the foam over Ichigo's feet
     lg.fillStyle = P.mist; lg.fillRect(ix - 10, ground - 3, 20, 2); lg.fillStyle = P.aqua; lg.fillRect(ix - 9, ground - 1, 18, 2);
   }
   for (const q of parts) if (q.life > .05) { lg.fillStyle = q.c; lg.fillRect(X(q.x), Math.round(q.y / PIXEL + TOP_PX), 2, 2); }
-  const head = ground - (sitting ? 46 * (mini() ? .75 : 1) : spriteHeight());
+  const head = feet - (sitting ? 46 * (mini() ? .75 : 1) : spriteHeight());
   if (action()) drawRows(lg, MARKER, { K: P.outline, W: P.white }, ix - 3, Math.round(head - 10 + Math.sin(S.T * 5) * 1.5));
 
   drawBubbles(lg, {
