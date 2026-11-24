@@ -98,7 +98,7 @@ function drawSky(B, camX, top, t, name, light) {
   }
 }
 
-// Mt Fuji, drawn in cells the same way as the title card's (see draw_fuji in tools/make_title.py).
+// Mt Fuji, drawn in cells: see fujiCells.
 // Each level sees it a different way, after Hokusai's Thirty-six Views of Mount Fuji (levels/*.json,
 // "fuji": { "view": ... }):
 //   grey  - The Great Wave: grey, a white peak whose snow line is ragged, streaks of snow running down

@@ -33,8 +33,8 @@ export const TOP_PX = TOP / PIXEL;                   // the extra sky, in art pi
 
 export const SEA = 430;                 // resting height of the sea surface (in game units, y grows downward)
 
-// The woodblock palette: the colours of the title card's chart of Hokusai's Great Wave (see
-// tools/make_title.py), plus Ichigo's jersey, skin and hair, plus more of the printmaker's pigments
+// The woodblock palette: the colours of Hokusai's Great Wave on the title card
+// (greatwave.js), plus Ichigo's jersey, skin and hair, plus more of the printmaker's pigments
 // (blossom pinks, greens, rust, wood, the orange of dawn) for the other prints (dawn.js). Every pixel
 // of the world is snapped to one of these.
 export const P = {
