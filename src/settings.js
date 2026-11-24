@@ -71,7 +71,7 @@ function rows(act) {
 }
 
 const CONTROLS = [
-  ['<- ->', 'WALK'], ['SHIFT', 'RUN'], ['SPACE', 'JUMP (HOLD: HIGHER)'], ['DOWN', 'DIG, FILL, POUR'],
+  ['<- ->', 'WALK'], ['SHIFT', 'RUN'], ['SPACE', 'JUMP (HOLD: HIGHER)'], ['DOWN', 'PICK UP, DIG, FILL, POUR'], ['TAB', "ICHIGO'S THINGS"],
   ['P', 'SETTINGS'], ['M', 'SOUND ON / OFF'], ['F', 'FULL SCREEN'], ['ESC', 'SKIP STORY CARDS'],
 ];
 

@@ -36,8 +36,10 @@ If the spec and the script disagree, the spec wins for code and the script wins 
 | `src/art.js`, `src/title.js`, `src/dawn.js` | Scenery, title card, the Hokusai print shown at each new tomorrow |
 | `src/pixel.js`, `src/text.js` | Pixel pipeline (palette snapping), bitmap font and rainbow cover lettering |
 | `src/input.js`, `src/pc.js` | Keyboard and touch; the 1996 PC monitor around the game |
-| `src/beach.js`, `src/cards.js` | Level 1's playable beach and the wave; story cards |
-| `src/prologue.js`, `src/menu.js` | Level 0 (the premise and the novel, over Hokusai's prints); the list of all levels (locked / unlocked) |
+| `src/beach.js`, `src/beachart.js`, `src/cards.js` | Level 1's playable beach and the wave; how the beach looks; story cards |
+| `src/prologue.js`, `src/menu.js` | Level 0 (the premise and the novel, over the last day on Ichigo's beach); the list of all levels (locked / unlocked) |
+| `src/things.js` | What Ichigo carries and has learned, and their drawing of the way home (Tab) |
+| `src/tide.js`, `src/tideart.js`, `src/water.js` | Level 2: how it plays, how it looks, and its water (no drawing in `water.js`: it runs in Node for tuning) |
 | `src/audio.js` | All sound, synthesised: the Lullaby, music, sea, gulls, the tsunami, falling in |
 | `src/bubbles.js`, `src/icons.js`, `src/people.js`, `src/save.js` | Speech bubbles and their icons; Kaa-chan and Ojii-san (for later levels); the save |
 | `tests/play_level.py` | Headless play-test bot (Playwright) |
@@ -59,7 +61,7 @@ Run locally: `python3 -m http.server 8000`, then open http://localhost:8000.
 
 ## Code conventions (match what's here)
 
-- Pixel art rules: every line and edge is whole art pixels. Use `px()`, `onPixel()`, `toPx()` from `config.js`. Colours come only from the palette `P`; `quantize()` snaps drawn art to it.
+- Pixel art rules: every line and edge is whole art pixels. Use `px()`, `onPixel()`, `toPx()` from `config.js`. Colours come only from the palette `P`, and the same material uses the same few everywhere (`RAMP`); `quantize()` snaps drawn art to it.
 - Sprites are letter grids (see `sprite.js`): one letter per colour, frames face right, `drawSprite` mirrors and outlines them. New characters follow the same style.
 - Comments are plain English explaining *why*, written so Nadia can read them. Keep that voice.
 - Keep `window.ichigo` exposing what the test bot needs.

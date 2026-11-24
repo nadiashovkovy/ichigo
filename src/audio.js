@@ -7,6 +7,7 @@
 //     coming and going, a temple bell and a shō now and then.
 //   • the sea itself: waves washing in and out wherever there's water.
 //   • the tsunami: a rumble as the wave rises, then the crash (cut off by the silence of the white).
+//   • Level 2's waves breaking, sand, bucket and crabs.
 //   • falling in: a splash, a sinking "bloop" and a few bubbles.
 //   • gulls, now and then.
 //
@@ -144,9 +145,12 @@ const LINES = [
   null, null, null, null,
   [[0, 62, 2], [2, 64, 2], [4, 67, 2], [6, 69, 2]], [[0, 71, 4], [4, 69, 4]], [[0, 67, 8]], null,
 ];
+// Level 2's night: a few low plucks over a drone, that step up the scale with each set of waves (see music's `shift`).
+const NIGHT = [[50, 0, 0, 57, 0, 0, 0, 0], [50, 0, 0, 55, 0, 0, 52, 0], [50, 0, 0, 59, 0, 57, 0, 0]];
 // tempo: beats a minute; arps: a bar of plucks per chord (0 = rest); bass: under each chord;
 // lines: the flute, a bar each; order: which chord each bar plays; thin: plucks to leave out.
 const SONGS = {
+  night: { tempo: 50, arps: NIGHT, bass: [26, 26, 26, 26], lines: [null, null, null, null, [[0, 62, 4], [4, 64, 4]], [[0, 57, 8]], null, null], order: [0, 1, 0, 2], thin: () => false, pluck: [.08, .05], flute: .06 },
   sea:   { tempo: 72, arps: ARPS, bass: BASS, lines: LINES, order: [0, 1, 2, 3], thin: (bar, i) => bar >= 8 && bar < 12 && i % 2, pluck: [.11, .07], flute: .1 },
 };
 
@@ -170,8 +174,9 @@ function bass(freq, at, len, out) {
 
 let step = 0, nextStep = 0, playing = null;
 // Call every frame. level: 1 = playing, a little = held quietly under something, 0 = fading away.
-// song: 'sea' or 'title' (changing song starts the new one from the top).
-export function music(level, song = 'sea') {
+// song: 'sea', 'night' or 'title' (changing song starts the new one from the top).
+// shift: how many semitones higher to play it (Level 2's night rises with the tide).
+export function music(level, song = 'sea', shift = 0) {
   if (!ac) return;
   if (level > 0 && song !== playing) { stopTitle(); playing = song; step = 0; nextStep = 0; }
   musicBus.gain.setTargetAtTime(level * .6, ac.currentTime, level > 0 ? .4 : .8);
@@ -182,11 +187,11 @@ export function music(level, song = 'sea') {
   while (nextStep < ac.currentTime + .25) {   // schedule what's due in the next quarter second
     const bar = Math.floor(step / 8) % M.lines.length, i = step % 8, chord = M.order[bar % 4];
     const m0 = M.arps[chord][i];
-    if (m0 && !M.thin(bar, i)) pluck(hz(m0), nextStep, i === 0 ? M.pluck[0] : M.pluck[1], musicBus);   // (the sea's is sparser in bars 9–12)
-    if (i === 0) bass(hz(M.bass[chord]), nextStep, STEP * 8, musicBus);
-    if (i === 0 && bar === 0) templeBell(hz(57), nextStep, .18, musicBus, 8);                  // each round opens with a temple bell,
+    if (m0 && !M.thin(bar, i)) pluck(hz(m0 + shift), nextStep, i === 0 ? M.pluck[0] : M.pluck[1], musicBus);   // (the sea's is sparser in bars 9–12)
+    if (i === 0) bass(hz(M.bass[chord] + shift), nextStep, STEP * 8, musicBus);
+    if (i === 0 && bar === 0) templeBell(hz(57 + shift), nextStep, .18, musicBus, 8);                  // each round opens with a temple bell,
     if (i === 0 && bar === 8) sho([62, 64, 69, 71], nextStep, STEP * 8 * 4, musicBus, .018);       // and a shō breathes under the quiet bars
-    for (const [at, m, len] of M.lines[bar] || []) if (at === i) note(hz(m), nextStep, len * STEP, musicBus, M.flute);
+    for (const [at, m, len] of M.lines[bar] || []) if (at === i) note(hz(m + shift), nextStep, len * STEP, musicBus, M.flute);
     nextStep += STEP; step++;
   }
 }
@@ -275,6 +280,58 @@ export function playFall() {
     bg.gain.setValueAtTime(.08, t); bg.gain.exponentialRampToValueAtTime(.001, t + .06);
     b.connect(bg); bg.connect(fx); b.start(t); b.stop(t + .08);
   }
+}
+
+// ============================================================================
+// Level 2's small sounds: a wave breaking and running up the sand (size 0..1), sand being piled, the
+// bucket filled and tipped out, the lantern's light going out, a crab's claw (or a shell) clicking.
+// ============================================================================
+export function playWash(size) {
+  if (!ac) return;
+  const at = ac.currentTime;
+  burst(at, 1.6, { from: 250, to: 2200, vol: .35 + .3 * size, attack: .12 });
+  burst(at + .15, 1.5, { from: 5000, to: 1800, type: 'highpass', vol: .05 + .05 * size, attack: .2, buf: noise });
+}
+export function playDig() { if (ac) burst(ac.currentTime, .16, { from: 1500, to: 600, type: 'bandpass', q: .8, vol: .16, buf: noise }); }
+export function playScoop() {
+  if (!ac) return;
+  const at = ac.currentTime, o = ac.createOscillator(), g = ac.createGain();
+  burst(at, .2, { from: 1800, to: 900, type: 'bandpass', q: 1, vol: .16, buf: noise });
+  o.frequency.setValueAtTime(260, at); o.frequency.exponentialRampToValueAtTime(620, at + .22);   // filling up: the pitch rises
+  g.gain.setValueAtTime(.12, at); g.gain.exponentialRampToValueAtTime(.001, at + .26);
+  o.connect(g); g.connect(fx); o.start(at); o.stop(at + .3);
+}
+export function playPour() { if (ac) burst(ac.currentTime, .5, { from: 2200, to: 700, type: 'bandpass', q: .7, vol: .24, attack: .05, buf: noise }); }
+// Ichigo asleep: a soft little snore, a rattly breath in and a whistling breath out.
+export function playSnore() {
+  if (!ac) return;
+  const at = ac.currentTime, o = ac.createOscillator(), rattle = ac.createOscillator(), rg = ac.createGain(), f = ac.createBiquadFilter(), g = ac.createGain();
+  o.type = 'sawtooth'; o.frequency.setValueAtTime(88, at); o.frequency.linearRampToValueAtTime(112, at + .8);
+  rattle.type = 'square'; rattle.frequency.value = 24; rg.gain.value = .03; rattle.connect(rg); rg.connect(g.gain);   // (the rattle: its loudness flutters)
+  f.type = 'lowpass'; f.frequency.setValueAtTime(260, at); f.frequency.linearRampToValueAtTime(520, at + .7);
+  g.gain.setValueAtTime(0, at); g.gain.linearRampToValueAtTime(.06, at + .45); g.gain.linearRampToValueAtTime(0, at + .9);
+  const gate = ac.createGain(); gate.gain.setValueAtTime(0, at); gate.gain.linearRampToValueAtTime(1, at + .2); gate.gain.setValueAtTime(1, at + .7); gate.gain.linearRampToValueAtTime(0, at + .95);
+  o.connect(f); f.connect(g); g.connect(gate); gate.connect(fx); o.start(at); rattle.start(at); o.stop(at + 1); rattle.stop(at + 1);
+  burst(at + .1, .7, { from: 500, to: 1100, type: 'bandpass', q: 1.2, vol: .05, attack: .35, buf: noise });
+  burst(at + 1.25, .8, { from: 1500, to: 700, type: 'bandpass', q: 5, vol: .07, attack: .2, buf: noise });
+}
+// Ichigo, pinched: a small "waa", sliding down.
+export function playCry() {
+  if (!ac) return;
+  for (const [d, top, len] of [[0, 620, .3], [.38, 560, .45]]) {
+    const at = ac.currentTime + d, o = ac.createOscillator(), vib = ac.createOscillator(), vg = ac.createGain(), f = ac.createBiquadFilter(), g = ac.createGain();
+    o.type = 'triangle'; o.frequency.setValueAtTime(top * .8, at); o.frequency.linearRampToValueAtTime(top, at + .06); o.frequency.exponentialRampToValueAtTime(top * .62, at + len);
+    vib.frequency.value = 9; vg.gain.value = 14; vib.connect(vg); vg.connect(o.frequency);
+    f.type = 'bandpass'; f.frequency.value = 1000; f.Q.value = .8;
+    g.gain.setValueAtTime(0, at); g.gain.linearRampToValueAtTime(.14, at + .05); g.gain.exponentialRampToValueAtTime(.001, at + len);
+    o.connect(f); f.connect(g); g.connect(fx); o.start(at); vib.start(at); o.stop(at + len); vib.stop(at + len);
+  }
+}
+export function playHiss() { if (ac) { burst(ac.currentTime, 1.1, { from: 6500, to: 2500, type: 'highpass', vol: .22, attack: .03, buf: noise }); burst(ac.currentTime, .5, { from: 600, to: 200, vol: .4 }); } }
+export function playClick(pitch = 1) {
+  if (!ac) return;
+  for (const d of [0, .07]) { const at = ac.currentTime + d, o = ac.createOscillator(), g = ac.createGain();
+    o.type = 'triangle'; o.frequency.value = 1500 * pitch; g.gain.setValueAtTime(.07, at); g.gain.exponentialRampToValueAtTime(.001, at + .04); o.connect(g); g.connect(fx); o.start(at); o.stop(at + .05); }
 }
 
 // ============================================================================

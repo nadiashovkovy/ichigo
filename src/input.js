@@ -15,7 +15,7 @@ export const input = { jumpBuffer: 0, usePressed: false, anyPressed: false, key:
 const JUMP_KEYS = ['Space', 'ArrowUp', 'KeyW', 'KeyZ'];
 const USE_KEYS = ['ArrowDown', 'KeyS', 'KeyE'];   // "use": dig, fill the bucket, pour it
 addEventListener('keydown', e => {
-  if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Space'].includes(e.code)) e.preventDefault();
+  if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Space', 'Tab'].includes(e.code)) e.preventDefault();
   if (!keys[e.code] && JUMP_KEYS.includes(e.code)) input.jumpBuffer = 0.14;
   if (!keys[e.code] && USE_KEYS.includes(e.code)) input.usePressed = true;
   if (!e.repeat) input.key = e.code;

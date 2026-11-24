@@ -2,7 +2,7 @@
   "number": 1,
   "name": "The Great Wave",
   "age": 3,
-  "learns": ["kaa-chan"],
+  "learns": ["kaa-chan", "umi"],
   "length": 6500,
   "sea": { "base": 5, "grow": 12, "growOver": 5200 },
   "islandTop": 395,

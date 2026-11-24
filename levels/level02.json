@@ -1,0 +1,18 @@
+{
+  "number": 2,
+  "name": "The Tide Comes In",
+  "age": 3,
+  "learns": ["kani"],
+  "length": 4480,
+  "sea": { "base": 3, "grow": 0, "growOver": 5200 },
+  "fuji": { "view": "night", "x": 170 },
+  "lantern": 427,
+  "island": [[-13, -46], [67, -14], [137, 0], [237, 14], [317, 29], [361, 43], [379, 50], [475, 50], [493, 43], [537, 29], [617, 14], [717, 0], [787, -14], [867, -46]],
+  "sets": [
+    { "tide": 0,  "gap": 4.6, "burn": 0.022, "thing": ["bowl", "right"],     "crabs": [],                "waves": [["right", 44], ["left", 44], ["right", 48], ["left", 48], ["right", 52]] },
+    { "tide": 7,  "gap": 4.5, "burn": 0.030, "thing": ["streamer", "left"],  "crabs": ["right"],         "waves": [["left", 48], ["right", 48], ["left", 52], ["right", 52], ["left", 54], ["right", 54]] },
+    { "tide": 14, "gap": 4.3, "burn": 0.036, "thing": ["float", "right"],    "crabs": ["left"],          "waves": [["left", 48], ["right", 48], ["left", 52], ["right", 52], ["left", 56], ["right", 56]] },
+    { "tide": 20, "gap": 4.1, "burn": 0.041, "thing": ["sandal", "left"],    "crabs": ["right", "left"], "waves": [["right", 46], ["left", 46], ["right", 50], ["left", 50], ["right", 54], ["left", 54], ["both", 56]] }
+  ],
+  "bar": { "from": 690, "to": 4080, "shell": 2250, "crabs": [1250, 1750, 2700, 3150, 3500], "goal": 4270 }
+}

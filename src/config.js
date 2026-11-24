@@ -53,10 +53,18 @@ export const P = {
   night: '#0b1428', indigo: '#373a79', plum: '#352d56', violet: '#4e395d', mauve: '#80595f',   // the sky, from the top down
   rosewood: '#7f383e', ember: '#d8453a',                     // the sunset glow, and the red flecks in the clouds
   ocean: '#1e5e89', abyss: '#123744', aqua: '#afd6df', mist: '#d7eaed',   // the sea, its foam lines; pale light
+  glow: '#5fd8e6',                                          // sea-fireflies (drawn exactly: the world isn't snapped to it)
   // the same pigments, aged: the Hokusai prints (dawn.js) as they are now, nearly two hundred years on.
   // Their whites have yellowed to old paper, and their inks have softened and faded unevenly.
   paper: '#efe2c3', fadeNavy: '#34466e', fadeBlue: '#5d7ba0', fadeSky: '#a0b5bd',
   fadeRed: '#c45c40', fadeGreen: '#93a26c', fadeOchre: '#d3b37c', fadeInk: '#30344a',
+};
+
+// Materials: the same few colours for the same stuff everywhere, light to dark. (Use these before
+// reaching for another colour: it's what makes the levels, the beach and the islands one place.)
+export const RAMP = {
+  sand: [P.sky, P.tan, P.tanD, P.bark], wood: [P.tan, P.ochre, P.wood, P.brown], straw: [P.ochre, P.olive, P.brown],
+  leaf: [P.grass, P.leaf, P.pine], stone: [P.grey0, P.grey1, P.grey2, P.grey3], cloth: [P.aqua, P.ocean, P.navy], red: [P.red, P.rust],
 };
 
 // The novel's cover: pastel rainbow used for big titles.
@@ -117,4 +125,48 @@ export const BEACH = {
   sulk: 0.45,         // any key gets them up at once, but their lip stays out this long
   hop: 150,           // a tiny hop: how fast Ichigo leaves the sand,
   hopGravity: 1100,   // and how fast they come down (about 8 pixels high, a quarter of a second)
+};
+
+// The lantern island at night, and the sandbar (Level 2, tide.js). Heights (z) go up from `base`, the
+// sea's height at the lowest tide of the night: z = 50 is 50 units above it.
+export const TIDE = {
+  base: 440,          // the screen height (y) of z = 0
+  x0: -45, cell: 8, cells: 118, edge: 4,   // the water's columns (water.js): where they start, how wide, how many; the sea fills `edge` of them at each end
+  seep: 12,           // how fast the sea fills ground lower than it
+  soak: 3.5,          // how fast water left on the sand soaks away
+  wave: { speed: 150, width: 55, start: 110 },   // a wave's speed and half-width; how far off screen it starts
+  // before each wave the sea draws back: how far down; how long that takes; how long until the wave itself sets off
+  pull: { depth: 17, time: 2, lead: 3.6 },
+  asleep: .6,        // seconds asleep after the story cards, before the wave that wakes Ichigo sets off
+  wakeWave: 115,      // how high it is
+  calm: 3,            // seconds at the start of a set, while the tide rises to its new height
+  ends: 7,            // seconds after a set's last wave, for it to come in and go out again
+  // the sea-fireflies a wave leaves on the sand as it drains: clusters at least this far apart; how long they shine;
+  // how many scoops are in one, and in one on sand the sea only bares when it draws back
+  glow: { apart: 26, life: 8.5, near: 1, far: 2, most: 14 },
+  reach: 24,          // how close Ichigo must be to scoop up a cluster, or pick something up
+  scoop: .24,         // seconds for a scoop
+  bucket: 6,          // how many scoops the bucket holds
+  heavy: .07,         // each scoop in it slows Ichigo by this share of walking speed
+  canRun: 2,          // and with more than this many, they can't run
+  feed: .065,         // how much of the lantern's light one scoop gives back (1 = all of it)
+  first: .55,         // how much light the lantern has at the start of the night
+  atLeast: .45,       // and after a new tomorrow, at least this much
+  kinder: .12,        // each new tomorrow in a set, the lantern burns this much slower (three times at most)
+  by: 52,             // how near the lantern Ichigo must be to feed it
+  light: [46, 250],   // how far the lantern's light reaches, nearly out and full
+  knock: 15, rush: 30,   // water deeper than this, going faster than this, knocks Ichigo over
+  down: 1,            // seconds to get up again
+  under: 26, underTime: .12,   // and a wave deeper than this, for this long, takes Ichigo: a new tomorrow, from the start of the night
+  wade: .6,           // wading: this share of walking speed
+  waist: 24,          // Ichigo can't walk out into water deeper than this
+  shove: 1.1,         // how much of the water's speed pushes Ichigo along
+  ebb: 5,             // seconds for the tide to go out at dawn
+  low: -30,           // how low it goes
+  rise: 1.95,         // the sandbar: how fast the tide comes back (units a second)
+  deep: 19, deepTime: .35,   // water this deep for this long takes Ichigo: a new tomorrow
+  shellTime: 1,       // picking up the shell
+  crab: { speed: 34, from: 78, to: 190, cry: 1.2, hide: 4, reach: 10, clear: 4 },   // crabs on the island: how fast, between how near the lantern and how far; how long a pinch makes Ichigo cry; how long the crab then hides; how near it must be to pinch, and how high a hop clears it
+  hop: 235,           // how fast Ichigo leaves the sand: higher than on the beach, so crabs are easy to hop over
+  stumble: .5,        // a crab on the sandbar
 };
