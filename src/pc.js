@@ -1,8 +1,11 @@
 // ============================================================================
-// pc.js — the PC around the game: builds the chunky mid-90s keyboard under the monitor, presses
-// its keys when you press the real ones, and works the monitor's power button.
+// pc.js — the PC monitor around the game: works its power button, and full screen. (It also has the
+// chunky mid-90s keyboard that sat under the monitor, whose keys press along with the real ones:
+// commented out for now, as are its parts of index.html and css/style.css.)
 // ============================================================================
+import { soundPower } from './audio.js';
 
+/* (the keyboard, switched off)
 // --- the keyboard: a 1990s 101-key layout, in key units (1 = one letter key) ---
 // Each key: [x, y, w, h, label, code, grey]. grey = a darker grey keycap (modifiers, function keys...)
 const keys = [];
@@ -51,12 +54,10 @@ for (const [x, y, w, h, label, code, grey] of keys) {
 // the status-light panel above the number pad
 board.insertAdjacentHTML('beforeend', `<span class="status" style="left:calc(var(--k)*${19.5 + PAD_X});top:calc(var(--k)*${PAD_Y})">
   <span><i></i>Num Lock</span><span><i class="on"></i>Caps Lock</span><span><i></i>Scroll Lock</span></span>`);
+*/
 
-// --- full screen: right up close to the monitor ---
-// The button sits outside the PC. In full screen (the 'full' class, see style.css) the monitor's
-// casing fills the display and the game is zoomed as big as fits inside its bezel. Esc (or F) leaves
-// full screen.
-const fsButton = document.getElementById('fullscreen');
+// --- full screen (F, or in the settings) ---
+// The game looks the same as in the window, just bigger. Esc (or F) leaves full screen.
 const page = document.documentElement;
 const fsElement = () => document.fullscreenElement || document.webkitFullscreenElement;
 const fsSupported = page.requestFullscreen || page.webkitRequestFullscreen;
@@ -66,27 +67,21 @@ export function toggleFullscreen() {
   if (fsElement()) (document.exitFullscreen || document.webkitExitFullscreen).call(document);
   else (page.requestFullscreen || page.webkitRequestFullscreen).call(page);
 }
-function onFullscreenChange() {
-  page.classList.toggle('full', !!fsElement());
-  dispatchEvent(new Event('resize'));   // re-fit the game (src/pixel.js)
-}
-if (fsSupported) {
-  fsButton.addEventListener('click', e => { e.currentTarget.blur(); toggleFullscreen(); });
-  document.addEventListener('fullscreenchange', onFullscreenChange);
-  document.addEventListener('webkitfullscreenchange', onFullscreenChange);
-  addEventListener('keydown', e => { if (e.code === 'KeyF' && !e.repeat && !e.metaKey && !e.ctrlKey) toggleFullscreen(); });
-} else fsButton.hidden = true;   // e.g. iPhone Safari, which can't make a page full screen
+// (Not every browser can: e.g. iPhone Safari can't make a page full screen.)
+if (fsSupported) addEventListener('keydown', e => { if (e.code === 'KeyF' && !e.repeat && !e.metaKey && !e.ctrlKey) toggleFullscreen(); });
 
+/* (the keyboard, switched off)
 // press the keyboard's keys along with the real ones
 const press = (e, down) => board.querySelectorAll(`[data-code="${e.code}"]`).forEach(k => k.classList.toggle('down', down));
 addEventListener('keydown', e => press(e, true));
 addEventListener('keyup', e => press(e, false));
 addEventListener('blur', () => board.querySelectorAll('.down').forEach(k => k.classList.remove('down')));
+*/
 
 // --- the power button: switch the monitor off and on, with a CRT animation ---
 // Off: the picture collapses to a bright line, then a dot, then fades (a faint afterglow lingers).
 // On: the dot blooms back into a line and the picture opens up, flickering as the tube warms up.
-// The game pauses while the PC is off (see main.js).
+// The game pauses while the PC is off (see main.js), and the sound stops (see audio.js).
 export const pc = { on: true };
 const pcEl = document.querySelector('.pc'), power = document.querySelector('.power'), pictureEl = document.querySelector('.picture');
 let busy = false;
@@ -94,6 +89,7 @@ power.addEventListener('click', () => {
   if (busy) return;
   busy = true; power.blur();
   const turningOff = pc.on;
+  soundPower(!turningOff);   // (as soon as the button is pressed, not when the picture has gone)
   power.setAttribute('aria-pressed', String(!turningOff));
   if (turningOff) pcEl.classList.add('powering-off');
   else { pcEl.classList.remove('off'); pcEl.classList.add('powering-on'); pc.on = true; }

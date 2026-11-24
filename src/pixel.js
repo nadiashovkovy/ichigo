@@ -1,10 +1,10 @@
 // ============================================================================
 // pixel.js — the pixel-art pipeline.
-// The world is drawn onto a small 640×480 canvas (640×360 in full screen); every pixel is then snapped to the
+// The world is drawn onto a small 640×360 canvas; every pixel is then snapped to the
 // woodblock palette using checkerboard ("ordered") dithering, and the result is blown up
 // to the window with hard pixel edges.
 // ============================================================================
-import { LW, LH, PIXEL, W, H, TOP, P, setWide } from './config.js';
+import { LW, LH, PIXEL, W, H, TOP, P } from './config.js';
 
 const cv = document.getElementById('c'), ctx = cv.getContext('2d');
 export const canvas = cv;
@@ -14,40 +14,26 @@ export const lo = layer(), lg = lo.getContext('2d', { willReadFrequently: true }
 export const topC = layer(), tg = topC.getContext('2d', { willReadFrequently: true });  // sea + wreckage + overlays
 
 let dpr = 1, k = 1;
-// The game sits in the screen of the PC drawn around it (index.html + css/style.css).
-// Pick the biggest whole-number zoom k (device pixels per art pixel) at which the whole PC fits
-// the window, then size the screen to exactly LW·k × LH·k device pixels, so every art pixel is a
-// perfect k×k square. (If that would waste much of the window, as when a 640-pixel-wide game doesn't
-// quite fit twice over, the zoom isn't rounded down: pixels then differ by one device pixel here and
-// there, which is hard to see at these sizes.) The PC's own size follows the screen's size in CSS (--sw, --sh).
-const root = document.documentElement, setup = document.querySelector('.pc');
-function setScreen(sw, sh) { root.style.setProperty('--sw', sw + 'px'); root.style.setProperty('--sh', sh + 'px'); }
-// How big the whole PC (monitor and keyboard) is, relative to its screen, measured from the page.
-function setupScale() {
-  setScreen(LW, LH);
-  let r = setup.getBoundingClientRect(), L = r.left, T = r.top, R = r.right, B = r.bottom;
-  for (const el of setup.querySelectorAll('.keyboard')) {   // tipped back in 3D, so measured on its own
-    const q = el.getBoundingClientRect(); L = Math.min(L, q.left); T = Math.min(T, q.top); R = Math.max(R, q.right); B = Math.max(B, q.bottom);
-  }
-  return [(R - L) / LW, (B - T) / LH];
-}
+// The game sits in the screen of the PC monitor drawn around it (index.html + css/style.css), whose
+// casing fills the window.
+// Pick the biggest whole-number zoom k (device pixels per art pixel) at which the screen, its bezel and
+// the chin under it fit the window, then size the screen to exactly LW·k × LH·k device pixels, so every
+// art pixel is a perfect k×k square. (If that would waste much of the window, as when a 640-pixel-wide
+// game doesn't quite fit twice over, the zoom isn't rounded down: pixels then differ by one device pixel
+// here and there, which is hard to see at these sizes.) The monitor's own size follows the screen's in CSS (--sw, --sh).
+// The room left around the screen, as shares of its width (see style.css):
+const EDGE = 2 * (.016 + .014);          // the bezel and a little casing beyond it, left and right
+const CHIN = 2 * .016 + .012 + .036;     // the bezel above and below, the casing on top, the chin
+const root = document.documentElement;
 function resize() {
   dpr = window.devicePixelRatio || 1;
-  // In full screen (see src/pc.js) the monitor's casing fills the display, so the screen only needs
-  // room for its bezel all round: 1.6% + the .6% dark rim of the screen's width (see style.css),
-  // plus a little casing showing beyond it.
-  const full = root.classList.contains('full');
-  setWide(full);   // 16:9 in full screen, 4:3 on the PC
-  if (lo.width !== LW || lo.height !== LH) { lo.width = topC.width = LW; lo.height = topC.height = LH; }
-  const edge = 2 * (.016 + .006 + .008);
-  const [sx, sy] = full ? [1 + edge, 1 + edge * LW / LH] : setupScale(), margin = full ? 1 : .96;
-  const footer = full ? 0 : (document.getElementById('footer')?.offsetHeight || 0);   // (the page's footer takes a strip off the bottom)
-  const fit = Math.min(innerWidth * margin / (LW * sx), (innerHeight - footer) * margin / (LH * sy)) * dpr;
+  const sx = 1 + EDGE, sy = 1 + CHIN * LW / LH;
+  const fit = Math.min(innerWidth / (LW * sx), innerHeight / (LH * sy)) * dpr;
   k = fit >= 1 && Math.floor(fit) >= fit * .85 ? Math.floor(fit) : fit;   // whole-number zoom, unless that wastes too much room
   cv.width = Math.round(LW * k); cv.height = Math.round(LH * k);
   const sw = cv.width / dpr, sh = cv.height / dpr;
   cv.style.width = sw + 'px'; cv.style.height = sh + 'px';
-  setScreen(sw, sh);
+  root.style.setProperty('--sw', sw + 'px'); root.style.setProperty('--sh', sh + 'px');
   // Centring the monitor can leave the screen on a half pixel, which would blur the game. Nudge the
   // canvas onto the nearest whole device pixel.
   cv.style.transform = '';
@@ -56,7 +42,7 @@ function resize() {
 }
 addEventListener('resize', resize); resize();
 
-// Drawing modes: "world" = game units (see config.js); "pixel" = real art pixels (640×480 or 640×360).
+// Drawing modes: "world" = game units (see config.js); "pixel" = real art pixels (640×360).
 // (World y = 0 sits TOP units down the screen; the space above it is extra sky.)
 export function beginWorld() { lg.setTransform(1 / PIXEL, 0, 0, 1 / PIXEL, 0, TOP / PIXEL); }
 export function beginTop() { tg.setTransform(1 / PIXEL, 0, 0, 1 / PIXEL, 0, TOP / PIXEL); tg.clearRect(0, -TOP, W, H + TOP); }

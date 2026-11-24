@@ -280,7 +280,7 @@ function picture(who, frame, mini) {
   const pic = { grid: outline(grid), anchor: Math.floor(L.anchor * (mini ? .75 : 1)) };
   cache.set(key, pic); return pic;
 }
-const mini = () => PIXEL > 1.1;   // full screen: 3/4 size, like Ichigo
+const mini = () => PIXEL > 1.1;   // the 16:9 screen: 3/4 size, like Ichigo
 
 // How tall a frame is, in pixels (for placing speech bubbles over their heads).
 export const personHeight = (who, frame) => picture(who, frame, mini()).grid.length;

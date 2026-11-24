@@ -2,10 +2,11 @@
    drawn here in plain CSS (smooth, not pixelated). The game itself and the mouse pointer are the only
    pixel art on the page.
 
-   Sizes: src/pixel.js sets --sw × --sh, the screen's size (a zoom of the game's 640×480 pixels, or
-   640×360 in full screen; whole-number where it fits). Everything about the monitor is measured in --u,
-   1% of the screen's width, so the whole PC scales together (src/pixel.js measures the whole PC to decide how big it can be). */
-:root { --sw: 960px; --sh: 720px; --u: calc(var(--sw) / 100); --k: calc(var(--u) * 3.8); --gap: calc(var(--k) * .1); }   /* --k: one keyboard key */
+   Sizes: src/pixel.js sets --sw × --sh, the screen's size (a zoom of the game's 640×360 pixels;
+   whole-number where it fits). Everything about the monitor is measured in --u, 1% of the screen's
+   width, so it all scales together. src/pixel.js leaves room for the bezel and the chin when it picks
+   the zoom: if you change their sizes here, change EDGE and CHIN there. */
+:root { --sw: 960px; --sh: 540px; --u: calc(var(--sw) / 100); }
 
 /* The pixel-art pointer, a classic Windows-style arrow (assets/cursor.png, drawn at 2× and 4×). */
 html, body, canvas, .tb {
@@ -15,22 +16,18 @@ html, body, canvas, .tb {
 }
 
 html, body { margin: 0; height: 100%; overflow: hidden; touch-action: none; -webkit-user-select: none; user-select: none; }
-body { display: flex; align-items: center; justify-content: center; background: #163F9F; box-sizing: border-box; padding-bottom: 30px; }   /* (room for the footer) */
+body { display: flex; align-items: center; justify-content: center; background: #163F9F; }
 
-/* The PC: monitor on a stand, with the keyboard in front of it. */
-.pc { position: relative; display: flex; flex-direction: column; align-items: center; }
-
+/* You're right up close to the monitor: its casing fills the window around the screen, with the chin
+   (the badge, the vents, the power button) along the bottom. */
 .monitor {
-  position: relative; padding: calc(var(--u) * 3.2) calc(var(--u) * 4.5) 0;
-  border-radius: calc(var(--u) * 2.2) calc(var(--u) * 2.2) calc(var(--u) * 1.4) calc(var(--u) * 1.4);
+  position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding-top: calc(var(--u) * 1.2); box-sizing: border-box;
   background: linear-gradient(170deg, #f0ede4, #e3dfd4 55%, #d9d4c8);
-  box-shadow:
-    inset 0 calc(var(--u) * .25) 0 rgba(255, 255, 255, .7),
-    inset 0 calc(var(--u) * -.5) calc(var(--u) * 1) rgba(0, 0, 0, .12),
-    0 calc(var(--u) * 3) calc(var(--u) * 6) rgba(0, 0, 0, .45);
+  box-shadow: inset 0 0 calc(var(--u) * 4) rgba(0, 0, 0, .22);
 }
 .bezel {
-  padding: calc(var(--u) * 2.6); border-radius: calc(var(--u) * 1.6);
+  padding: calc(var(--u) * 1.6); border-radius: calc(var(--u) * 1.6); flex: none;
   background: linear-gradient(#dad5ca, #d2cdc1);
   box-shadow: inset 0 calc(var(--u) * .4) calc(var(--u) * .8) rgba(0, 0, 0, .3), inset 0 calc(var(--u) * -.2) 0 rgba(255, 255, 255, .45);
 }
@@ -49,7 +46,7 @@ canvas { display: block; image-rendering: pixelated; image-rendering: crisp-edge
   box-shadow: inset 0 0 calc(var(--u) * 2.5) rgba(0, 0, 0, .55);
 }
 .chin {
-  height: calc(var(--u) * 7); display: flex; align-items: center; justify-content: space-between;
+  flex: none; width: calc(var(--sw) + var(--u) * 3.2); height: calc(var(--u) * 3.6); box-sizing: border-box; display: flex; align-items: center; justify-content: space-between;
   padding: 0 calc(var(--u) * 1.5);
 }
 .badge {
@@ -97,6 +94,10 @@ button.power { border: 0; margin: 0; font: inherit; cursor: inherit; }   /* (a r
 .pc.off .afterglow { animation: afterglow 1.6s ease-out forwards; }
 @keyframes afterglow { 0% { opacity: .9; } 100% { opacity: 0; } }
 
+/* Switched off (nothing inside "@media not all" applies; it's CSS's way to comment out rules that have
+   comments of their own): the monitor's stand and the keyboard in front of it. */
+@media not all {
+:root { --k: calc(var(--u) * 3.8); }   /* one keyboard key */
 .neck { width: calc(var(--sw) * .3); height: calc(var(--u) * 4);
   background: linear-gradient(90deg, #cfcabf, #e2ded3 45%, #cbc6b9);
   clip-path: polygon(12% 0, 88% 0, 100% 100%, 0 100%); }
@@ -140,7 +141,10 @@ button.power { border: 0; margin: 0; font: inherit; cursor: inherit; }   /* (a r
   font: 700 calc(var(--k) * .13) / 1 Arial, sans-serif; color: #b9b19c; text-transform: uppercase; text-align: center; width: 33%; }
 .status i { width: calc(var(--k) * .24); height: calc(var(--k) * .14); border-radius: calc(var(--k) * .03); background: #3f4a36; }
 .status i.on { background: #7dff8a; box-shadow: 0 0 calc(var(--k) * .3) #4dff63; }
+}
 
+/* Switched off too: the full-screen button and the footer, on the page around the PC. */
+@media not all {
 /* The full-screen button, in the corner of the page outside the PC. */
 #fullscreen { position: fixed; top: 16px; right: 16px; display: flex; align-items: center; gap: 8px; z-index: 2;
   padding: 8px 14px; border: 1px solid #3a3a3a; border-radius: 8px; background: #141414; color: #bdbdbd;
@@ -151,23 +155,14 @@ button.power { border: 0; margin: 0; font: inherit; cursor: inherit; }   /* (a r
 #fullscreen svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 #fullscreen[hidden] { display: none; }
 
-/* Full screen: you're right up close to the monitor. Its casing fills the display around the screen
-   (with a slimmer bezel, so the game stays big); the stand, chin and keyboard are out of view.
-   src/pixel.js leaves room for the bezel when it picks the zoom. */
-.full #fullscreen, .full .chin, .full .neck, .full .foot, .full .desk { display: none; }
-.full .monitor { position: fixed; inset: 0; padding: 0; border-radius: 0; display: flex; align-items: center; justify-content: center;
-  box-shadow: inset 0 0 calc(var(--u) * 4) rgba(0, 0, 0, .22); }
-.full .bezel { padding: calc(var(--u) * 1.6); }
-
-/* The footer, along the bottom of the page (hidden in full screen). */
+/* The footer, along the bottom of the page. */
 #footer { position: fixed; left: 0; right: 0; bottom: 0; height: 30px; display: flex; align-items: center; justify-content: center;
   font: 500 12px/1 -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif; letter-spacing: .02em;
   color: rgba(255, 255, 255, .6); pointer-events: none; }
-.full body { padding-bottom: 0; }
-.full #footer { display: none; }
+}
 
-/* On-screen buttons for touch devices. */
-#touch { position: fixed; left: 0; right: 0; bottom: 14px; display: none; justify-content: space-between; padding: 0 14px; pointer-events: none; }
+/* On-screen buttons for touch devices (above the chin, so they don't cover the power button). */
+#touch { position: fixed; left: 0; right: 0; bottom: max(14px, calc(var(--u) * 5)); display: none; justify-content: space-between; padding: 0 14px; pointer-events: none; }
 #touch .grp { display: flex; gap: 12px; }
 .tb { pointer-events: auto; width: 64px; height: 64px; background: rgba(13,23,71,.55); border: 3px solid #141414; box-shadow: 3px 3px 0 #f08aa6;
       color: #f4eedb; font: bold 22px monospace; display: flex; align-items: center; justify-content: center; }

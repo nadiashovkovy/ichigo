@@ -6,21 +6,21 @@
 // ART STYLE: the game's global style settings. (The art is drawn by code onto a canvas,
 // where CSS can't reach it, so these constants do that job.)
 //
-// The screen is a grid of art pixels: 640×480 on the PC (4:3, like a 1996 SVGA monitor), and
-// 640×360 (16:9) in full screen. Every line, outline, dot and edge in the art is a whole number of
-// these pixels: write sizes of lines as px(n) ("n pixels") and snap positions with onPixel().
+// The screen is a grid of 640×360 art pixels (16:9). Every line, outline, dot and edge in the art is
+// a whole number of these pixels: write sizes of lines as px(n) ("n pixels") and snap positions with
+// onPixel().
 //
-// Both screens show the same 480 game units of height (the bottom of the 540-unit-tall world: the
-// sea, the wreckage and Ichigo; the high sky is cropped). Full screen zooms out to fit it into 360
-// rows, and shows more of the world to the sides: 853×480 units instead of 640×480.
-// PIXEL is how much of the world one art pixel covers, in game units: 1 on the PC, 4/3 in full screen.
+// It shows 853×480 game units of the world: the bottom of the 540-unit-tall world (the sea, the
+// wreckage and Ichigo; the high sky is cropped).
+// PIXEL is how much of the world one art pixel covers, in game units: 4/3.
+// (The game used to have a 4:3 screen as well, 640×480 with PIXEL = 1. Some of the art can still draw
+// itself at that size.)
 // Pixel art drawn from pictures (Ichigo, lettering, the title card) keeps its size in pixels; see
 // sprite.js for how Ichigo keeps their size in the world.
 // ---------------------------------------------------------------------------
 export const VIEW_H = 480;                                          // game units of height on screen
-export const NARROW = { LW: 640, LH: 480 }, WIDE = { LW: 640, LH: 360 };   // 4:3 and 16:9, in art pixels
-export let LW = NARROW.LW, LH = NARROW.LH;                          // current screen size, in art pixels
-export let PIXEL = VIEW_H / LH, W = LW * PIXEL;                     // game units per pixel; screen width in game units
+export const LW = 640, LH = 360;                                    // screen size, in art pixels
+export const PIXEL = VIEW_H / LH, W = LW * PIXEL;                   // game units per pixel; screen width in game units
 export const px = n => n * PIXEL;                                   // n art pixels, in game units
 export const onPixel = v => Math.round(v / PIXEL) * PIXEL;          // snap a game-unit position to the pixel grid
 export const toPx = u => Math.max(1, Math.round(u / PIXEL));       // how many whole pixels (at least one) u game units is
@@ -29,12 +29,8 @@ export const toPx = u => Math.max(1, Math.round(u / PIXEL));       // how many w
 // bottom (the sea). TOP is the difference: extra sky above the world (positive), or how much of the
 // world's high sky is cropped off (negative). World y = 0 is TOP units down the screen.
 export const H = 540;
-export let TOP = VIEW_H - H;
-export let TOP_PX = TOP / PIXEL;                     // the extra sky, in art pixels
-export function setWide(wide) {
-  ({ LW, LH } = wide ? WIDE : NARROW);
-  PIXEL = VIEW_H / LH; W = LW * PIXEL; TOP_PX = TOP / PIXEL;
-}
+export const TOP = VIEW_H - H;
+export const TOP_PX = TOP / PIXEL;                   // the extra sky, in art pixels
 
 export const SEA = 430;                 // resting height of the sea surface (in game units, y grows downward)
 

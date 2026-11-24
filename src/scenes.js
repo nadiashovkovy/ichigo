@@ -30,7 +30,7 @@ export function startLevel() {
 export function drawTitle() {
   pixelSpace(lg);
   const { x, w } = drawTitleArt(lg, S.T);
-  // The words, over the sky on the right, clear of the wave's claws. (Full screen's shorter chart
+  // The words, over the sky on the right, clear of the wave's claws. (The 16:9 screen's shorter chart
   // brings the claws higher, so the words sit further right and closer together there.)
   const wide = LW / LH > 1.5, tx = x + Math.round(w * (wide ? .78 : .725));
   const [cover, ys] = wide ? [60, [8, 82, 106, 124, 142, 166]] : [72, [10, 96, 124, 142, 160, 188]];

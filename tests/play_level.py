@@ -3,8 +3,7 @@ Automated play-test for Ichigo.
 
 What it does:
   1. Serves the game from this folder on a local web server.
-  2. Opens it in a headless Chrome, twice: at the PC's 4:3 size, then in full screen (16:9). Opens
-     the settings (P) on the title, its controls page, and the list of all levels from it; then
+  2. Opens it in a headless Chrome. Opens the settings (P) on the title, its controls page, and the list of all levels from it; then
      begins: Level 0's cards, then Level 1.
   3. Plays the beach before the wave: walks right to the water (tripping over the shovel on the way,
      and sitting through the plaster), fills the bucket, walks back, digs, pours, and again, until
@@ -12,7 +11,7 @@ What it does:
   4. Lets a simple "bot" play Level 1: it walks, runs before wide gaps, jumps near the end of each
      piece of wreckage, keeps its balance while waiting for drifting planks, and rests on the boat
      long enough for Ichigo to sit down and look back.
-  5. Takes screenshots of each moment worth looking at (tests/screens/; full screen ones end in _wide),
+  5. Takes screenshots of each moment worth looking at (tests/screens/),
      and reports page errors, where the bot fell in, whether it reached the lantern, and the save.
 
 Run it from the project folder:
@@ -83,10 +82,9 @@ async def wait_for(page, js, timeout=60, step=100):
         await page.wait_for_timeout(step)
     return False
 
-async def play(browser, wide):
+async def play(browser):
     """One full run. Returns a dict of what happened."""
-    tag = '_wide' if wide else ''
-    shot = lambda name: page.screenshot(path=f'{SHOTS}/{name}{tag}.png')
+    shot = lambda name: page.screenshot(path=f'{SHOTS}/{name}.png')
     ctx = await browser.new_context(viewport={'width': 960, 'height': 540})   # (a fresh context: an empty save)
     if SKIP_BEACH:
         await ctx.add_init_script("localStorage.setItem('ichigo.save', JSON.stringify({ words: [], marks: [], tomorrows: 0, seenWave: true }))")
@@ -95,8 +93,6 @@ async def play(browser, wide):
     page.on('pageerror', lambda e: errors.append(str(e)))
     # Only real code errors count. (Failed downloads, e.g. the Google font when offline, don't.)
     await page.goto(f'http://127.0.0.1:{PORT}/index.html')
-    if wide:   # full screen, as the F key gives it (headless Chrome can't really go full screen)
-        await page.evaluate("document.documentElement.classList.add('full'); dispatchEvent(new Event('resize'))")
     await page.wait_for_timeout(2500)
     await shot('1-title')
     # Read the story cards like a quick reader: a press shows the whole card, the next moves on.
@@ -174,7 +170,7 @@ async def main():
     ok = True
     async with async_playwright() as p:
         browser = await p.chromium.launch(executable_path=CHROME, args=['--no-sandbox']) if CHROME else await p.chromium.launch()
-        runs = [('4:3 PC', await play(browser, False)), ('full screen', await play(browser, True))]
+        runs = [('16:9', await play(browser))]
         await browser.close()
     httpd.shutdown()
 

@@ -4,7 +4,7 @@
 // flip-flops, yellow bucket — all from the novel.
 // Each frame is a little picture made of letters; each letter is a colour (see SP). Frames face
 // right; drawSprite mirrors them. A dark outline is added around every frame automatically.
-// In full screen (where each pixel covers 4/3 as much of the world) Ichigo is shrunk to 3/4 size
+// On the 16:9 screen (where each pixel covers 4/3 as much of the world) Ichigo is shrunk to 3/4 size
 // to keep their size in the world: see small().
 // ============================================================================
 import { P, PIXEL } from './config.js';
@@ -358,7 +358,7 @@ function picture(frame, scars, mini, [hx, hy] = [0, 0], marks = []) {
                 number: number && { x: Math.floor(number.x * k), y: Math.floor(number.y * k) + 1 } };
   cache.set(key, pic); return pic;
 }
-const mini = () => PIXEL > 1.1;   // full screen: draw Ichigo at 3/4 size
+const mini = () => PIXEL > 1.1;   // the 16:9 screen: draw Ichigo at 3/4 size
 export const spriteHeight = () => picture('stand', 0, mini()).grid.length;
 
 // x = centre, y = feet, in art pixels. face = 1 (right) or -1 (left). hair = [how far it's blown

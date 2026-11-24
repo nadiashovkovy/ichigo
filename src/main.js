@@ -122,7 +122,7 @@ loadLevel(LEVEL_FILE).then(() => { requestAnimationFrame(frame); prepareDawns();
   document.body.insertAdjacentHTML('beforeend', `<pre style="position:fixed;top:10px;left:10px;color:#b8322a">${err.message}\nIf you opened index.html straight from your computer, run a small local server instead (see README).</pre>`);
 });
 
-let resized; addEventListener('resize', () => { clearTimeout(resized); resized = setTimeout(prepareDawns, 300); });   // (full screen has its own size of print)
+let resized; addEventListener('resize', () => { clearTimeout(resized); resized = setTimeout(prepareDawns, 300); });   // (made again at the new size)
 
 // Handy for testing in the browser console: window.ichigo.S, window.ichigo.PL …
 import { keys } from "./input.js";

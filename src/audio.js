@@ -13,6 +13,7 @@
 // Browsers only allow sound after the player has pressed something, so nothing starts until the
 // first key press or tap. M turns all sound off and on; settings (settings.js) can turn the music and
 // the sound effects off separately, and set the volume. All remembered in the save.
+// Switching the PC off (its power button, pc.js) stops the sound until it's switched on again.
 // (Smaller sounds — splashes on the beach, the trip, pouring — are still to come; the places
 // they will go are marked "SOUND:" in the code.)
 // ============================================================================
@@ -26,8 +27,10 @@ const BEATS = [1, 1, 1, 1, 1, 1, 2];
 const TEMPO = 84;   // beats a minute: slow, a lullaby
 
 let ac = null, master = null, musicOut = null, sfxOut = null, hum = null, noise = null, brown = null, musicBus = null, fx = null;
+let powered = true;   // is the PC switched on? (the power button, pc.js)
 
 function start() {   // (on the first key press or tap)
+  if (!powered) return;   // (a key pressed while the PC is off mustn't wake the sound)
   if (ac) { if (ac.state === 'suspended') ac.resume(); return; }
   const AC = window.AudioContext || window.webkitAudioContext;
   if (!AC) return;
@@ -54,16 +57,25 @@ addEventListener('touchstart', start);
 
 // M: sound off and on.
 addEventListener('keydown', e => {
-  if (e.code !== 'KeyM' || e.repeat) return;
+  if (e.code !== 'KeyM' || e.repeat || !powered) return;
   S.muted = !S.muted; save(); applyLevels();
 });
 // Set the volumes from the settings: mute (M), the volume, music on/off, sound effects on/off.
 export function applyLevels() {
   if (!ac) return;
   const t = ac.currentTime;
-  master.gain.setTargetAtTime(S.muted ? 0 : S.volume, t, .05);
+  master.gain.setTargetAtTime(S.muted || !powered ? 0 : S.volume, t, .05);
   musicOut.gain.setTargetAtTime(S.musicOn ? 1 : 0, t, .05);
   sfxOut.gain.setTargetAtTime(S.sfxOn ? 1 : 0, t, .05);
+}
+
+// The PC switched off or on (pc.js). Off: the sound dies away in a blink, then its clock is stopped,
+// so every note, wave and swell waits where it was, like the game does. On: it carries on from there.
+export function soundPower(on) {
+  powered = on;
+  if (on) start();
+  applyLevels();
+  if (!on && ac) setTimeout(() => { if (!powered) ac.suspend(); }, 250);   // (once it has faded: cut dead, it would click)
 }
 
 // One flute note: a sine tone with a slow attack and a gentle vibrato, plus a breath of filtered noise.

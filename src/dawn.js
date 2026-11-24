@@ -11,9 +11,9 @@
 // title label sits in the corner, as on the prints. (The two great close-ups of the mountain, Red Fuji
 // and the Rainstorm, are kept apart in the order.)
 //
-// The prints are laid out on a grid 120 "design cells" tall (160 wide on the PC's 4:3 screen, 213 in
-// full screen), and drawn in finer cells, one pixel each: s of them to a design cell (4 on the PC's
-// 640×480, 3 on full screen's 640×360). Measurements are written in design cells and scaled with S(n);
+// The prints are laid out on a grid 120 "design cells" tall (213 wide; 160 on the old
+// 4:3 screen), and drawn in finer cells, one pixel each: s of them to a design cell (3 on the 640×360
+// screen, 4 on the old 640×480). Measurements are written in design cells and scaled with S(n);
 // cw and ch are the real (fine) grid's size.
 // ============================================================================
 import { LW, LH, P } from './config.js';

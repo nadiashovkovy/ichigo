@@ -35,7 +35,7 @@ If the spec and the script disagree, the spec wins for code and the script wins 
 | `src/wreckage.js`, `src/sea.js` | Floating wreckage, the sea's height |
 | `src/art.js`, `src/title.js`, `src/dawn.js` | Scenery, title card, the Hokusai print shown at each new tomorrow |
 | `src/pixel.js`, `src/text.js` | Pixel pipeline (palette snapping), bitmap font and rainbow cover lettering |
-| `src/input.js`, `src/pc.js` | Keyboard and touch; the 1996 PC frame around the game |
+| `src/input.js`, `src/pc.js` | Keyboard and touch; the 1996 PC monitor around the game |
 | `src/beach.js`, `src/cards.js` | Level 1's playable beach and the wave; story cards |
 | `src/prologue.js`, `src/menu.js` | Level 0 (the premise and the novel, over Hokusai's prints); the list of all levels (locked / unlocked) |
 | `src/audio.js` | All sound, synthesised: the Lullaby, music, sea, gulls, the tsunami, falling in |

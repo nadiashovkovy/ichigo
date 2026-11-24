@@ -11,7 +11,7 @@ const art = new Image(); art.src = 'assets/title_chart.png';
 const SKY = '#dac4a0';   // the chart's paper sky (above it on the PC's taller screen)
 const C = 3;             // pixels per cell
 
-// Draw the chart at the bottom of the screen at time t (on full screen's shorter 16:9 a little of
+// Draw the chart at the bottom of the screen at time t (on the 16:9 screen a little of
 // its sea is cropped off the bottom). Everything moves in whole cells. Returns where it went and how
 // wide it is (in pixels), so the words can be placed on it.
 export function drawTitleArt(g, t) {
