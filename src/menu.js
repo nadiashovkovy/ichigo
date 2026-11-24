@@ -16,7 +16,7 @@ export const LEVEL_NAMES = [
   'THE BAG OF WINDS', 'SHIP GRAVEYARD', 'THE KELP GARDEN', 'LANTERN CAVE', 'SINGING ROCKS',
   'WHIRLPOOL STRAIT', "THE FISHERMEN'S ISLAND", 'THE KIND HOUSE', 'THE RAFT HOME', 'THE LAST STORM', 'HOME',
 ];
-export const BUILT = [0, 1, 2];   // the levels that can be played so far
+export const BUILT = [0, 1, 2, 3];   // the levels that can be played so far
 export const unlocked = n => n <= 1 || S.done.has(n - 1);
 
 const M = { sel: 1, note: 0 };   // the chosen level; how long the "not built yet" note has left

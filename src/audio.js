@@ -167,10 +167,16 @@ const LINES = [
 const TAIKO = [[[0, 1]], [[0, .7], [5, .35]], [[0, 1]], [[0, .7], [4, .4], [5, .5], [6, .8]]];
 // Level 2's night: a few low plucks over a drone, that step up with each set of waves (see music's `shift`).
 const NIGHT = [[[0, 52], [4, 53, 'p']], [[0, 52], [3, 57], [6, 53]], [[0, 52, 'o'], [4, 59, 'g'], [6, 57]], [[2, 64, 'r']]];
+// Level 3's island: warm and slow, in the Lullaby's own scale (D E G A B: no semitones), never quite
+// getting anywhere. (With each plum it's played a semitone lower: see music's `shift`.)
+const ISLE = [[[0, 55, 'o'], [3, 62], [6, 64]], [[0, 57], [4, 64], [6, 67]], [[0, 52, 'o'], [3, 59], [6, 62]], [[0, 50], [4, 57], [6, 59, 'p']],
+  [[0, 55], [2, 59], [4, 62], [6, 67]], [[0, 69], [4, 67]], [[0, 64], [3, 62], [6, 59]], [[0, 55, 'o']]];
+const ISLE_LINES = [null, null, null, null, [[0, 74, 6]], [[0, 71, 4], [4, 69, 4]], [[0, 67, 8]], null, null, null, [[0, 62, 3], [3, 64, 5]], [[0, 67, 8]], [[0, 69, 2], [2, 71, 2], [4, 69, 4]], [[0, 67, 2], [2, 64, 6]], [[0, 62, 8]], null];
 // tempo: beats a minute; koto: its bars; bass: a low note under each bar, in turn; lines: the
 // shakuhachi's bars; loud: how loud the koto is, and the shakuhachi.
 const SONGS = {
   night: { tempo: 50, koto: NIGHT, bass: [28, 28, 28, 28], lines: [null, null, null, null, [[0, 64, 4], [4, 65, 4]], [[0, 64, 8]], null, null], taiko: [[[0, .5]], [], [[0, .4]], []], loud: [.16, .06] },
+  isle:  { tempo: 54, koto: ISLE, bass: [43, 45, 40, 38], lines: ISLE_LINES, taiko: [[], [], [], []], loud: [.2, .07], bell: 55, reeds: [62, 67, 69, 74] },
   sea:   { tempo: 66, koto: KOTO, bass: [40, 45, 41, 40], lines: LINES, taiko: TAIKO, loud: [.26, .1] },
 };
 
@@ -248,7 +254,7 @@ function bass(freq, at, len, out) {
 
 let step = 0, nextStep = 0, playing = null;
 // Call every frame. level: 1 = playing, a little = held quietly under something, 0 = fading away.
-// song: 'sea', 'night' or 'title' (changing song starts the new one from the top).
+// song: 'sea', 'night', 'isle' or 'title' (changing song starts the new one from the top).
 // shift: how many semitones higher to play it (Level 2's night rises with the tide).
 export function music(level, song = 'sea', shift = 0) {
   if (!ac) return;
@@ -263,8 +269,8 @@ export function music(level, song = 'sea', shift = 0) {
     for (const [at, m, how] of M.koto[bar % M.koto.length]) if (at === i) koto(m, nextStep + (how === 'r' ? 0 : Math.random() * .012), i === 0 ? M.loud[0] : M.loud[0] * .8, musicBus, how, STEP * .8, shift);   // (a hair early or late, as a hand is)
     for (const [at, hard] of M.taiko[bar % 4]) if (at === i) taiko(nextStep, hard, musicBus);
     if (i === 0) bass(hz(M.bass[bar % 4] + shift), nextStep, STEP * 8, musicBus);
-    if (i === 0 && bar === 0) templeBell(hz(52 + shift), nextStep, .18, musicBus, 8);                  // each round opens with a temple bell,
-    if (i === 0 && bar === 8) sho([64, 69, 71, 76, 81], nextStep, STEP * 8 * 4, musicBus, .016);       // and a shō breathes under the quiet bars
+    if (i === 0 && bar === 0) templeBell(hz((M.bell || 52) + shift), nextStep, .18, musicBus, 8);                  // each round opens with a temple bell,
+    if (i === 0 && bar === 8) sho(M.reeds || [64, 69, 71, 76, 81], nextStep, STEP * 8 * 4, musicBus, .016);       // and a shō breathes under the quiet bars
     if (M === SONGS.sea && bar === 15) for (const [at, v] of [[4, .02], [5.5, .02], [6.5, .022], [7.2, .024], [7.7, .026]]) if (Math.floor(at) === i) clap(nextStep + (at % 1) * STEP, v, musicBus);   // (the clappers, quickening, before it comes round again)
     for (const [at, m, len] of M.lines[bar] || []) if (at === i) shakuhachi(hz(m + shift), nextStep, len * STEP, musicBus, M.loud[1]);
     nextStep += STEP; step++;
@@ -401,6 +407,49 @@ export function playCry() {
     g.gain.setValueAtTime(0, at); g.gain.linearRampToValueAtTime(.14, at + .05); g.gain.exponentialRampToValueAtTime(.001, at + len);
     o.connect(f); f.connect(g); g.connect(fx); o.start(at); vib.start(at); o.stop(at + len); vib.stop(at + len);
   }
+}
+// Level 3's: a plum eaten; leaves rustling; a plum landing; an empty belly; a yawn; a splash of cold
+// water; and cicadas, droning somewhere in the trees.
+export function playMunch() { if (!ac) return; for (let i = 0; i < 3; i++) burst(ac.currentTime + i * .13, .09, { from: 1400 - i * 200, to: 500, type: 'bandpass', q: 1.4, vol: .22, buf: noise }); }
+export function playRustle() { if (ac) burst(ac.currentTime, .4, { from: 3200, to: 4600, type: 'bandpass', q: .7, vol: .1, attack: .08, buf: noise }); }
+export function playThud() { if (!ac) return; const at = ac.currentTime, o = ac.createOscillator(), g = ac.createGain(); o.frequency.setValueAtTime(190, at); o.frequency.exponentialRampToValueAtTime(80, at + .1); g.gain.setValueAtTime(.2, at); g.gain.exponentialRampToValueAtTime(.001, at + .16); o.connect(g); g.connect(fx); o.start(at); o.stop(at + .2); }
+export function playGrowl() {
+  if (!ac) return;
+  const at = ac.currentTime, o = ac.createOscillator(), w = ac.createOscillator(), wg = ac.createGain(), f = ac.createBiquadFilter(), g = ac.createGain();
+  o.type = 'sawtooth'; o.frequency.setValueAtTime(62, at); o.frequency.linearRampToValueAtTime(96, at + .3); o.frequency.linearRampToValueAtTime(54, at + .8);
+  w.frequency.value = 17; wg.gain.value = 14; w.connect(wg); wg.connect(o.frequency); f.type = 'lowpass'; f.frequency.value = 420;
+  g.gain.setValueAtTime(0, at); g.gain.linearRampToValueAtTime(.13, at + .15); g.gain.linearRampToValueAtTime(0, at + .85);
+  o.connect(f); f.connect(g); g.connect(fx); o.start(at); w.start(at); o.stop(at + .9); w.stop(at + .9);
+}
+export function playYawn() {
+  if (!ac) return;
+  const at = ac.currentTime, o = ac.createOscillator(), f = ac.createBiquadFilter(), g = ac.createGain();
+  o.type = 'triangle'; o.frequency.setValueAtTime(300, at); o.frequency.linearRampToValueAtTime(460, at + .5); o.frequency.exponentialRampToValueAtTime(210, at + 1.3);
+  f.type = 'bandpass'; f.frequency.setValueAtTime(600, at); f.frequency.linearRampToValueAtTime(1100, at + .5); f.frequency.linearRampToValueAtTime(500, at + 1.3); f.Q.value = .8;
+  g.gain.setValueAtTime(0, at); g.gain.linearRampToValueAtTime(.1, at + .4); g.gain.linearRampToValueAtTime(0, at + 1.3);
+  o.connect(f); f.connect(g); g.connect(fx); o.start(at); o.stop(at + 1.4);
+}
+export function playSplash() { if (ac) { burst(ac.currentTime, .4, { from: 2600, to: 700, type: 'bandpass', q: .7, vol: .45, buf: noise }); burst(ac.currentTime + .05, .5, { from: 500, to: 300, vol: .3 }); } }
+// A hammock throwing Ichigo up: a springy boing, higher the harder (k: 0..1). And a wasp's sting.
+export function playBoing(k) {
+  if (!ac) return;
+  const at = ac.currentTime, o = ac.createOscillator(), w = ac.createOscillator(), wg = ac.createGain(), g = ac.createGain();
+  o.type = 'triangle'; o.frequency.setValueAtTime(130 + k * 60, at); o.frequency.exponentialRampToValueAtTime(300 + k * 260, at + .22); o.frequency.exponentialRampToValueAtTime(240 + k * 200, at + .5);
+  w.frequency.setValueAtTime(24, at); w.frequency.linearRampToValueAtTime(9, at + .5); wg.gain.setValueAtTime(34, at); wg.gain.linearRampToValueAtTime(4, at + .5); w.connect(wg); wg.connect(o.frequency);
+  g.gain.setValueAtTime(0, at); g.gain.linearRampToValueAtTime(.2, at + .015); g.gain.exponentialRampToValueAtTime(.001, at + .55);
+  o.connect(g); g.connect(fx); o.start(at); w.start(at); o.stop(at + .6); w.stop(at + .6);
+}
+export function playSting() { if (!ac) return; const at = ac.currentTime, o = ac.createOscillator(), f = ac.createBiquadFilter(), g = ac.createGain(); o.type = 'sawtooth'; o.frequency.setValueAtTime(210, at); o.frequency.linearRampToValueAtTime(330, at + .25); f.type = 'bandpass'; f.frequency.value = 1400; f.Q.value = 1; g.gain.setValueAtTime(.16, at); g.gain.exponentialRampToValueAtTime(.001, at + .32); o.connect(f); f.connect(g); g.connect(fx); o.start(at); o.stop(at + .35); }
+let nextCicada = 0;
+// Call every frame: near = how close Ichigo is to the trees, 0..1.
+export function cicadas(near) {
+  if (!ac || near <= .05 || ac.currentTime < nextCicada) return;
+  const at = ac.currentTime, len = 3 + Math.random() * 2, src = ac.createBufferSource(), f = ac.createBiquadFilter(), g = ac.createGain(), am = ac.createOscillator(), ag = ac.createGain(), ap = ac.createGain();
+  src.buffer = noise; src.loop = true; f.type = 'bandpass'; f.frequency.value = 4200 + Math.random() * 700; f.Q.value = 14;
+  am.type = 'square'; am.frequency.setValueAtTime(5, at); am.frequency.linearRampToValueAtTime(8, at + len * .7); ag.gain.value = .35; ap.gain.value = .6; am.connect(ag); ag.connect(ap.gain);   // min-min-min
+  g.gain.setValueAtTime(0, at); g.gain.linearRampToValueAtTime(.09 * near, at + len * .4); g.gain.linearRampToValueAtTime(0, at + len);
+  src.connect(f); f.connect(ap); ap.connect(g); g.connect(fx); src.start(at); am.start(at); src.stop(at + len); am.stop(at + len);
+  nextCicada = at + len + 1 + Math.random() * 5;
 }
 export function playHiss() { if (ac) { burst(ac.currentTime, 1.1, { from: 6500, to: 2500, type: 'highpass', vol: .22, attack: .03, buf: noise }); burst(ac.currentTime, .5, { from: 600, to: 200, vol: .4 }); } }
 export function playClick(pitch = 1) {

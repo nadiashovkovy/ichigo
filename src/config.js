@@ -169,3 +169,39 @@ export const TIDE = {
   hop: 235,           // how fast Ichigo leaves the sand: higher than on the beach, so crabs are easy to hop over
   stumble: .5,        // a crab on the sandbar
 };
+
+// The Sleepy Island (Level 3, plum.js). Positions are in levels/level03.json.
+export const PLUM = {
+  sea: 470,           // the sea's height (y) round the island
+  wade: 12,           // Ichigo can't wade deeper than this
+  hungry: 54,         // seconds from a full belly to an empty one
+  first: .7,          // how full it is at the start, and after a new tomorrow
+  eat: { clam: .4, orange: .45, plum: 1 },   // how much each food fills
+  growl: .25,         // below this, Ichigo's belly growls
+  weak: .55,          // with an empty belly: this share of walking speed (and no running)
+  starving: 22,       // and after this many seconds of it, Ichigo lies down: a new tomorrow
+  asleep: 3,          // this many plums at once, and Ichigo falls asleep under the trees: a new tomorrow
+  wears: 80,          // seconds for one plum's sleepiness to wear off
+  slow: .16,          // each plum slows Ichigo by this share of walking speed
+  full: .8,           // and so does a full bucket (and they can't run)
+  // plums: how near a tree's middle the fruit hangs; seconds of rustling before one falls; how often one
+  // falls by itself when Ichigo is under a tree, and when they run; how fast it falls; how long it lies there
+  drop: { under: 62, warn: .65, walk: [4, 5], run: [.9, .8], gravity: 620, lie: 25 },
+  bonk: { near: 12, time: .5, safe: 1.4 },   // a falling plum: how near it must be to hit Ichigo's head; how long that stops them; how long before another can
+  jump: 640,          // how fast Ichigo leaves the ground (each plum takes a little off)
+  // empty hammocks: how far above the ground the cloth is; how near its middle to land on it; how fast they throw
+  // Ichigo up: a plain bounce, a well-timed one (jump pressed as they land), and how much more each in a row, up to
+  bounce: { up: 25, wide: 46, plain: 620, timed: 860, more: 70, most: 1010, window: .16 },
+  leafSag: 5,         // how far a treetop gives under Ichigo
+  wasp: { near: 15, push: 190, up: 260 },   // how near a wasp must be to sting; how hard Ichigo starts back
+  spill: 1,           // a jump with a full bucket spills this much of it (it holds 3)
+  // the old sailor: how much three-thirds of a bucket wakes him; how fast he dozes off again (a second); how awake is awake
+  sailor: { splash: 1.25, doze: .045, awake: 3 },
+  dig: .7,            // seconds to dig up a clam
+  clamTime: 5,        // how long a clam's bubbles show in one place
+  shakes: 2,          // shakes of the orange tree before one falls
+  regrow: 14,         // seconds for the orange tree to have another ripe
+  reach: 26,          // how near to use something
+  drift: 85,          // how fast the current takes the raft, at the end
+  crab: 30,           // how fast the crabs walk
+};

@@ -207,6 +207,14 @@ const FRAMES = {
   dig2: [...HEAD, ...DIG2],
   sit: [...HEAD, ...SIT],
 };
+// Growing up. From four, Ichigo's legs are two pixels longer (the jersey, which doesn't grow, starts to look short).
+function older(frames) {
+  const legs = (rows, n = 2) => { const i = rows.length - 4; return [...rows.slice(0, i), ...Array(n).fill(rows[i]), ...rows.slice(i)]; };
+  const sit = frames.sit.map(r => { const at = r.includes('D') ? r.indexOf('D') : r.lastIndexOf('B'); return at > 0 ? (r.slice(0, at) + r[at - 1].repeat(2) + r.slice(at)).slice(0, FRAME_W) : r; });   // (legs out in front)
+  return { ...frames, stand: legs(frames.stand), step1: legs(frames.step1), step2: legs(frames.step2), balance: legs(frames.balance), jump: legs(frames.jump.slice(0, -1)), sit };
+}
+const FRAMES4 = older(FRAMES);
+const framesNow = () => (S.level && S.level.age >= 4 ? FRAMES4 : FRAMES);
 const HOLDS_BUCKET = ['stand', 'step1', 'step2', 'balance', 'sit'];   // frames where the bucket hangs upright (it can show water, and the shovel)
 // The red shovel, standing in the bucket blade up (its handle down inside): drawn from the rim up.
 const SPADE = ['RR.', 'RRR', 'RRr', '.Rr', '.R.', '.R.'];
@@ -296,9 +304,9 @@ function windswept(rows, dx, dy) {
 const cache = new Map();
 // marks: ids from MARKS to paint on, plus 'water' for a full bucket.
 function picture(frame, scars, [hx, hy] = [0, 0], marks = []) {
-  const key = [frame, scars, hx, hy, marks.join('+')].join();
+  const FR = framesNow(), key = [FR === FRAMES4, frame, scars, hx, hy, marks.join('+')].join();
   if (cache.has(key)) return cache.get(key);
-  const rows = windswept(FRAMES[frame], hx, hy);
+  const rows = windswept(FR[frame], hx, hy);
   const collar = rows.findIndex(r => r.includes('W'));
   let grid = rows.map(r => [...r].map(ch => ch === '.' ? null : SP[ch]));
   let number = null;

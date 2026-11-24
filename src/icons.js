@@ -14,7 +14,7 @@ const IC = {
   G: P.leaf, g: P.grass, Y: P.gold,              // leaves, seeds
   S: P.skin, m: P.rose,                          // skin; cheeks and mouths
   I: P.indigo, A: P.foam, T: P.tan,              // Kaa-chan's kimono and apron; paper windows
-  O: P.olive, B: P.wood, b: P.brown, a: P.aqua, o: P.ocean,   // thatch, timber, the carp streamer
+  O: P.olive, B: P.wood, b: P.brown, a: P.aqua, o: P.ocean, V: P.plum, v: P.violet,   // thatch, timber, the carp streamer
 };
 
 export const ICONS = {
@@ -132,6 +132,65 @@ ICONS.kani = [   // a crab, claws up
   '.rrRRRRRRrr.',
   'r..r.rr.r..r',
   '..r......r..',
+];
+
+ICONS.uchi = ICONS.house;   // home
+
+ICONS.plum = [   // a plum, a leaf on its stalk
+  '......b.....',
+  '.....bGGg...',
+  '....bGGGg...',
+  '...VVbVV....',
+  '..VVVvVVVV..',
+  '.VVpVVvVVVV.',
+  '.VpVVVvVVVV.',
+  '.VVVVVvVVVV.',
+  '.VVVVVvVVVv.',
+  '..VVVvVVVv..',
+  '...VVVVvv...',
+  '............',
+];
+ICONS.rope = [   // a coil of rope
+  '............',
+  '...TTTTTT...',
+  '..TBBBBBBT..',
+  '.TB.TTTT.BT.',
+  '.TBTBBBBTBT.',
+  '.TBTB..BTBT.',
+  '.TBTBBBBTBT.',
+  '.TB.TTTT.BT.',
+  '..TBBBBBBT..',
+  '...TTTTTTBT.',
+  '........TBT.',
+  '.........TT.',
+];
+ICONS.blanket = [   // a cloth, folded: persimmon red, with a small pattern
+  '............',
+  '.rRRRRRRRRr.',
+  'rRRwRRRwRRRr',
+  'RRwwwRwwwRRR',
+  'RRRwRRRwRRRR',
+  'RRRRRRRRRRRr',
+  'rRwRRRwRRRwr',
+  'rwwwRwwwRwwr',
+  'RRwRRRwRRRwR',
+  'RRRRRRRRRRRR',
+  'rRRRRRRRRRRr',
+  '.rrrrrrrrrr.',
+];
+ICONS.paddle = [
+  '.........TT.',
+  '........TBB.',
+  '.......TBB..',
+  '......TBB...',
+  '.....TBB....',
+  '....TBB.....',
+  '..TTBB......',
+  '.TTBBB......',
+  'TTBBBB......',
+  'TBBBBb......',
+  'TBBBb.......',
+  '.bbb........',
 ];
 
 // The musical note shown beside a word as it's spoken (where Ichigo's voice will go, later).

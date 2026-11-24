@@ -23,6 +23,10 @@ export const THINGS = {
   float: { name: 'A GLASS FLOAT', text: 'IT HAS A STAR ON IT. SO DO ALL THE BOATS IN THE HARBOR AT HOME.', pic: ['...KKKKK...', '.KKggwggKK.', '.KgwwYgggK.', 'KgwggYgggsK', 'KgYYYYYYYsK', 'KggYYYYYgsK', 'KggYYgYYgsK', '.KgYgggYsK.', '.KKsgggsKK.', '...KKKKK...'] },
   sandal: { name: "KAA-CHAN'S SANDAL", text: 'SHE LEAVES HER SANDALS BY THE DOOR.', pic: ['...KKKKKKKKKK..', '.KKTTTTTRTTTTKK', 'KTTTTTRRTTTTTTK', 'KTTTRRTTTTTTTTK', 'KTTTTTRRTTTTTtK', '.KKTTTTTRTTTtKK', '...KKKKKKKKKK..'] },
   shell: { name: 'A SHELL', text: 'FROM THE SANDBAR. IT SOUNDS LIKE THE SEA.', pic: ['...KKKK...', '..KTbpTK..', '.KTpbTpTK.', 'KTpTbTbTpK', 'KTbTKKpTTK', '.KTpwwTbK.', '..KTTTTK..', '...KKKK...'] },
+  blanket: { name: 'A BLANKET', text: 'IT WAS UP IN A PLUM TREE. IT WILL DO FOR A SAIL.', pic: ['.KKKKKKKKKKK.', 'KrRRRRRRRRRrK', 'KRRfRRRfRRRRK', 'KRfffRfffRRRK', 'KRRfRRRfRRRRK', 'KrRRRRRRRRRrK', 'KRfRRRfRRRfRK', 'KfffRfffRfffK', 'KRfRRRfRRRfRK', 'KrrrrrrrrrrrK', '.KKKKKKKKKKK.'] },
+  kite: { name: 'A KITE', text: 'ICHIGO AND KAA-CHAN FLEW ONE LIKE IT FROM THE HILL BEHIND THE HOUSE.', pic: ['.....KK.....', '....KRRK....', '...KRRRRK...', '..KRRwwRRK..', '.KRRwwwwRRK.', 'KRRRwnnwRRRK', '.KRRwwwwRRK.', '..KRRwwRRK..', '...KRRRRK...', '....KRRK....', '.....KK.....', '......KK....', '.....KK.KK..'] },
+  rope: { name: 'A ROPE', text: 'THE FISHERMAN GAVE IT TO ICHIGO, FOR A CRAB.', pic: ['...KKKKKK...', '..KTTTTTTK..', '.KTyKKKKyTK.', 'KTyKTTTTKyTK', 'KTKTyKKyTKTK', 'KTKTyKKyTKTK', 'KTyKTTTTKyTK', '.KTyKKKKyTK.', '..KTTTTTTTK.', '...KKKKKKTK.', '.........KK.'] },
+  paddle: { name: 'A PADDLE', text: 'THE OLD SAILOR GAVE IT TO ICHIGO. HE DOES NOT NEED IT.', pic: ['.........KK.', '........KTbK', '.......KTbK.', '......KTbK..', '.....KTbK...', '....KTbK....', '..KKTbK.....', '.KTTbbK.....', 'KTTbbbK.....', 'KTbbbBK.....', '.KbbBK......', '..KKK.......'] },
 };
 for (const th of Object.values(THINGS)) { th.big = scale2x(th.pic); th.grid = th.pic.map(r => [...r].map(ch => (ch === '.' ? null : C[ch]))); }
 const ORDER = Object.keys(THINGS);
@@ -93,6 +97,7 @@ const PIECES = [
   { thing: 'float', lines: [[P.ochre, 128, 12, 128, 28], [P.ochre, 120, 20, 136, 20], [P.ochre, 122, 14, 134, 26], [P.ochre, 134, 14, 122, 26]] },        // the star over the harbor
   { thing: 'streamer', lines: [[P.brown, 178, 108, 178, 56], [P.sea, 178, 58, 196, 60, 206, 56, 206, 68, 196, 65, 178, 68]] },                            // the pole by the house
   { thing: 'sandal', lines: [[P.olive, 204, 90, 226, 72, 248, 90, 204, 90], [P.wood, 208, 90, 208, 110, 244, 110, 244, 90], [P.red, 222, 110, 222, 98, 232, 98, 232, 110]] },   // the house, its door
+  { thing: 'kite', lines: [[P.leaf, 186, 108, 214, 84, 244, 66, 274, 58, 306, 62]] },                                                        // the hill behind the house
   { thing: 'shell', lines: [[P.sea, 12, 92, 24, 84, 36, 92, 48, 84, 60, 92, 72, 84, 84, 92], [P.sea, 60, 106, 72, 98, 84, 106, 96, 98, 108, 106, 120, 98, 132, 106]] },   // the sea between
 ];
 function stroke(x0, y0, [col, ...pts], solid) {

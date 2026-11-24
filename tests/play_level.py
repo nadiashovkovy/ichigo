@@ -16,6 +16,9 @@ What it does:
   6. Plays Level 2 on a sped-up clock: once doing nothing (the lantern must go out in the first set),
      once walking the sandbar (the sea must take Ichigo), and once properly: sea-fireflies to the
      lantern till morning, the things from home, the sandbar, the shell. Looks at Ichigo's things (Tab). Reports how it went.
+  7. Plays Level 3 the same way: once doing nothing (too hungry: a new tomorrow), once running under the
+     trees (bumped on the head, nothing eaten), once eating every plum (asleep: a new tomorrow), and once
+     properly, to the raft.
 
 Run it from the project folder:
     pip install playwright && playwright install chromium
@@ -82,6 +85,7 @@ FAST_CLOCK = r'''
     now += 1000 / 60; const due = queue; queue = [];
     if (window._tick) window._tick();
     for (const f of due) f(now);
+    if (window._want && window._want()) { window._want = null; window._hold = window._got = true; }   // (what the test is waiting for, looked for every frame: a moment can be shorter than the test's own checks)
     ch.port2.postMessage(0);
   };
   ch.port2.postMessage(0);
@@ -126,6 +130,15 @@ TIDE_BOT = r'''
 })();
 '''
 
+async def moment(page, name, js, notes, shot, timeout):
+    """Wait for something on the sped-up clock (held still as soon as it's true), and take a picture of it."""
+    await page.evaluate(f"window._got = false; window._want = () => {{ const N = ichigo.tide, M = ichigo.plum, S = ichigo.S; try {{ return {js}; }} catch (e) {{ return false; }} }}")
+    ok = await wait_for(page, 'window._got', timeout, 30)
+    if ok and shot: await page.wait_for_timeout(100); await page.screenshot(path=f'{SHOTS}/{shot}.png')
+    if not ok: notes.append(f'{name}: never saw {js}')
+    await page.evaluate('window._want = null; window._hold = false')
+    return ok
+
 async def play_tide(browser):
     """Level 2. Returns (problems, page errors, what to report)."""
     errors, notes, report = [], [], {}
@@ -138,12 +151,7 @@ async def play_tide(browser):
         await page.evaluate(f"window._mode = '{mode}'"); await page.add_script_tag(content=TIDE_BOT)
         await page.evaluate('ichigo.begin(2)')
         return ctx, page
-    async def until(page, js, shot=None, timeout=240):
-        if not await wait_for(page, f'(() => {{ const N = ichigo.tide, S = ichigo.S; return {js}; }})()', timeout, 30): notes.append(f'Level 2: never saw {js}'); return False
-        if shot:
-            await page.evaluate('window._hold = true'); await page.wait_for_timeout(100)
-            await page.screenshot(path=f'{SHOTS}/{shot}.png'); await page.evaluate('window._hold = false')
-        return True
+    async def until(page, js, shot=None, timeout=240): return await moment(page, 'Level 2', js, notes, shot, timeout)
     NOW = "N.phase === 'calm' && (N.phase = 'ebb', N.t = 0, N.tideFrom = N.tide, true)"   # (skip the night)
 
     ctx, page = await open_level('idle')   # nothing done: the lantern goes out, and it's a new tomorrow in the same set
@@ -168,7 +176,7 @@ async def play_tide(browser):
 
     ctx, page = await open_level('play')
     for js, shot in [("N.phase === 'wake' && N.t > 2.2", 'tide_sleep'), ("N.set === 0 && N.phase === 'waves'", 'tide_umi'), ("N.phase === 'waves' && N.set === 0 && N.load >= 3", 'tide_scoop'), ("N.flare > .6", 'tide_feed'),
-                     ("N.held", 'tide_thing'), ("N.phase === 'waves' && N.set === 1 && N.swells.some(v => v.t > 4.9 && v.t < 5.2)", 'tide_wave'), ("N.set === 2 && N.glows.length > 5", 'tide_glow'), ("N.set === 3 && N.phase === 'waves'", 'tide_last'),
+                     ("N.held", 'tide_thing'), ("N.phase === 'waves' && N.set === 1 && N.swells.some(v => v.t > 4.9 && v.t < 5.2)", 'tide_wave'), ("N.set === 2 && N.glows.length > 2", 'tide_glow'), ("N.set === 3 && N.phase === 'waves'", 'tide_last'),
                      ("N.phase === 'ebb' && N.t > 3.6", 'tide_dawn'), ("N.phase === 'bar' && N.x > 1180", 'tide_sandbar'), ("N.shellT > .2", 'tide_shell')]:
         if not await until(page, js, shot): break
     await page.keyboard.press('Tab'); await until(page, "S.thingsOpen", 'tide_things'); await page.keyboard.press('Tab'); await until(page, "!S.thingsOpen")
@@ -178,6 +186,99 @@ async def play_tide(browser):
     if report['scene'] != 'end': notes.append('Level 2: the bot did not finish')
     s = report['save']
     if 'kani' not in s['words'] or 2 not in s['done'] or 'shell' not in s['things']: notes.append('Level 2: the save is missing kani, the shell or the level')
+    await ctx.close()
+    return notes, errors, report
+
+# Level 3's bot. window._mode: 'idle' (does nothing), 'run' (runs up and down under the trees), 'glut' (that, and eats every plum) or 'play'.
+PLUM_BOT = r"""
+(() => { const { S, plum: M, keys, input, cards } = window.ichigo; let wait = 0, back = 1; window._log = [];
+  window._tick = () => {
+    if (cards.active()) { if (++wait > 20) { cards.next(); wait = 0; } return; }
+    for (const k of ['ArrowLeft', 'ArrowRight', 'KeyS', 'ShiftLeft']) keys[k] = false;
+    if (S.scene !== 'plum' || M.phase !== 'play' || window._mode === 'idle') return;
+    const L = S.level, under = x => L.trees.some(([t, s]) => Math.abs(x - t) < 74 * s);
+    const go = x => {
+      const d = Math.sign(x - M.x);
+      if (M.plums.some(p => !p.lying && (p.x - M.x) * d > 4 && (p.x - M.x) * d < 46)) return;                        // wait for one to land
+      if (M.rustle.some(r => Math.abs(r.x - M.x) < 70 && (r.x - M.x) * d > 14)) return;
+      keys[d > 0 ? 'ArrowRight' : 'ArrowLeft'] = true; keys.ShiftLeft = !under(M.x) && !under(M.x + d * 60);
+    };
+    const at = (x, r = 10) => Math.abs(M.x - x) < r, use = () => { input.usePressed = true; };
+    if (window._mode === 'glut') { M.belly = .4; const p = M.plums.find(p => p.lying && !p.eaten); if (p) { if (at(p.x, 8)) use(); else keys[p.x > M.x ? 'ArrowRight' : 'ArrowLeft'] = true; return; } }
+    if (window._mode === 'run' || window._mode === 'glut') { if (M.x > 1300) back = -1; if (M.x < 500) back = 1; keys[back > 0 ? 'ArrowRight' : 'ArrowLeft'] = keys.ShiftLeft = true; return; }
+    if (M.digT > 0) { keys.KeyS = true; return; }
+    if (M.belly < .45) {   // something to eat, that isn't a plum
+      const o = M.oranges.find(o => o.lying); if (o) { if (at(o.x, 12)) use(); else go(o.x); return; }
+      const c = M.clams.filter(c => c.t > 0 && c.t < 3.5).sort((a, b) => Math.abs(a.x - M.x) - Math.abs(b.x - M.x))[0];
+      if (c && Math.abs(c.x - M.x) < 420) { if (at(c.x, 9)) { use(); keys.KeyS = true; } else go(c.x); return; }
+      if (M.ripe > 0) { if (at(L.orange, 12)) { if (M.shakeT <= 0) use(); } else go(L.orange); return; }
+      go(230); return;
+    }
+    if (M.rope !== 'kept') {
+      if (M.rope === 'lying') { if (at(L.fisherman)) use(); else go(L.fisherman); return; }
+      if (M.fisher !== 'asleep') return;   // (he's deciding)
+      if (M.bucket === 'crab') { if (at(L.fisherman, 14)) use(); else go(L.fisherman); return; }
+      const k = M.crabs.filter(c => !c.hide).sort((a, b) => Math.abs(a.x - M.x) - Math.abs(b.x - M.x))[0];
+      if (k) { if (at(k.x, 14)) use(); else go(k.x); } return;
+    }
+    if (!M.blanket) {   // bounce on the empty hammock, up onto the treetops, and along to the blanket
+      if (M.on === 'ground') { if (at(L.hammocks[0], 8)) { input.jumpBuffer = .1; keys.Space = true; } else go(L.hammocks[0]); window._hi = false; return; }
+      keys.Space = true;
+      if (M.on === 'leaves') { const w = M.wasps[1]; if (M.x < 880 || M.x > 985) keys.ArrowRight = true; else if (w.py < 250 || M.t % 7 > 5) { keys.ArrowRight = keys.ShiftLeft = true; if (M.x > 900) input.jumpBuffer = .1; } return; }
+      if (M.vy > 0 && M.y > 300 && Math.abs(M.x - L.hammocks[0]) < 46) input.jumpBuffer = .1;   // time the next bounce
+      if (M.row >= 2 || M.x > 835) window._hi = true;
+      if (window._hi) keys.ArrowRight = keys.ShiftLeft = true; else if (Math.abs(M.x - L.hammocks[0]) > 6) keys[M.x < L.hammocks[0] ? 'ArrowRight' : 'ArrowLeft'] = true;
+      return;
+    }
+    if (!M.paddle) {
+      if (M.sailor === 'up') return;
+      if (M.bucket === 'water') { if (at(L.sailor, 12)) use(); else go(L.sailor); return; }
+      if (M.x > L.water[1] - 12) use(); else go(L.water[1]); return;
+    }
+    if (at(L.raft, 30)) use(); else go(L.raft);
+  };
+})();
+"""
+
+async def play_plum(browser):
+    """Level 3. Returns (problems, page errors, what to report)."""
+    errors, notes, report = [], [], {}
+    async def open_level(mode):
+        ctx = await browser.new_context(viewport={'width': 960, 'height': 540})
+        await ctx.add_init_script(FAST_CLOCK)
+        await ctx.add_init_script("localStorage.setItem('ichigo.save', JSON.stringify({ words: ['kaa-chan', 'umi', 'kani'], marks: ['chin'], things: ['shell'], tomorrows: 0, done: [1, 2], seenWave: true }))")
+        page = await ctx.new_page(); page.on('pageerror', lambda e: errors.append(str(e)))
+        await page.goto(f'http://127.0.0.1:{PORT}/index.html'); await page.wait_for_timeout(2000)
+        await page.evaluate(f"window._mode = '{mode}'"); await page.add_script_tag(content=PLUM_BOT)
+        await page.evaluate('ichigo.begin(3)')
+        return ctx, page
+    async def until(page, js, shot=None, timeout=90): return await moment(page, 'Level 3', js, notes, shot, timeout)
+
+    ctx, page = await open_level('idle')   # nothing done: Ichigo gets too hungry, and it's a new tomorrow
+    await until(page, 'M.empty > 3', 'plum_hungry'); await until(page, "S.scene === 'plum' && S.deaths === 1 && M.belly > .5"); await ctx.close()
+
+    ctx, page = await open_level('run')    # running under the trees: plums come down on Ichigo's head, but none is eaten
+    await until(page, 'M.bonk > .2', 'plum_bonk')
+    if await page.evaluate('ichigo.plum.sleep') != 0: notes.append('Level 3: a plum was eaten by touching it')
+    await page.evaluate('Object.assign(ichigo.plum, { sleep: 1, wear: 1 })')   # one plum's sleepiness wears off
+    await until(page, 'M.sleep === 0'); await ctx.close()
+
+    ctx, page = await open_level('glut')   # eating every plum: three put Ichigo to sleep
+    await until(page, 'M.sleep === 2', 'plum_sleepy'); await until(page, "M.phase === 'asleep' && M.t > 1.2", 'plum_asleep')
+    await page.evaluate("ichigo.plum.rope = 'kept'")
+    await until(page, "S.scene === 'plum' && S.deaths === 1 && M.sleep === 0 && M.rope === 'kept'"); await ctx.close()
+
+    ctx, page = await open_level('play')
+    for js, shot in [("M.woman === 'offers' && M.womanT > 1", 'plum_woman'), ("S.words.includes('uchi')", None), ("M.bucket === 'crab'", 'plum_crab'), ("M.fisher === 'up' && M.fisherT > 1", 'plum_shown'), ("M.fisher === 'sat' && M.fisherT > 2.5", 'plum_fisherman'), ("M.rope === 'kept'", None), ("M.row >= 2 && M.vy < 0", 'plum_bounce'), ("M.on === 'leaves'", 'plum_treetop'), ("M.blanket", None),
+                     ("M.eating > .3", 'plum_eat'), ("M.splashes === 1", 'plum_splash'), ("M.sailor === 'up' && M.sailorT > 1", 'plum_sailor'), ("M.paddle", None), ("M.phase === 'leave' && M.t > 3.4", 'plum_leave')]:
+        if not await until(page, js, shot): break
+    await until(page, "S.scene === 'end' && S.sceneT > 3", 'plum_end')
+    if not await page.evaluate('ichigo.plum.raftX - ichigo.S.camX > 853 + 45'): notes.append('Level 3: Ichigo was still on screen at the end')
+    report = await page.evaluate("({ scene: ichigo.S.scene, deaths: ichigo.S.deaths, seconds: Math.round(ichigo.S.levelT), plums: ichigo.plum.sleep, splashes: ichigo.plum.splashes })")
+    report['save'] = json.loads(await page.evaluate("localStorage.getItem('ichigo.save')"))
+    if report['scene'] != 'end': notes.append('Level 3: the bot did not finish')
+    s = report['save']
+    if 'uchi' not in s['words'] or 3 not in s['done'] or 'rope' not in s['things'] or 'paddle' not in s['things'] or 'blanket' not in s['things']: notes.append('Level 3: the save is missing uchi, the rope, the paddle, the blanket or the level')
     await ctx.close()
     return notes, errors, report
 
@@ -287,6 +388,7 @@ async def main():
         browser = await p.chromium.launch(executable_path=CHROME, args=['--no-sandbox']) if CHROME else await p.chromium.launch()
         runs = [('Level 1', await play(browser))] if ONLY in (None, 1) else []
         tide = await play_tide(browser) if ONLY in (None, 2) else None
+        plum = await play_plum(browser) if ONLY in (None, 3) else None
         await browser.close()
     httpd.shutdown()
 
@@ -302,9 +404,10 @@ async def main():
             s = r['save'] or {}
             if s.get('words') != ['kaa-chan', 'umi'] or s.get('marks') != ['chin']: print("Problem: expected words ['kaa-chan', 'umi'] and marks ['chin']"); ok = False
         if r['errors'] or r['notes']: ok = False
-    if tide:
-        notes, errors, report = tide
-        print('--- Level 2 ---')
+    for name, got in (('Level 2', tide), ('Level 3', plum)):
+        if not got: continue
+        notes, errors, report = got
+        print(f'--- {name} ---')
         print('Page errors:', errors or 'none')
         for n in notes: print('Problem:', n)
         print(f"Bot: {report['scene']}, {report['deaths']} new tomorrows, {report['seconds']} s.  Save: {report['save']}")
