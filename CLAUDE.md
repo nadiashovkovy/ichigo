@@ -50,6 +50,7 @@ Run locally: `python3 -m http.server 8000`, then open http://localhost:8000.
   - *Story cards* (`src/cards.js`): short click-through cards that tell the story and say what to do; the world waits while one is up, any key goes on, Esc skips. Level 0 is made of them; Level 1 has them on the beach and on the white after the wave. Later levels can use them mid-level too. Keep them short.
   - *Speech:* other characters' bubbles can carry their line as short text, with or without pictogram icons. The script's italic line after each pictogram is that text.
   - *Hints:* a short line naming a new control the first time it's needed.
+- **Voice:** story cards and speech are plain and matter-of-fact, like Level 1's cards. Short sentences, no metaphors, no telling the player how to feel. See "Voice" at the top of `docs/levels-and-script.md`.
 - **Ichigo's own words stay limited** to the ones they've learned (an icon bubble; each level lists them in `"learns"`). Learning to talk is part of the story.
 - **Failure is never final.** Every failure is "a new tomorrow": the dawn print, then a retry from the last checkpoint. Never a game-over screen.
 - **Every level needs stakes:** a clock, a hazard, a scarce resource.
