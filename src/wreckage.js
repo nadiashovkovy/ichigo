@@ -5,10 +5,11 @@
 import { W, H, SEA, P, WRECKAGE, px, onPixel } from './config.js';
 import { S, parts } from './state.js';
 import { seaY } from './sea.js';
-import { drawKoinobori } from './art.js';
+import { drawKoinobori, drawLantern } from './art.js';
 
 // Turn a level's "wreckage" list into live objects.
 export function buildWreckage(level) {
+  if (!level.wreckage) return [];   // (not every level is on wreckage)
   return level.wreckage.map((d, i) => ({
     type: d.type, x0: d.x, w: d.w, ...WRECKAGE[d.type],
     range: d.drift || 0, ph: i * 1.7, cp: !!d.checkpoint, goal: !!d.goal,
@@ -85,9 +86,5 @@ function drawIsland(g, p, camX, t) {
   g.strokeStyle = P.brown; g.lineWidth = 9; g.beginPath(); g.moveTo(tx, y); g.quadraticCurveTo(tx - 20, y - 60, tx + 10, y - 110); g.stroke();
   g.fillStyle = P.deep;
   for (const [dx, dy, r] of [[-30, -95, 24], [20, -115, 28], [40, -85, 20], [-5, -130, 18]]) { g.beginPath(); g.ellipse(tx + dx, y + dy, r * 1.6, r * .55, 0, 0, 7); g.fill(); }
-  const lx = onPixel(x + S.level.goalOffset + 20); g.lineWidth = px(1); g.strokeStyle = P.ink;   // the stone lantern
-  g.fillStyle = P.grey1; g.fillRect(lx - 6, y - 39, 12, 39); g.strokeRect(lx - 6, y - 39, 12, 39);
-  g.fillRect(lx - 15, y - 63, 30, 24); g.strokeRect(lx - 15, y - 63, 30, 24);
-  g.fillStyle = Math.sin(t * 4) > 0 ? P.ochre : P.foam; g.fillRect(lx - 9, y - 57, 18, 12);
-  g.fillStyle = P.grey1; g.beginPath(); g.moveTo(lx - 27, y - 63); g.lineTo(lx, y - 81); g.lineTo(lx + 27, y - 63); g.fill(); g.stroke();
+  drawLantern(g, onPixel(x + S.level.goalOffset + 20), y, t);   // the stone lantern
 }

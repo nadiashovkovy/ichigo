@@ -118,3 +118,36 @@ export const BEACH = {
   hop: 150,           // a tiny hop: how fast Ichigo leaves the sand,
   hopGravity: 1100,   // and how fast they come down (about 8 pixels high, a quarter of a second)
 };
+
+// The lantern island at night, and the sandbar (Level 2, tide.js). Heights (z) go up from `base`, the
+// sea's height at the lowest tide of the night: z = 50 is 50 units above it.
+export const TIDE = {
+  base: 440,          // the screen height (y) of z = 0
+  x0: 94, cell: 8, cells: 83, edge: 4,   // the water's columns (water.js): where they start, how wide, how many; the sea fills `edge` of them at each end
+  slot: 24,           // how wide a wall is
+  block: 12,          // how high one block of sand is (a wall is up to 3)
+  walls: [190, 664],  // walls can be built between here and here
+  dig: .85,           // blocks of sand piled in a second
+  dry: 6,             // sand can't be piled under water deeper than this, or with water this deep against it
+  touch: .1, over: .022,   // how fast walls wear: blocks a second for each block's depth of water against them; and for each unit of water pouring over
+  seep: 12,           // how fast the tide fills low ground behind a wall
+  soak: .5,           // how fast a puddle soaks away
+  scoop: 150,         // how much water a bucket holds (an area, in square units)
+  scoopAt: 2, shelf: 8, inner: 78,   // how deep water must be to scoop it: near the lantern (this far each side), and further out (where sand comes first)
+  arm: 46,            // how far in front the bucket tips out
+  wave: { speed: 150, width: 55, gap: 6.6, start: 150 },   // a wave's speed and half-width; seconds between waves; how far off screen it starts
+  tideTime: 5,        // seconds for the tide to rise to its new height, at the start of a set
+  patch: [405, 449],  // the sand round the lantern that has to stay dry:
+  wet: 3, wetTime: .3,   // water this deep for this long puts the lantern out
+  extraCalm: 3,       // each new tomorrow in a set gives this much more time before its first wave (three times at most)
+  climb: .5, wade: .6,   // climbing a wall, or wading: this share of walking speed
+  waist: 24,          // Ichigo can't walk out into water deeper than this
+  shove: .55,         // how much of the water's speed pushes Ichigo along
+  crab: { speed: 44, flee: 110, near: 42, pinch: 1.4, bite: .8 },   // walking; running from Ichigo, who's this near; seconds at a wall, and how many blocks it takes off
+  ebb: 5,             // seconds for the tide to go out at dawn
+  low: -30,           // how low it goes
+  rise: 1.95,         // the sandbar: how fast the tide comes back (units a second)
+  deep: 19, deepTime: .35,   // water this deep for this long takes Ichigo: a new tomorrow
+  shellTime: 1,       // picking up the shell
+  stumble: .5,        // bumping into a crab
+};

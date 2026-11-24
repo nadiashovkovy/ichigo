@@ -1,8 +1,7 @@
 // ============================================================================
 // cards.js — story cards: short lines of text the player reads and clicks through, at the start of
-// the beach and in the white after the wave. They tell the story so far and what to do.
-// (The game is otherwise wordless during play: see CLAUDE.md. Cards come between moments, and the
-// world waits while one is up.)
+// each level and between its moments. They tell the story so far and what to do.
+// (The world waits while one is up.)
 // Any key or click shows the whole card at once, then moves on; Esc skips the rest.
 // The text types itself out a letter at a time, in the game's bitmap font (text.js).
 // ============================================================================

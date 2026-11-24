@@ -75,22 +75,24 @@ export function drawPlay() {
     const n = toPx(2 * (q.s || 1));
     lg.fillStyle = q.c; lg.fillRect(Math.round((q.x - camX) / PIXEL), Math.round(q.y / PIXEL + TOP_PX), n, n);
   }
-  if (S.scene !== 'end' && !(S.scene === 'dawn' && S.sceneT > .3 && S.sceneT < 1.5)) drawHUD();   // (hidden while the dawn covers the screen)
+  if (S.scene !== 'end' && !(S.scene === 'dawn' && S.sceneT > .3 && S.sceneT < 1.5)) {
+    const goal = S.plats.find(p => p.goal), goalX = goal ? goal.x0 + S.level.goalOffset : S.level.length;
+    drawHUD(Math.min(1, PL.x / goalX));
+  }   // (hidden while the dawn covers the screen)
   if (S.scene === 'end') drawEndFg(S.sceneT);
 }
 
 // The level's end: the world stays, Ichigo sitting by the lantern; a panel
 // like the story cards' (night, edged in pale ink) says which level is done, how it went, and any
 // word Ichigo learned. All in the pixel font.
-function drawEndFg(t) {
+export function drawEndFg(t) {
   if (t < 1) return;
   const L = S.level, learned = (L.learns || []).filter(w => S.words.includes(w));   // (the words this level teaches: levels/*.json)
   const lines = [
     [`LEVEL ${NUMBER_WORDS[L.number]} DONE`, P.gold],
     [L.name.toUpperCase(), P.mist],
-    null,
-    [S.deaths ? `ICHIGO FELL IN THE SEA ${S.deaths === 1 ? 'ONCE' : S.deaths + ' TIMES'}` : 'ICHIGO NEVER FELL IN', P.aqua],
   ];
+  if (L.number === 1) lines.push(null, [S.deaths ? `ICHIGO FELL IN THE SEA ${S.deaths === 1 ? 'ONCE' : S.deaths + ' TIMES'}` : 'ICHIGO NEVER FELL IN', P.aqua]);
   const s = iconSize(true), w = Math.min(LW - 40, 440), pad = 16;
   const h = pad * 2 + lines.length * LINE + (learned.length ? s + 12 : 0) + 30, x = Math.round((LW - w) / 2), y = 28;
   lg.fillStyle = P.mist; lg.fillRect(x - 2, y - 2, w + 4, h + 4);
@@ -111,14 +113,14 @@ function drawEndFg(t) {
 // working its way along a twisted rope toward home. (In pixels: it keeps its size on both screens.)
 const HUD_BOAT = scale2x(['...K....', '...R....', 'KYYYYYYK', '.KTTTTK.']);
 const HOME = scale2x(['...K...', '..KOK..', '.KOOOK.', 'KOOOOOK', '.GGGGG.', '.GGKGG.']);   // the family house from the intro: grey walls, olive thatch
-function drawHUD() {
+// pr: how far through the level Ichigo is (0..1).
+export function drawHUD(pr) {
   lg.fillStyle = P.mist;   // (pale, against the dusk)
   for (let i = 0; i < Math.min(S.deaths, 30); i++) {   // tally marks, struck through in fives
     const gI = Math.floor(i / 5), j = i % 5, bx = 16 + gI * 24;
     if (j < 4) lg.fillRect(bx + j * 4, 14, 2, 14); else for (let s = 0; s < 18; s++) lg.fillRect(bx - 2 + s, 24 - Math.floor(s * .6), 1, 2);
   }
-  const goal = S.plats.find(p => p.goal), goalX = goal ? goal.x0 + S.level.goalOffset : S.level.length;
-  const pr = Math.min(1, PL.x / goalX), x0 = LW - 160, len = 124;
+  const x0 = LW - 160, len = 124;
   for (let x = 0; x < len; x++) for (let y = 0; y < 4; y++) {   // the rope, two strands twisting round each other
     lg.fillStyle = (x + y) % 8 < 4 ? P.ochre : P.brown; lg.fillRect(x0 + x, 22 + y, 1, 1);
   }

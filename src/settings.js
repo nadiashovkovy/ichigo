@@ -71,7 +71,7 @@ function rows(act) {
 }
 
 const CONTROLS = [
-  ['<- ->', 'WALK'], ['SHIFT', 'RUN'], ['SPACE', 'JUMP (HOLD: HIGHER)'], ['DOWN', 'DIG, FILL, POUR'],
+  ['<- ->', 'WALK'], ['SHIFT', 'RUN'], ['SPACE', 'JUMP (HOLD: HIGHER)'], ['DOWN', 'DIG, PILE, FILL, POUR'],
   ['P', 'SETTINGS'], ['M', 'SOUND ON / OFF'], ['F', 'FULL SCREEN'], ['ESC', 'SKIP STORY CARDS'],
 ];
 

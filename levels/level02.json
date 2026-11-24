@@ -1,0 +1,20 @@
+{
+  "number": 2,
+  "name": "The Tide Comes In",
+  "age": 3,
+  "learns": ["umi"],
+  "length": 4480,
+  "sea": { "base": 3, "grow": 0, "growOver": 5200 },
+  "fuji": { "view": "night", "x": 170 },
+  "lantern": 427,
+  "island": [[40, -46], [150, -8], [190, 5], [235, 19], [330, 24], [368, 44], [395, 50], [459, 50], [486, 44], [524, 24], [619, 19], [664, 5], [704, -8], [814, -46]],
+  "sets": [
+    { "tide": 0,  "calm": 13, "waves": [["right", 60], ["right", 68], ["right", 75]], "crabs": [] },
+    { "tide": 6,  "calm": 15, "waves": [["right", 62], ["right", 72], ["right", 88]], "crabs": ["right"] },
+    { "tide": 12, "calm": 19, "waves": [["left", 58],  ["right", 68], ["left", 84]],  "crabs": ["right"] },
+    { "tide": 22, "calm": 18, "waves": [["right", 54], ["left", 60],  ["right", 70]], "crabs": ["left"] },
+    { "tide": 27, "calm": 17, "waves": [["left", 50],  ["right", 56], ["both", 62]],  "crabs": ["right", "left"] },
+    { "tide": 32, "calm": 17, "waves": [["right", 44], ["left", 50],  ["both", 56]],  "crabs": ["left", "right"] }
+  ],
+  "bar": { "from": 690, "to": 4080, "shell": 2250, "crabs": [1250, 1750, 2700, 3150, 3500], "goal": 4270 }
+}

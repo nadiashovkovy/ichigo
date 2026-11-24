@@ -104,6 +104,21 @@ export const ICONS = {
   ],
 };
 
+ICONS.umi = [   // the sea: a wave curling over, foam on its crest
+  '............',
+  '....www.....',
+  '..wwaaaww...',
+  '.waaooowaw..',
+  '.waoow..ww..',
+  'waaoow......',
+  'waoooaw.....',
+  'waooooaaw..w',
+  'aaoooooaaaaa',
+  'ooooooooooaa',
+  'oIIooooIIooo',
+  'IIIIIIIIIIII',
+];
+
 // The musical note shown beside a word as it's spoken (where Ichigo's voice will go, later).
 export const NOTE = ['...KKK', '...KKK', '...K..', '...K..', '.KKK..', 'KKKK..', '.KK...'];
 

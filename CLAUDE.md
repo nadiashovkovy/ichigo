@@ -38,6 +38,7 @@ If the spec and the script disagree, the spec wins for code and the script wins 
 | `src/input.js`, `src/pc.js` | Keyboard and touch; the 1996 PC monitor around the game |
 | `src/beach.js`, `src/cards.js` | Level 1's playable beach and the wave; story cards |
 | `src/prologue.js`, `src/menu.js` | Level 0 (the premise and the novel, over Hokusai's prints); the list of all levels (locked / unlocked) |
+| `src/tide.js`, `src/tideart.js`, `src/water.js` | Level 2: how it plays, how it looks, and its water (no drawing in `water.js`: it runs in Node for tuning) |
 | `src/audio.js` | All sound, synthesised: the Lullaby, music, sea, gulls, the tsunami, falling in |
 | `src/bubbles.js`, `src/icons.js`, `src/people.js`, `src/save.js` | Speech bubbles and their icons; Kaa-chan and Ojii-san (for later levels); the save |
 | `tests/play_level.py` | Headless play-test bot (Playwright) |

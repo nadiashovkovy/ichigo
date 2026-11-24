@@ -12,7 +12,9 @@ import { PL, spawn, updatePlayer, updateParts } from './player.js';
 import { startLevel, drawTitle, drawPlay } from './scenes.js';
 import { openSettings, updateSettings, drawSettings, onGear } from './settings.js';
 import { startPrologue, drawPrologue } from './prologue.js';
-import { openMenu, updateMenu, drawMenu } from './menu.js';
+import { openMenu, updateMenu, drawMenu, BUILT } from './menu.js';
+import { N, startTide, updateTide, retryTide } from './tide.js';
+import { drawTide } from './tideart.js';
 import { B, startBeach, updateBeach, drawBeachScene, drawWhite, WAKE_CARDS } from './beach.js';
 import { showCards, cardsActive, updateCards, nextCard, drawCards, clearCards } from './cards.js';
 import { say, updateBubbles } from './bubbles.js';
@@ -20,16 +22,31 @@ import { playLullaby, music, seaSound, gulls, soundAge } from './audio.js';
 import { loadSave, save } from './save.js';
 import { prepareDawns } from './dawn.js';
 
-// Which level to load. Later this will be chosen by the game's progress.
-const LEVEL_FILE = 'levels/level01.json';
-
-async function loadLevel(path) {
-  const res = await fetch(path);
-  if (!res.ok) throw new Error(`Couldn't load ${path} (${res.status})`);
-  S.level = await res.json();
+// Every built level's data, loaded at the start: LEVELS[n] (Level 0, the prologue, has none).
+const LEVELS = {};
+async function loadLevels() {
+  await Promise.all(BUILT.filter(n => n > 0).map(async n => {
+    const path = `levels/level${String(n).padStart(2, '0')}.json`, res = await fetch(path);
+    if (!res.ok) throw new Error(`Couldn't load ${path} (${res.status})`);
+    LEVELS[n] = await res.json();
+  }));
+  useLevel(1);
+}
+function useLevel(n) {   // the level everything else sees as S.level
+  if (S.level === LEVELS[n]) return;
+  S.level = LEVELS[n];
   S.plats = buildWreckage(S.level);
   S.checkpoint = S.plats[0];
 }
+// Start level n from its beginning.
+function begin(n) {
+  clearCards();
+  useLevel(Math.max(1, n));
+  if (n === 0) startPrologue(startBeach);   // Level 0, the prologue, leads into Level 1's beach
+  else if (n === 1) startBeach();
+  else if (n === 2) startTide();
+}
+const win = () => { S.scene = 'end'; S.sceneT = 0; };
 
 loadSave();   // the words, marks and tomorrows Ichigo carries (save.js)
 
@@ -39,8 +56,8 @@ let last = performance.now(), lastScene = S.scene;
 const act = {
   levels: () => { clearCards(); openMenu(); },
   title: () => { clearCards(); S.scene = 'title'; S.sceneT = 0; },
-  restart: () => { clearCards(); if (S.scene === 'beach' || S.scene === 'white') startBeach(); else startLevel(); },
-  inLevel: () => ['beach', 'white', 'play', 'dawn'].includes(S.scene),
+  restart: () => { clearCards(); if (S.level.number !== 1) begin(S.level.number); else if (S.scene === 'beach' || S.scene === 'white') startBeach(); else startLevel(); },
+  inLevel: () => ['beach', 'white', 'play', 'tide', 'dawn'].includes(S.scene),
 };
 function frame(now) {
   if (!pc.on) {   // the PC is switched off: the game waits, exactly where it was
@@ -51,7 +68,6 @@ function frame(now) {
   const pressed = input.anyPressed; input.anyPressed = false;
   const key = input.key, click = input.click; input.key = input.click = null;
   const toTitle = () => { clearCards(); S.scene = 'title'; S.sceneT = 0; };
-  const begin = n => n === 0 ? startPrologue(startBeach) : startBeach();   // Level 0, the prologue, leads into Level 1's beach
 
   // move between scenes
   // (while the settings or a story card are up, the world waits: see settings.js, cards.js)
@@ -68,11 +84,16 @@ function frame(now) {
   else if (S.scene === 'levels') updateMenu(dt, key, click, begin, toTitle);
   else if (S.scene === 'beach') updateBeach(dt, skipped => { if (skipped) startLevel(); else { S.scene = 'white'; S.sceneT = 0; } });
   else if (S.scene === 'white' && S.sceneT > BEACH.whiteTime) showCards(WAKE_CARDS, startLevel, { paper: true });   // a silence, then the cards on the white
-  else if (S.scene === 'end' && pressed && S.sceneT > 2.5) toTitle();
+  else if (S.scene === 'end' && pressed && S.sceneT > 2.5) { if (LEVELS[S.level.number + 1]) begin(S.level.number + 1); else toTitle(); }   // on to the next level, if it's built
+  else if (S.scene === 'tide') updateTide(dt, win);
+  else if (S.scene === 'dawn' && S.level.number === 2) {   // Level 2's new tomorrow: the same timing as the sea's, below
+    if (S.sceneT > .9 && S.sceneT - dt <= .9) retryTide();
+    if (S.sceneT > 1.7) { S.scene = 'tide'; S.sceneT = 1; }
+  }
 
   // update the world
   const waiting = reading || wasOpen || S.settingsOpen;
-  if (!waiting && (S.scene === 'play' || S.scene === 'dawn' || S.scene === 'end')) {
+  if (!waiting && S.level.number === 1 && (S.scene === 'play' || S.scene === 'dawn' || S.scene === 'end')) {
     updateWreckage(S.T, dt, PL);
     if (S.scene === 'play') updatePlayer(dt);
     if (S.scene === 'dawn' && S.sceneT > 0.9 && S.sceneT - dt <= 0.9) spawn();   // respawn while the sun is up
@@ -98,20 +119,21 @@ function frame(now) {
   // the music and the sea. The music plays on the sea level, held quietly under a new tomorrow's
   // Lullaby; the sea is heard wherever there's water, its waves louder as they grow along the level.
   // (The beach sets its own sea sound; the white is silent.)
+  const tide = S.level.number === 2 && (S.scene === 'tide' || S.scene === 'dawn'), morning = N.light > .5;   // (Level 2's night song climbs the scale, a step with each set)
   const menus = S.scene === 'title' || S.scene === 'levels' || S.scene === 'prologue';
   // The title's theme on the title and on through Level 0's cards; the sea's music under the cards on
   // the white after the wave (after its silence), on into the sea level.
   if (S.scene === 'title' || S.scene === 'prologue') music(1, 'title');
-  else music(S.scene === 'play' ? 1 : S.scene === 'dawn' ? .25 : S.scene === 'white' && reading ? .6 : 0, 'sea');   // (the level list: just the sea)
-  if (S.scene === 'play' || S.scene === 'dawn') seaSound(.45 + .45 * Math.min(1, PL.x / ((S.level.sea && S.level.sea.growOver) || 5200)));
+  else music(S.scene === 'play' || S.scene === 'tide' ? 1 : S.scene === 'dawn' ? .25 : S.scene === 'white' && reading ? .6 : 0, tide && !morning ? 'night' : 'sea', tide && !morning ? [0, 2, 5, 7, 9, 12][N.set] : 0);   // (the level list: just the sea)
+  if (S.scene === 'play' || (S.scene === 'dawn' && !tide)) seaSound(.45 + .45 * Math.min(1, PL.x / ((S.level.sea && S.level.sea.growOver) || 5200)));
   else if (S.scene === 'end') seaSound(.25);   // a calm night sea
   else if (S.scene === 'levels' || S.scene === 'prologue') seaSound(S.scene === 'levels' ? .3 : .15);
   else if (menus) seaSound(0);
-  gulls(S.scene === 'play' || (S.scene === 'beach' && B.phase !== 'recede'));   // (they fall silent when the sea pulls back)
+  gulls(S.scene === 'play' || (tide && morning) || (S.scene === 'beach' && B.phase !== 'recede'));   // (they fall silent when the sea pulls back)
 
   // draw (the camera moves in whole pixels so nothing shimmers)
   const cam = S.camX; S.camX = Math.round(S.camX / PIXEL) * PIXEL;
-  if (S.scene === 'title') drawTitle(); else if (S.scene === 'levels') drawMenu(); else if (S.scene === 'prologue') drawPrologue(); else if (S.scene === 'beach') drawBeachScene(); else if (S.scene === 'white') drawWhite(); else drawPlay();
+  if (S.scene === 'title') drawTitle(); else if (S.scene === 'levels') drawMenu(); else if (S.scene === 'prologue') drawPrologue(); else if (S.scene === 'beach') drawBeachScene(); else if (S.scene === 'white') drawWhite(); else if (S.level.number === 2) drawTide(); else drawPlay();
   S.camX = cam;
   drawCards();
   drawSettings(act);   // (the gear in the corner, always; the panel when it's open)
@@ -119,7 +141,7 @@ function frame(now) {
   requestAnimationFrame(frame);
 }
 
-loadLevel(LEVEL_FILE).then(() => { requestAnimationFrame(frame); prepareDawns(); }).catch(err => {
+loadLevels().then(() => { requestAnimationFrame(frame); prepareDawns(); }).catch(err => {
   document.body.insertAdjacentHTML('beforeend', `<pre style="position:fixed;top:10px;left:10px;color:#b8322a">${err.message}\nIf you opened index.html straight from your computer, run a small local server instead (see README).</pre>`);
 });
 
@@ -127,4 +149,4 @@ let resized; addEventListener('resize', () => { clearTimeout(resized); resized =
 
 // Handy for testing in the browser console: window.ichigo.S, window.ichigo.PL …
 import { keys } from "./input.js";
-window.ichigo = { S, PL, input, keys, startLevel, spawn, beach: B, save, cards: { active: cardsActive, next: nextCard } };
+window.ichigo = { S, PL, input, keys, startLevel, begin, spawn, beach: B, tide: N, save, cards: { active: cardsActive, next: nextCard } };
