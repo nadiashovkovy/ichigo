@@ -3,8 +3,9 @@
 //   • the Lullaby on a little wooden flute. Kaa-chan hums it on the beach; its first two notes play at
 //     every new tomorrow; Ichigo learns to hum it in Level 8.
 //   • music, after Toshiro Mayuzumi (see templeBell, below): the title's own, temple bells and shō
-//     chords with a few flute notes; and the sea level's, a koto-like pluck over a soft bass, the flute
-//     coming and going, a temple bell and a shō now and then.
+//     chords with a shakuhachi and a koto; and the sea level's, a koto with taiko drums under it, the
+//     shakuhachi coming and going, a temple bell and a shō now and then. All of it in miyako-bushi, the
+//     old scale of koto music (E F A B C): its two close semitones are what make it sound Japanese.
 //   • the sea itself: waves washing in and out wherever there's water.
 //   • the tsunami: a rumble as the wave rises, then the crash (cut off by the silence of the white).
 //   • Level 2's waves breaking, sand, bucket and crabs.
@@ -125,50 +126,123 @@ export function stopHumming() { if (ac) hum.gain.setTargetAtTime(0, ac.currentTi
 
 // ============================================================================
 // The music: the sea level's song (SONGS) and the title's theme (titleTheme, further down).
-// The sea level's music. D yo-scale like the Lullaby, slow: a koto-like pluck playing broken chords,
-// eight to a bar, over a soft bass note; every so often the flute plays a line from the Lullaby.
-// 16 bars, then round again. Scheduled a little ahead of time, a step at a time (see music()).
+// The sea level's: 16 slow bars, then round again. Not chords, as a Western song would have, but one
+// line at a time with space round it: a koto phrase, left to ring; the shakuhachi answering; taiko like a
+// heartbeat underneath. Scheduled a little ahead of time, a step at a time (see music()).
 // ============================================================================
 const hz = m => 440 * 2 ** ((m - 69) / 12);   // a MIDI note number, in hertz
-// (G1 31, A1 33, B1 35, D2 38, G2 43, A2 45, B2 47, D3 50, E3 52, G3 55, A3 57, B3 59, D4 62, E4 64, G4 67, A4 69, B4 71, D5 74)
-const ARPS = [   // one bar of broken chord each: D, then B, G, A
-  [50, 57, 62, 64, 69, 64, 62, 57],
-  [47, 52, 59, 62, 64, 62, 59, 52],
-  [43, 50, 55, 57, 62, 57, 55, 50],
-  [45, 52, 57, 59, 64, 59, 57, 52],
+// The scale, miyako-bushi on E, up the koto's strings: E F A B C, E F A B C ...
+// (E2 40, A2 45, B2 47, C3 48, E3 52, F3 53, A3 57, B3 59, C4 60, E4 64, F4 65, A4 69, B4 71, C5 72, E5 76, F5 77, A5 81)
+const STRINGS = [52, 53, 57, 59, 60, 64, 65, 69, 71, 72, 76, 77, 81];
+// The koto's bars: [step (eighth notes, 0 to 7), note, how it's played]. How: 'o' with the octave below
+// (kakezume); 'p' pressed, bent up a tone as it rings, and let go (oshi); 'g' with a quick grace note
+// before it; 'r' a run down the strings to it (sararin); 't' repeated, faster and faster (ton-ton-tonton).
+const KOTO = [
+  [[0, 64, 'o'], [3, 65], [4, 64], [6, 59]],
+  [[0, 57, 'g'], [2, 60], [3, 59], [4, 57, 'p']],
+  [[0, 52, 'o'], [2, 59], [3, 64], [4, 69, 'g'], [6, 71]],
+  [[0, 72, 'p'], [3, 71], [4, 69], [5, 65], [6, 64]],
+  [[0, 52], [4, 64]],
+  [[0, 57], [3, 60], [4, 59]],
+  [[0, 53], [4, 57], [6, 53]],
+  [[0, 52, 'o'], [5, 64, 'r']],
+  [[2, 76, 'r']],
+  [[0, 64, 'p'], [4, 65]],
+  [[0, 72, 'g'], [4, 71]],
+  [[0, 69, 't'], [6, 65]],
+  [[0, 64, 'o'], [4, 59]],
+  [[0, 60], [2, 59], [4, 57, 'p']],
+  [[0, 53], [3, 57], [4, 59, 'g']],
+  [[0, 64, 'r'], [4, 52, 'o']],
 ];
-const BASS = [38, 35, 31, 33];   // D2, B1, G1, A1: under each chord
-// The flute's lines, [step, note, length in steps], one per bar; null = the flute rests.
+// The shakuhachi's bars: [step, note, how long in steps] (the Lullaby's shape, rising and falling back,
+// in this scale); null = it rests.
 const LINES = [
   null, null, null, null,
-  [[0, 69, 3], [3, 71, 1], [4, 74, 4]], [[0, 71, 2], [2, 69, 2], [4, 67, 4]], [[0, 69, 3], [3, 67, 1], [4, 64, 4]], [[0, 62, 8]],
+  [[0, 71, 3], [3, 72, 1], [4, 76, 4]], [[0, 72, 2], [2, 71, 2], [4, 69, 4]], [[0, 71, 3], [3, 69, 1], [4, 65, 4]], [[0, 64, 7]],
   null, null, null, null,
-  [[0, 62, 2], [2, 64, 2], [4, 67, 2], [6, 69, 2]], [[0, 71, 4], [4, 69, 4]], [[0, 67, 8]], null,
+  [[0, 64, 2], [2, 65, 2], [4, 69, 2], [6, 71, 2]], [[0, 72, 4], [4, 71, 4]], [[0, 69, 2], [2, 65, 1], [3, 64, 5]], null,
 ];
-// Level 2's night: a few low plucks over a drone, that step up the scale with each set of waves (see music's `shift`).
-const NIGHT = [[50, 0, 0, 57, 0, 0, 0, 0], [50, 0, 0, 55, 0, 0, 52, 0], [50, 0, 0, 59, 0, 57, 0, 0]];
-// tempo: beats a minute; arps: a bar of plucks per chord (0 = rest); bass: under each chord;
-// lines: the flute, a bar each; order: which chord each bar plays; thin: plucks to leave out.
+// The taiko: [step, how hard], one bar each, round and round (the last bar rolls: do-don).
+const TAIKO = [[[0, 1]], [[0, .7], [5, .35]], [[0, 1]], [[0, .7], [4, .4], [5, .5], [6, .8]]];
+// Level 2's night: a few low plucks over a drone, that step up with each set of waves (see music's `shift`).
+const NIGHT = [[[0, 52], [4, 53, 'p']], [[0, 52], [3, 57], [6, 53]], [[0, 52, 'o'], [4, 59, 'g'], [6, 57]], [[2, 64, 'r']]];
+// tempo: beats a minute; koto: its bars; bass: a low note under each bar, in turn; lines: the
+// shakuhachi's bars; loud: how loud the koto is, and the shakuhachi.
 const SONGS = {
-  night: { tempo: 50, arps: NIGHT, bass: [26, 26, 26, 26], lines: [null, null, null, null, [[0, 62, 4], [4, 64, 4]], [[0, 57, 8]], null, null], order: [0, 1, 0, 2], thin: () => false, pluck: [.08, .05], flute: .06 },
-  sea:   { tempo: 72, arps: ARPS, bass: BASS, lines: LINES, order: [0, 1, 2, 3], thin: (bar, i) => bar >= 8 && bar < 12 && i % 2, pluck: [.11, .07], flute: .1 },
+  night: { tempo: 50, koto: NIGHT, bass: [28, 28, 28, 28], lines: [null, null, null, null, [[0, 64, 4], [4, 65, 4]], [[0, 64, 8]], null, null], taiko: [[[0, .5]], [], [[0, .4]], []], loud: [.16, .06] },
+  sea:   { tempo: 66, koto: KOTO, bass: [40, 45, 41, 40], lines: LINES, taiko: TAIKO, loud: [.26, .1] },
 };
 
-// A plucked string: a bright attack that dulls quickly as it rings.
-function pluck(freq, at, vol, out) {
-  const o = ac.createOscillator(), o2 = ac.createOscillator(), f = ac.createBiquadFilter(), g = ac.createGain();
-  o.type = 'triangle'; o.frequency.value = freq;
-  o2.type = 'sawtooth'; o2.frequency.value = freq * 1.003;   // (a hair out of tune: a string's shimmer)
-  f.type = 'lowpass'; f.frequency.setValueAtTime(freq * 8, at); f.frequency.exponentialRampToValueAtTime(freq * 1.5, at + .4);
-  g.gain.setValueAtTime(0, at); g.gain.linearRampToValueAtTime(vol, at + .005); g.gain.exponentialRampToValueAtTime(.0001, at + 1.6);
-  o.connect(f); o2.connect(f); f.connect(g); g.connect(out);
-  for (const x of [o, o2]) { x.start(at); x.stop(at + 1.7); }
+// A koto string, plucked: a burst of noise going round and round a loop as long as the note's wave,
+// losing its brightness each time (how a real string rings). Worked out once for each note, and kept.
+const strings = new Map();
+function stringSound(freq) {
+  const id = Math.round(freq * 10);
+  if (!strings.has(id)) {
+    const rate = ac.sampleRate, n = Math.round(rate * 2.6), buf = ac.createBuffer(1, n, rate), d = buf.getChannelData(0), N = rate / freq - .5, len = Math.floor(N), frac = N - len;
+    const loop = new Float32Array(len + 2); let last = 0, top = 0;
+    for (let i = 0; i < loop.length; i++) { last = last * .35 + (Math.random() * 2 - 1) * .65; loop[i] = last; }   // (the ivory plectrum: bright, not harsh)
+    const keep = Math.pow(.001, 1 / (freq * 2.2));
+    for (let i = 0, w = 0; i < n; i++) {   // (frac: the loop isn't a whole number of samples long, or every note would be out of tune)
+      const L = loop.length, a = loop[(w - len + L) % L], b = loop[(w - len - 1 + L) % L], v = a * (1 - frac) + b * frac;
+      const a2 = d[i - 1] === undefined ? 0 : d[i - 1];
+      d[i] = v; loop[w] = keep * (v * .5 + (i ? a2 : v) * .5); w = (w + 1) % L;
+      top = Math.max(top, Math.abs(v));
+    }
+    for (let i = 0; i < n; i++) d[i] *= Math.min(1, (n - i) / (rate * .2)) / (top || 1);
+    strings.set(id, buf);
+  }
+  return strings.get(id);
+}
+function koto(m, at, vol, out, how = '', step = .4, shift = 0) {   // (shift: semitones higher, for everything in it)
+  const one = (n, t, v, press = false) => {
+    const src = ac.createBufferSource(), g = ac.createGain(), body = ac.createBiquadFilter();
+    src.buffer = stringSound(hz(n + shift)); body.type = 'peaking'; body.frequency.value = 420; body.Q.value = 1; body.gain.value = 5;   // (the paulownia-wood body)
+    if (press) { src.playbackRate.setValueAtTime(1, t + .22); src.playbackRate.linearRampToValueAtTime(2 ** (2 / 12), t + .36); src.playbackRate.setValueAtTime(2 ** (2 / 12), t + .6); src.playbackRate.linearRampToValueAtTime(1, t + .8); }
+    g.gain.value = v; src.connect(body); body.connect(g); g.connect(out); src.start(t);
+  };
+  if (how === 'o') { one(m - 12, at, vol * .8); one(m, at + .035, vol); }
+  else if (how === 'g') { one(STRINGS[Math.min(STRINGS.length - 1, Math.max(0, STRINGS.indexOf(m)) + 1)], at, vol * .5); one(m, at + .09, vol); }
+  else if (how === 'r') { const run = STRINGS.filter(n => n > m).reverse().slice(-7); run.forEach((n, i) => one(n, at + i * .075, vol * (.35 + i * .05))); one(m, at + run.length * .075 + .05, vol * .9); }
+  else if (how === 't') { let t = at; for (let i = 0; i < 8; i++) { one(m, t, vol * (.75 - i * .06)); t += step * Math.pow(.78, i); } }
+  else one(m, at, vol, how === 'p');
+}
+// A shakuhachi note: the flute's, but sliding up into pitch on a burst of breath.
+function shakuhachi(freq, at, len, out, vol) {
+  const o = ac.createOscillator(), o2 = ac.createOscillator(), g = ac.createGain(), g2 = ac.createGain(), vib = ac.createOscillator(), vg = ac.createGain();
+  o.type = 'sine'; o2.type = 'triangle';
+  for (const [x, k] of [[o, 1], [o2, 2]]) { x.frequency.setValueAtTime(freq * k * .955, at); x.frequency.exponentialRampToValueAtTime(freq * k, at + Math.min(.22, len * .35)); x.frequency.setValueAtTime(freq * k, at + len * .86); x.frequency.exponentialRampToValueAtTime(freq * k * .975, at + len); }   // up into the note, and sagging off its end
+  vib.frequency.setValueAtTime(3.4, at); vib.frequency.linearRampToValueAtTime(5.4, at + len);   // the head shaking, slow then quicker (yuri)
+  vg.gain.setValueAtTime(0, at + Math.min(.4, len * .4)); vg.gain.linearRampToValueAtTime(freq * .012, at + len * .85); vib.connect(vg); vg.connect(o.frequency); vg.connect(o2.frequency);
+  g2.gain.value = .12; o2.connect(g2); g2.connect(g); o.connect(g); g.connect(out);
+  g.gain.setValueAtTime(0, at); g.gain.linearRampToValueAtTime(vol, at + .14); g.gain.setTargetAtTime(vol * .75, at + .2, len * .4); g.gain.setTargetAtTime(0, at + len * .9, .09);
+  const n = ac.createBufferSource(), bp = ac.createBiquadFilter(), ng = ac.createGain();
+  n.buffer = noise; n.loop = true; bp.type = 'bandpass'; bp.frequency.value = freq * 2.5; bp.Q.value = 1.6;
+  ng.gain.setValueAtTime(0, at); ng.gain.linearRampToValueAtTime(vol * .7, at + .04); ng.gain.setTargetAtTime(vol * .12, at + .07, .09); ng.gain.setTargetAtTime(0, at + len * .9, .08);
+  n.connect(bp); bp.connect(ng); ng.connect(out);
+  for (const x of [o, o2, vib, n]) { x.start(at); x.stop(at + len + .6); }
+}
+// A big taiko, struck softly: a deep skin, dropping in pitch, and the thud of the stick.
+function taiko(at, hard, out) {
+  const o = ac.createOscillator(), g = ac.createGain();
+  o.frequency.setValueAtTime(118, at); o.frequency.exponentialRampToValueAtTime(66, at + .16);
+  g.gain.setValueAtTime(0, at); g.gain.linearRampToValueAtTime(.34 * hard, at + .006); g.gain.exponentialRampToValueAtTime(.0005, at + .9);
+  o.connect(g); g.connect(out); o.start(at); o.stop(at + 1);
+  const n = ac.createBufferSource(), f = ac.createBiquadFilter(), ng = ac.createGain();
+  n.buffer = brown; f.type = 'bandpass'; f.frequency.value = 260; f.Q.value = .8;
+  ng.gain.setValueAtTime(.3 * hard, at); ng.gain.exponentialRampToValueAtTime(.001, at + .12);
+  n.connect(f); f.connect(ng); ng.connect(out); n.start(at); n.stop(at + .2);
+}
+// Wooden clappers (hyōshigi), as a play begins.
+function clap(at, vol, out) {
+  for (const f of [1180, 1890, 2750]) { const o = ac.createOscillator(), g = ac.createGain(); o.type = 'triangle'; o.frequency.value = f; g.gain.setValueAtTime(vol, at); g.gain.exponentialRampToValueAtTime(.0005, at + .09); o.connect(g); g.connect(out); o.start(at); o.stop(at + .1); }
 }
 // A soft low note under each bar.
 function bass(freq, at, len, out) {
   const o = ac.createOscillator(), g = ac.createGain();
   o.type = 'sine'; o.frequency.value = freq;
-  g.gain.setValueAtTime(0, at); g.gain.linearRampToValueAtTime(.16, at + .08); g.gain.setTargetAtTime(0, at + len * .7, len * .2);
+  g.gain.setValueAtTime(0, at); g.gain.linearRampToValueAtTime(.09, at + .3); g.gain.setTargetAtTime(0, at + len * .7, len * .2);
   o.connect(g); g.connect(out); o.start(at); o.stop(at + len + .5);
 }
 
@@ -185,13 +259,14 @@ export function music(level, song = 'sea', shift = 0) {
   const M = SONGS[playing], STEP = 60 / M.tempo / 2;   // (eighth notes)
   if (nextStep < ac.currentTime) nextStep = ac.currentTime + .05;
   while (nextStep < ac.currentTime + .25) {   // schedule what's due in the next quarter second
-    const bar = Math.floor(step / 8) % M.lines.length, i = step % 8, chord = M.order[bar % 4];
-    const m0 = M.arps[chord][i];
-    if (m0 && !M.thin(bar, i)) pluck(hz(m0 + shift), nextStep, i === 0 ? M.pluck[0] : M.pluck[1], musicBus);   // (the sea's is sparser in bars 9–12)
-    if (i === 0) bass(hz(M.bass[chord] + shift), nextStep, STEP * 8, musicBus);
-    if (i === 0 && bar === 0) templeBell(hz(57 + shift), nextStep, .18, musicBus, 8);                  // each round opens with a temple bell,
-    if (i === 0 && bar === 8) sho([62, 64, 69, 71], nextStep, STEP * 8 * 4, musicBus, .018);       // and a shō breathes under the quiet bars
-    for (const [at, m, len] of M.lines[bar] || []) if (at === i) note(hz(m + shift), nextStep, len * STEP, musicBus, M.flute);
+    const bar = Math.floor(step / 8) % M.lines.length, i = step % 8;
+    for (const [at, m, how] of M.koto[bar % M.koto.length]) if (at === i) koto(m, nextStep + (how === 'r' ? 0 : Math.random() * .012), i === 0 ? M.loud[0] : M.loud[0] * .8, musicBus, how, STEP * .8, shift);   // (a hair early or late, as a hand is)
+    for (const [at, hard] of M.taiko[bar % 4]) if (at === i) taiko(nextStep, hard, musicBus);
+    if (i === 0) bass(hz(M.bass[bar % 4] + shift), nextStep, STEP * 8, musicBus);
+    if (i === 0 && bar === 0) templeBell(hz(52 + shift), nextStep, .18, musicBus, 8);                  // each round opens with a temple bell,
+    if (i === 0 && bar === 8) sho([64, 69, 71, 76, 81], nextStep, STEP * 8 * 4, musicBus, .016);       // and a shō breathes under the quiet bars
+    if (M === SONGS.sea && bar === 15) for (const [at, v] of [[4, .02], [5.5, .02], [6.5, .022], [7.2, .024], [7.7, .026]]) if (Math.floor(at) === i) clap(nextStep + (at % 1) * STEP, v, musicBus);   // (the clappers, quickening, before it comes round again)
+    for (const [at, m, len] of M.lines[bar] || []) if (at === i) shakuhachi(hz(m + shift), nextStep, len * STEP, musicBus, M.loud[1]);
     nextStep += STEP; step++;
   }
 }
@@ -418,13 +493,18 @@ function titleTheme() {
   const t = nextRound, o = titleOut;
   // (pitched where laptop speakers can carry it: a temple bell's hum is lower still)
   templeBell(hz(57), t, .45, o);                                  // A3
-  sho([62, 64, 69, 71, 76], t + .5, 10, o, .045);                 // D E A B E: a cluster in the Lullaby's scale
-  rin(hz(86), t + 7, .08, o);
-  for (const [at, m, len] of [[9, 74, 1.6], [10.6, 76, 1], [11.6, 71, 2.4], [14, 69, 3]]) note(hz(m), t + at, len, o, .12);
-  templeBell(hz(55), t + 16, .4, o);                              // G3
-  sho([67, 69, 74, 76, 81], t + 16.5, 10, o, .045);
-  rin(hz(81), t + 24, .075, o);
-  for (const [at, m, len] of [[25, 69, 1.2], [26.2, 71, 1.2], [27.4, 74, 3.5]]) note(hz(m), t + at, len, o, .12);
+  sho([64, 69, 71, 76, 81], t + .5, 10, o, .042);                 // E A B E A: fourths and fifths, as the court's chords are
+  taiko(t + 4, .5, o); taiko(t + 5.6, .7, o);
+  koto(64, t + 6.2, .2, o, 'r'); rin(hz(88), t + 8, .07, o);
+  for (const [at, m, len] of [[9, 76, 2], [11, 77, .7], [11.7, 76, 1.6], [13.4, 72, .8], [14.2, 71, 3]]) shakuhachi(hz(m), t + at, len, o, .12);
+  koto(52, t + 14.4, .22, o, 'o'); koto(64, t + 15.2, .16, o, 'p');
+  templeBell(hz(52), t + 17, .4, o);                              // E3
+  sho([64, 69, 71, 76, 83], t + 17.5, 10, o, .042);
+  koto(69, t + 19, .18, o, 'g'); koto(65, t + 20, .16, o); koto(64, t + 20.8, .2, o, 'o'); koto(59, t + 22.2, .16, o, 'p');
+  taiko(t + 21, .5, o); taiko(t + 22.4, .4, o); taiko(t + 22.9, .6, o);
+  rin(hz(83), t + 24.5, .065, o);
+  for (const [at, m, len] of [[25, 69, 1.2], [26.2, 71, 1], [27.2, 72, .8], [28, 71, 3.4]]) shakuhachi(hz(m), t + at, len, o, .12);
+  koto(64, t + 29.4, .17, o, 't', .38);
   nextRound = t + TITLE_ROUND;
 }
 function stopTitle() { if (titleOut) { titleOut.disconnect(); titleOut = null; } }

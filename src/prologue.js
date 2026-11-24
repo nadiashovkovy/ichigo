@@ -69,7 +69,7 @@ function drawDay(L, t, card) {
   lg.restore(); pixelSpace(lg);
   // the tide, running up the beach and back as a card begins: it takes the drawing before it
   const k = card > 0 ? Math.max(0, Math.min(1, t / WASH)) : 1, wash = 330 * Math.sin(Math.PI * k) ** 1.3;
-  drawSand(lg, 0, T, { day: L.day, wash });
+  drawSand(lg, 0, T, { day: L.day, wash, surf: surf(T), tone: L.tone });
   return { k, wash };
 }
 export function drawPrologue() {
@@ -86,7 +86,7 @@ export function drawPrologue() {
     const L = DAY[i], { k, wash } = drawDay(L, t, i);
     if (i > 0 && !V.washed && t > .2) { V.washed = true; playWash(.35); }
     if (i > 0 && k < .5) drawInSand(lg, DRAWINGS[i - 1], Infinity, L.day, wash, S.T);
-    drawBeachThings(lg, S.T, L);
+    drawBeachThings(lg, S.T, { ...L, wash });
     const len = (t - (i ? START : .8)) * SPEED, tip = len > 0 ? drawInSand(lg, DRAWINGS[i], len, L.day) : null;
     if (tip) {   // the stick, scratching
       const [x, y] = tip, lean = Math.round(Math.sin(t * 9) * 2);

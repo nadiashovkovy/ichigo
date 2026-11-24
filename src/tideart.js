@@ -240,7 +240,7 @@ function drawIchigo(ix, feet, sitting) {
   drawSprite(lg, frame, ix, feet, N.face, Math.min(5, S.deaths), hair, marks);
   if (N.cry > 0) for (let i = 0; i < 4; i++) {   // tears, two each side, falling
     const k = (S.T * 1.9 + i * .27) % 1; lg.fillStyle = i % 2 ? P.white : P.aqua;
-    lg.fillRect(ix + N.face * 7 + (i % 2 ? 1 : -1) * Math.round(5 + k * 7), feet - 24 + Math.round((k * k * 22) - k * 8), 2, 2);
+    lg.fillRect(ix + N.face * 3 + (i % 2 ? 1 : -1) * Math.round(5 + k * 7), feet - 24 + Math.round((k * k * 22) - k * 8), 2, 2);
   }
   // the light in the bucket: more of it, the more they've scooped
   for (let i = 0; i < N.load * 3; i++) {

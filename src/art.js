@@ -162,7 +162,8 @@ function drawFuji(B, camX, fuji = {}) {
   f.rows = Math.round(f.rows * k); f.half = Array.isArray(f.half) ? f.half.map(h => Math.round(h * k)) : Math.round(f.half * k);
   const cx = Math.round((f.x - camX * 0.05) / u);                         // the peak's cell column
   const top = Math.round((f.base + TOP) / u) - f.rows;                     // the peak's cell row (from the screen's top)
-  fujiCells((x, r, c) => B.rect((cx + x) * CELL, (top + r) * CELL, CELL, CELL, c), f.rows, f.half, f.view, Math.max(1, Math.round(k / 2)));
+  const water = Math.round((380 + TOP) / u) + Math.ceil(6 / u);            // the first row of open water, below the glow on the horizon (see drawFarSea)
+  fujiCells((x, r, c) => { if (top + r < water) B.rect((cx + x) * CELL, (top + r) * CELL, CELL, CELL, c); }, f.rows, f.half, f.view, Math.max(1, Math.round(k / 2)));
 }
 
 // The distant sea, in the level and the intro, after the river under Mannen Bridge (see dawn.js): water
@@ -200,7 +201,8 @@ export function drawScenery(g, camX, t, fuji, { sky = 'dusk', light = 0, behind 
   const B = sceneryBuf.begin();
   drawSky(B, camX, TOP, t, sky, light);
   if (behind) behind(B);
-  drawFuji(B, camX, fuji); drawFarSea(B, camX, t, light > .2 ? SKIES.dawn : SKIES[sky]);
+  drawFarSea(B, camX, t, light > .2 ? SKIES.dawn : SKIES[sky]);
+  drawFuji(B, camX, fuji);   // (over the glow on the horizon, down to the water: the glow is nearly the sky's colour, and Fuji would seem to float on it)
   B.draw(g);
 }
 
@@ -268,9 +270,24 @@ function seaCell(c, d, t, i, above, ci, ri, K) {
     if (lace < 1 - d / 6) return d < 3 ? K.mist : K.aqua;
   }
   if (i !== above) return K.line;                                                         // the contour line along a layer's top
-  if (i < 3 && hsh(Math.floor(c / 3 + t * (ri % 2 ? .6 : -.5)) * 3.7 + ri * 11.1) < (i < 2 ? .05 : .02)) return i < 1 ? K.white : K.aqua;   // lines of light
+  if (i < 3 && hsh(Math.floor(c / 3 + t * (ri % 2 ? .6 : -.5)) * 3.7 + ri * 11.37) < (i < 2 ? .05 : .02)) return i < 1 ? K.white : K.aqua;   // lines of light
   if (i >= 2 && (ci * 7 + ri * 13) % 251 === 0) return K.aqua;                             // bubbles
   return K.depth[i];
+}
+// The same water running up over the sand (beachart.js), made of the same layers and lines of light:
+// gives colour(x, y, q, qUp, qLeft), where q is how far out from the water's edge the pixel is, 0 (a thin film) to
+// 1 (where it meets the sea, and matches it); qUp and qLeft, the same for the pixels above and to the left.
+export function seaOverSand(t, surf, tone = 'dusk') {
+  const K = SEA_TONES[tone], f = PIXEL / 4;
+  const layer = (x, y, q) => {
+    const d = Math.max(0, y - Math.round(surf((x + .5) * PIXEL) / PIXEL + TOP_PX)) * f, e = d * q;
+    return e < 4 ? 0 : Math.min(K.depth.length - 1, Math.max(0, Math.floor((e + Math.sin(x * f * .3 - t * 1.1 + e * .15) * 1.2 + Math.sin(x * f * .07 + t * .4) * 2 - 4) / 8)));
+  };
+  return (x, y, q, qUp, qLeft) => {
+    const i = layer(x, y, q);
+    if (i !== layer(x, y - 1, qUp) || i !== layer(x - 1, y, qLeft)) return K.line;
+    return seaCell(x * f, 99, t, i, i, x, y, K);
+  };
 }
 // (The sea is written pixel by pixel into a buffer, then drawn in one go: see pixelBuffer.)
 const seaBuf = pixelBuffer();

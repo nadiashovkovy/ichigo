@@ -7,7 +7,7 @@
 // What doesn't move is drawn once, onto a picture that's kept.
 // ============================================================================
 import { LW, LH, TOP_PX, PIXEL, P, RAMP } from './config.js';
-import { hsh, drawNeedles, drawCarp } from './art.js';
+import { hsh, drawNeedles, drawCarp, seaOverSand } from './art.js';
 import { dither, pack, pixelBuffer } from './pixel.js';
 
 const Yp = y => Math.round(y / PIXEL + TOP_PX);   // a height in game units, in pixels
@@ -28,14 +28,22 @@ function shoreX(y, back, t) {
   return (gx + back) / PIXEL + Math.sin(y * .11) * 3 * Math.min(1, (gy - 410) / 40) + Math.sin(y * .05 + t * .9) * 1.6;
 }
 const backLine = x => GROUND + Math.round(x * .0125 + Math.sin(x * .045) * 1.2);   // the back edge of the beach, from the house to the sea
-// The edge of a wave that has run up the front of the beach on row y (Level 0).
-const filmX = (y, back, t, wash) => shoreX(y, back, t) - wash * Math.max(0, Math.min(1, (y - 270) / 26)) * (1 + .06 * Math.sin(y * .13 + t * 2));
+// The edge of a wave that has run up the front of the beach on row y (Level 0): a tongue of water with a
+// broad round front, its own shape whatever the shore's, melting into the shore where the two meet, so it never comes to a point.
+const filmX = (y, back, t, wash) => {
+  const shore = shoreX(y, back, t), v = Math.min(1, Math.abs(y - 314) / (y < 314 ? 52 : 92)), round = 1 - (1 - v ** 2.5) ** .4;
+  const tongue = 565 - wash * 1.2 + round * (wash * .95 + 40) + Math.sin(y * .045 + t * 1.1) * 2, soft = 14;
+  return -soft * Math.log(Math.exp(-(shore - 480) / soft) + Math.exp(-(tongue - 480) / soft)) + 480;   // (whichever is further up the sand, with the join rounded off)
+};
 const sandBuf = pixelBuffer();
 const dryKept = new Map();   // the dry sand's pixels, by day and at dusk (it never changes, so it's worked out once)
 // Two contours divide the sand into flat bands, a step darker toward us, like the layers of the sea.
 const contour = [x => 26 + Math.sin(x * .021) * 5 + Math.sin(x * .057 + 2) * 2, x => 62 + Math.sin(x * .016 + 1) * 7 + Math.sin(x * .049) * 2.5];
 // day: daylight, not dusk. wash: how far (pixels) a wave has run up the front of the beach (Level 0).
-export function drawSand(g, back, t, { day = false, wash = 0 } = {}) {
+export function drawSand(g, back, t, { day = false, wash = 0, surf = null, tone = 'dusk' } = {}) {
+  const water = wash > 0 ? seaOverSand(t, surf, tone) : null;   // (the wave running up over the sand: the sea's own water)
+  // how far out from the wave's edge a pixel is: 0 at its thin edge, 1 where it meets the sea
+  const out = (x, y) => { const fx = filmX(y, back, t, wash), w = shoreX(y, back, t) - fx; return w < 24 ? 1 : Math.max(0, Math.min(1, (x - fx - 14) / (w * .9 - 14))) ** 1.15; };
   const B = sandBuf.begin(), buf = B.buf, [c0, c1, c2, c3] = RAMP.sand, C = c => pack(day ? DAY.get(c) || c : c);
   const col = { ink: pack(P.outline), white: pack(P.white), mist: pack(P.mist), aqua: pack(P.aqua), lit: C(c0), a: C(c1), b: C(c2), c: C(c3), wet: C(P.mauve), wetD: C(P.violet), shine: C(P.rosewood) };
   let still = dryKept.get(day);
@@ -50,7 +58,7 @@ export function drawSand(g, back, t, { day = false, wash = 0 } = {}) {
   }
   for (let y = GROUND - 4; y < LH; y++) {
     const edge = shoreX(y, back, t), dry = shoreX(y, 0, 0) - 18, x1 = Math.min(LW, Math.ceil(edge));
-    const film = filmX(y, back, t, wash);   // (the wave's thin edge)
+    const film = filmX(y, back, t, wash), lean = Math.hypot(1, film - filmX(y - 1, back, t, wash));   // (the wave's thin edge)
     const calm = Math.max(0, Math.min(x1, Math.floor(Math.min(dry, film)) + 1));
     buf.set(still.subarray(y * LW, y * LW + calm), y * LW);
     for (let x = calm; x < x1; x++) {
@@ -58,7 +66,12 @@ export function drawSand(g, back, t, { day = false, wash = 0 } = {}) {
       if (d < 0) continue;
       let v;
       if (d === 0) v = col.ink;
-      else if (wash > 0 && x > film) { const f = x - film; v = f < 2 ? col.white : f < 5 ? (hsh(x * 3.1 + y * 7.7 + Math.floor(t * 5)) < .5 ? col.mist : col.aqua) : (Math.floor(x / 7 + t * 3) + y * 3) % 11 === 0 ? col.white : col.aqua; }
+      else if (wash > 0 && x > film) {
+        const f = (x - film) / lean;   // (how far from the edge, across it)
+        v = f < 1.6 ? col.white : f < 3.5 ? (hsh(x * 12.99 + y * 78.23) < .35 ? col.mist : col.white)   // its foam, as along the sea's crest
+          : f < 16 && hsh(Math.floor(x / 7 + t * .9) * 5.1 + Math.floor(y / 2) * 9.7) < (1 - f / 16) * .8 ? (f < 8 ? col.white : col.mist)   // the whitewash behind it, in drifting streaks
+          : pack(water(x, y, out(x, y), out(x, y - 1), out(x - 1, y)));
+      }
       else if (edge - x < 2) v = col.white;                                             // the foam's edge
       else if (edge - x < 4) v = hsh(x * 3.1 + y * 7.7 + Math.floor(t * 4)) < .5 ? col.mist : col.aqua;
       else if (x > dry) v = x - dry < 1 ? col.wetD : Math.floor(y / 2) % 5 === 0 && hsh(Math.floor(x / 8) + y * 2.3) < .35 ? col.shine : col.wet;   // the wet sand, shining with the sky
@@ -135,9 +148,6 @@ function picture(day, nets, castle) {
     r(284, 253, 8, 11, P.outline); r(285, 255, 6, 9, wood3); if (castle > 1) r(288, 222, 1, 12, P.outline);   // (its gate, and the stick for its flag)
     for (let i = 0; i < 7; i++) { const x = 136 + i * 20, y = 266 + (i % 2) * 4; r(x, y, 4, 2, s3); }   // footprints, from the step to the castle
   }
-  // --- left by the tide: a shell and a few stones
-  r(351, 292, 7, 3, P.outline); r(352, 291, 5, 1, P.outline); r(352, 292, 5, 2, P.foam); dot(354, 292, P.pink);
-  for (const [x, y, w] of [[176, 322, 5], [268, 338, 6], [404, 320, 5], [412, 324, 3]]) { r(x - 1, y, w + 2, 3, P.outline); r(x, y - 1, w, 1, P.outline); r(x, y, w, 2, st2); r(x + 1, y, w - 2, 1, st1); }
   if (day) {   // a step lighter
     const img = g.getImageData(0, 0, LW, LH), v = new Uint32Array(img.data.buffer), to = new Map([...DAY].map(([a, b]) => [pack(a), pack(b)]));
     for (let i = 0; i < v.length; i++) if (to.has(v[i])) v[i] = to.get(v[i]);
@@ -155,8 +165,16 @@ function grass(g, x, y, n, tall, seed, t) {
   }
 }
 
-// Everything on the sand, over it. t: the time. shadow: how far shadows fall ([right, down], in pixels; none at dusk).
-export function drawBeachThings(g, t, { day = false, nets = true, castle = 2, carps = true, smoke = true, shadow = null } = {}) {
+// Left by the tide: a shell and a few stones (a wave running up over the sand covers them).
+function tideline(g, t, wash) {
+  const r = (x, y, w, h, c) => { g.fillStyle = c; g.fillRect(x, y, w, h); }, [, st1, st2] = RAMP.stone, under = (x, y) => wash > 0 && x > filmX(y, 0, t, wash) - 4;
+  if (!under(351, 292)) { r(351, 292, 7, 3, P.outline); r(352, 291, 5, 1, P.outline); r(352, 292, 5, 2, P.foam); r(354, 292, 1, 1, P.pink); }
+  for (const [x, y, w] of [[176, 322, 5], [268, 338, 6], [404, 320, 5], [412, 324, 3]]) if (!under(x, y)) { r(x - 1, y, w + 2, 3, P.outline); r(x, y - 1, w, 1, P.outline); r(x, y, w, 2, st2); r(x + 1, y, w - 2, 1, st1); }
+}
+
+// Everything on the sand, over it. t: the time. shadow: how far shadows fall ([right, down], in pixels; none at dusk). wash: how far a wave has run up the sand.
+export function drawBeachThings(g, t, { day = false, nets = true, castle = 2, carps = true, smoke = true, shadow = null, wash = 0 } = {}) {
+  tideline(g, t, wash);
   if (shadow) {
     const [dx, dy] = shadow, at = (x0, x1, y) => { g.fillStyle = day ? P.tanD : P.bark; for (let k = 0; k < dy; k++) { const x = Math.round(dx * k / dy); for (let i = x0; i < x1; i++) if (dither(i + x + 512, y + k) < .62) g.fillRect(i + x, y + k, 1, 1); } };
     at(60, 158, 261); at(185, 189, 262); at(14, 24, 262); if (nets) { at(213, 217, 265); at(262, 266, 265); } if (castle > 1) at(272, 304, 264); else if (castle) at(283, 293, 264);

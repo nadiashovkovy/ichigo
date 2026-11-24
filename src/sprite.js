@@ -1,18 +1,17 @@
 // ============================================================================
-// sprite.js — Ichigo, drawn pixel by pixel at full size (about 36×56 art pixels, plus an outline).
-// Bowl cut (a little ruffled, after the game's cover), red #15 jersey to the knees, wooden
-// flip-flops, yellow bucket — all from the novel.
+// sprite.js — Ichigo, drawn pixel by pixel at the size they're shown (about 20×40 art pixels, plus an
+// outline): a sturdy small child, a bit over two heads tall. Bowl cut (a little ruffled, after the game's
+// cover), red #15 jersey to the knees, wooden flip-flops, yellow bucket — all from the novel.
 // Each frame is a little picture made of letters; each letter is a colour (see SP). Frames face
 // right; drawSprite mirrors them. A dark outline is added around every frame automatically.
-// On the 16:9 screen (where each pixel covers 4/3 as much of the world) Ichigo is shrunk to 3/4 size
-// to keep their size in the world: see small().
 // ============================================================================
-import { P, PIXEL } from './config.js';
+import { P } from './config.js';
 import { S } from './state.js';
 
 export const SP = {
   K: '#14131f', H: '#3b4a7a',                      // hair, and the blue sheen on it
   S: '#f1c49b', s: '#c98d66', m: '#a8523f',        // skin, skin shadow, mouth
+  c: '#e9a184',                                    // the pink of the cheek
   E: '#14131f', e: '#fdfbf3',                      // eye, and the light in it
   R: '#d2302a', r: '#8c2320', L: '#ec5a44', n: '#d2302a',   // jersey, its shadow, its light ('n' marks where the 15 goes)
   W: P.foam,                                       // collar trim and the number
@@ -21,248 +20,218 @@ export const SP = {
   w: P.white,                                      // the glint on the bucket's rim
 };
 const OUTLINE = '#0b1428';   // the night-blue ink of the cover's line-art
-const FRAME_W = 44;          // frame width in art pixels
-const ANCHOR = 22;           // the body's centre column (Ichigo's x)
+const FRAME_W = 34;          // frame width in art pixels
+const ANCHOR = 16;           // the body's centre column (Ichigo's x)
 
-// Every row is 44 letters wide (the body sits in the middle 36; arms and bucket can reach past it).
-const HEAD = [   // the bowl cut, a little ruffled (after the game's cover); the face puzzled: a slanting eyebrow, a wavy mouth
-  '..............KKKKK..KKKK...................',
-  '............KKKKKKKKKKKKKKK.................',
-  '..........KKKKKKKKKKKKKKHHKKKK..............',
-  '.........KKKKKKKKKKKKKKKKKKKKKKK............',
-  '........KKKKKKKKKKKKKHHHHHHHKKK.............',
-  '.......KKKKKKKKKKKKHHHHHHHHHKKKKK...........',
-  '......KKKKKKKKKKKKHHHHHKKKKKKKKKK...........',
-  '......KKKKKKKKKKKKHHHKKKKKKKKKKKKKK.........',
-  '......KKKKKKKKKKKKKKKKKKKKKKKKKKKKK.........',
-  '......KKKKKKKKKKKKKKKKKKKKKKKKKKKKKK........',
-  '......KKKKKKKKKKKKKKKKKKKKKKKKKKKKKK........',
-  '......KKKKKKKKKKKKKKKKKKKKKKKKKKKKKK........',
-  '......KKKKKKKKKKKKKKKKKKKKKKKKKKKKKK........',
-  '......KKKKKKKKKKKKKKKKKKKKKKKKKKKKKKK.......',
-  '......KKKKKKKKKKKKKKKKKSSSSSSSSKKSSKKK......',
-  '......KKKKKKKKKKKKKKKSSSSSSSSKKSSSSSKK......',
-  '......KKKKKKKKKKKKKKKSSSSSSSSSeESSSS........',
-  '......KKKKKKKKKKKKKSSSSSSSSSSSEESSSS........',
-  '......KKKKKKKKKKKKSsSSSSSSSSSSEESSSS........',
-  '.......KKKKKKKKKKsSsSSSSSSSSSSEESSSS........',
-  '.......KKKKKKKKKKssSsSSSSSSSSSSSSSSS........',
-  '.........KKKKKKKssSSSSSSSSSSSSSSSSS.........',
-  '.........KKKKKKKssSSSSSSSSSSmSmSSs..........',
-  '...........KKKKsssSSSSSSSSSSSmSms...........',
-  '..............ssssSSSSSSSSSSSSSss...........',
-  '...............ssssSSSSSSSSSSSs.............',
-  '.................ssSSSSSSs..................',
-  '..................ssSSSSss..................',
-];
+// Rows are padded out to 34 letters (the body sits in the middle 18; arms and bucket can reach past it).
+const fit = rows => rows.map(r => r.padEnd(FRAME_W, '.'));
+const over = (rows, top, extra) => rows.map((r, y) => (extra[y - top] ? [...r].map((ch, x) => ((extra[y - top][x] ?? '.') === '.' ? ch : extra[y - top][x])).join('') : r));   // lay one picture over another, from row top
+const HEAD = fit([   // the bowl cut, full and a little ruffled (after the game's cover); wide eyes, pink cheeks, a small mouth
+  '.............KKK.KKK',
+  '..........KKKKKKKKKKK.K',
+  '.........KKKKKKKKKKKKKKK',
+  '.......KKKKKKKKKKKHHHKKKK',
+  '......KKKKKKKKKKHHHHKKKKKK',
+  '......KKKKKKKKKHHHKKKKKKKKK',
+  '.....KKKKKKKKKHHKKKKKKKKKKK',
+  '.....KKKKKKKKKKKKKKKKKKKKKK',
+  '.....KKKKKKKKKKKKKKKKKKKKKK',
+  '.....KKKKKKKKKSKKKSSKKKKKK',
+  '.....KKKKKKKKSSSKSSSSKSSKK',
+  '......KKKKKKsSSSSSSSSSSSSK',
+  '......KKKKKKsSSeESSSSeESSK',
+  '......KKKKKssSSEESSSSEESS',
+  '.......KKKKsSSSEESSSSEESS',
+  '.......KKKKssSccSSSSSSccS',
+  '........KK.sssSSSSmmSSSSs',
+  '............sssSSSSSSSSs',
+  '..............ssSSSSSs',
+]);
 // the jersey, arms down, the bucket hanging from the front hand
-const TORSO = [
-  '.............rRRRRWWWWWWRRRRr...............',
-  '...........rrRRRRRRWWWWRRRRRRrr.............',
-  '...........rrRLLnRRRRRRRRRRRRrr.............',
-  '.........rrRRLLLRRRRRRRRRRRRRRRrr...........',
-  '.........rrRLLLRRRRRRRRRRRRRRRRrr...........',
-  '........rrRRLLRRRRRRRRRRRRRRRRRRrr..........',
-  '........rrRRLLRRRRRRRRRRRRRRRRRRrr..........',
-  '........rrrRLLRRRRRRRRRRRRRRRRRrrr..........',
-  '........SrrRRRRRRRRRRRRRRRRRRRRrrS..........',
-  '........SSrrRRRRRRRRRRRRRRRRRRrrSS..........',
-  '........SSrrRRRRRRRRRRRRRRRRRRrrSS..........',
-  '........SSSrRRRRRRRRRRRRRRRRRRrSSS..........',
-  '........SSSSRRRRRRRRRRRRRRRRRRSSSSh.........',
-  '.........SSSRRRRRRRRRRRRRRRRRRSSSShh.....hh.',
-  '..........rrRRRRRRRRRRRRRRRRRRrr..yyyyyyyyyy',
-  '..........rrRRRRRRRRRRRRRRRRRRrr..YweYYYYYYy',
-  '..........rrRRRRRRRRRRRRRRRRRRrr..YeYYYYYYYy',
-  '..........rrRRRRRRRRRRRRRRRRRRrr..YeYYYYYYYy',
-  '..........rrRRRRRRRRRRRRRRRRRRrr...YeYYYYYy.',
-  '..........rrrRRRRRRRRRRRRRRRRrrr...YYYYYYYy.',
-  '..........rrrrrRRRRRRRRRRRRrrrrr...YYYYYYYy.',
-  '...........rrrrrRRRRRRRRRRrrrrr.....yyyyyy..',
-];
+const TORSO = fit([
+  '...........rrRWWWWRrr',
+  '.........rrRRRRWWRRRRrr',
+  '........rrRLLnRRRRRRRRrr',
+  '.......rrrRLLRRRRRRRRRrrr',
+  '.......rrRRLRRRRRRRRRRRrr',
+  '.......rrrRLRRRRRRRRRRrrr',
+  '.......SSrRRRRRRRRRRRRrSS',
+  '.......SSrRRRRRRRRRRRRrSSs',
+  '.......sSrRRRRRRRRRRRRrSSh.hh',
+  '........srRRRRRRRRRRRRryyyyyyy',
+  '........rrRRRRRRRRRRRRrYweYYYy',
+  '........rrRRRRRRRRRRRRrYeYYYYy',
+  '........rrRRRRRRRRRRRRrrYeYYy',
+  '........rrRRRRRRRRRRRRrrYYYYy',
+  '........rrrRRRRRRRRRRrrr',
+  '.......rrrrrrRRRRRRrrrrrr',
+]);
 const LEGS = {
-  stand: [
-    '..............SSss....SSss..................',
-    '..............SSss....SSss..................',
-    '..............SSss....SSss..................',
-    '..............SSss....SSss..................',
-    '............DDBBBB..DDBBBB..................',
-    '............DDBBB...DDBBB...................',
-  ],
-  step1: [
-    '............SSss......SSss..................',
-    '...........SSss........SSss.................',
-    '...........SSss........SSss.................',
-    '..........SSss..........SSss................',
-    '........DDBBBB..........DDBBBB..............',
-    '........DDBBB............DBBBB..............',
-  ],
-  step2: [
-    '................SSssSS......................',
-    '................SSssS.S.....................',
-    '................SSss.S.Ss...................',
-    '................SSss..SSss..................',
-    '..............DDBBBB..DDBBBB................',
-    '..............DDBBB....DBBBB................',
-  ],
+  stand: fit([
+    '...........ssss..ssss',
+    '...........SSSs..SSSs',
+    '...........SSSs..SSSs',
+    '............SSs...SSs',
+    '...........DBBBB.DBBBB',
+    '...........DBBB..DBBB',
+  ]),
+  step1: fit([
+    '..........ssss...ssss',
+    '.........SSSs.....SSSs',
+    '.........SSSs......SSSs',
+    '........SSSs.......SSs',
+    '.......DBBBB......DBBBB',
+    '.......DBBB.......DBBB',
+  ]),
+  step2: fit([
+    '............ssssssss',
+    '...........ssss.SSSs',
+    '.........Dsss...SSSs',
+    '.........DB......SSs',
+    '..........B.....DBBBB',
+    '................DBBB',
+  ]),
 };
 // arms out wide, the bucket swinging from one hand
-const BALANCE = [
-  '.............rRRRRWWWWWWRRRRr...............',
-  '...........rrRRRRRRWWWWRRRRRRrr.............',
-  '...........rrRLLnRRRRRRRRRRRRrr.............',
-  '..........rrRRLLRRRRRRRRRRRRRRRrr...........',
-  '...SSSSSssrrRRLLRRRRRRRRRRRRRRRrrrssSSSSS...',
-  '..SSSSSSssrrRRLLRRRRRRRRRRRRRRRRrrssSSSSSS..',
-  '..ss......rrRRLLRRRRRRRRRRRRRRRRrr......h...',
-  '..ss......rrRRLLRRRRRRRRRRRRRRRrr......h.h..',
-  '..........rrRRRRRRRRRRRRRRRRRRRrr.....h...h.',
-  '..........rrRRRRRRRRRRRRRRRRRRrr....yyyyyyyy',
-  '..........rrRRRRRRRRRRRRRRRRRRrr....YweYYYYy',
-  '..........rrRRRRRRRRRRRRRRRRRRrr....YeYYYYYy',
-  '..........rrRRRRRRRRRRRRRRRRRRrr....YeYYYYYy',
-  '..........rrRRRRRRRRRRRRRRRRRRrr.....YYYYYy.',
-  '..........rrRRRRRRRRRRRRRRRRRRrr.....YYYYYy.',
-  '..........rrRRRRRRRRRRRRRRRRRRrr......yyyy..',
-  '..........rrRRRRRRRRRRRRRRRRRRrr............',
-  '..........rrRRRRRRRRRRRRRRRRRRrr............',
-  '..........rrRRRRRRRRRRRRRRRRRRrr............',
-  '..........rrrRRRRRRRRRRRRRRRRrrr............',
-  '..........rrrrrRRRRRRRRRRRRrrrrr............',
-  '...........rrrrrRRRRRRRRRRrrrrr.............',
-];
-// arms flung up (below the top of the head)
-const JUMP = [
-  '..SSs....KKKKKKKssSSSSSSSSSSmSmSSs...Sss....',
-  '..SSSss....KKKKsssSSSSSSSSSSSmSms...Ssss....',
-  '...SSss.......ssssSSSSSSSSSSSSSss..SSss.....',
-  '.....SSss......ssssSSSSSSSSSSSs..SSss.......',
-  '.....SSss........ssSSSSSSs.......SSss.......',
-  '.......SSs........ssSSSSss.....SSss.........',
-  '.......SSSrrRRRRWWWWWWRRRRr....SSss.........',
-  '.........SrrRRRRRWWWWRRRRRRr..SSs...........',
-  '..........rrRRLLnRRRRRRRRRRRRRrr............',
-  '..........rrRRLLRRRRRRRRRRRRRRrr............',
-  '..........rrRRLLRRRRRRRRRRRRRRrr............',
-  '..........rrRRLLRRRRRRRRRRRRRRrr............',
-  '..........rrRRLLRRRRRRRRRRRRRRrr............',
-  '..........rrRRLLRRRRRRRRRRRRRRrr............',
-  '..........rrRRRRRRRRRRRRRRRRRRrr............',
-  '..........rrRRRRRRRRRRRRRRRRRRrr............',
-  '..........rrRRRRRRRRRRRRRRRRRRrr............',
-  '..........rrRRRRRRRRRRRRRRRRRRrr............',
-  '..........rrRRRRRRRRRRRRRRRRRRrr............',
-  '..........rrRRRRRRRRRRRRRRRRRRrr............',
-  '..........rrRRRRRRRRRRRRRRRRRRrr............',
-  '..........rrrRRRRRRRRRRRRRRRRrrr............',
-  '..........rrrrrRRRRRRRRRRRRrrrrr............',
-  '...........rrrrrRRRRRRRRRRrrrrr.............',
-  '............SSssSSSSssss....................',
-  '............SSssSSSSssss....................',
-  '..........DDBBBB....DDBBBB..................',
-  '..........DDBBB......DBBBB..................',
-  '............................................',
-  '............................................',
-  '............................................',
-  '............................................',
+const BALANCE = fit([
+  '...........rrRWWWWRrr',
+  '.........rrRRRRWWRRRRrr',
+  '.....srrrrrRLLnRRRRRRRrrrrs',
+  '.SSSSSrrrrRRLLRRRRRRRRrrrrSSSSS',
+  '.SSSSSsrrrRRLRRRRRRRRRrrrrsSSSSS',
+  '..s......rRRLRRRRRRRRRRr.....h',
+  '.........rRRRRRRRRRRRRRr....h.h',
+  '.........rRRRRRRRRRRRRRr...h...h',
+  '.........rRRRRRRRRRRRRRr..yyyyyyy',
+  '........rrRRRRRRRRRRRRRr..YweYYYy',
+  '........rrRRRRRRRRRRRRrr..YeYYYYy',
+  '........rrRRRRRRRRRRRRrr...YeYYy',
+  '........rrRRRRRRRRRRRRrr...YYYYy',
+  '........rrRRRRRRRRRRRRrr....yyy',
+  '........rrrRRRRRRRRRRrrr',
+  '.......rrrrrrRRRRRRrrrrrr',
+]);
+// in the air: arms flung up, knees bent, the hem flying a little
+const JUMP = fit([
+  '.......rrrrrrRWWWWRrrrrrr',
+  '........rrrRRRRWWRRRRrrr',
+  '.........rRRLLnRRRRRRRr',
+  '.........rRRLLRRRRRRRRr',
+  '.........rRRRLRRRRRRRRr',
+  '.........rRRRLRRRRRRRRRr',
+  '.........rRRRRRRRRRRRRRr',
+  '........rrRRRRRRRRRRRRRr',
+  '........rrRRRRRRRRRRRRRrr',
+  '........rrRRRRRRRRRRRRRrr',
+  '........rrRRRRRRRRRRRRRrr',
+  '........rrRRRRRRRRRRRRRrr',
+  '.......rrrRRRRRRRRRRRRRrr',
+  '.......rrrRRRRRRRRRRRRrrr',
+  '.......rrrrrRRRRRRRRrrrrr',
+  '........rrr.rrRRRRrr.rrr',
+  '.........SSSs.....SSSs',
+  '........SSSs.......SSSs',
+  '.......DSSs........DBBBB',
+  '.......DB..........DBBB',
+  '........B',
+]);
+const ARMS_UP = [   // over the head, from row 9
+  '.SS..........................SS',
+  '.SSs........................SSs',
+  '..SSs.......................SSs',
+  '..SSs......................SSs',
+  '...SSs.....................SSs',
+  '...SSs....................SSs',
+  '....SSs..................SSs',
+  '.....SSs................SSs',
+  '......rrr..............rrr',
+  '......rrrr............rrrr',
 ];
 // squatting, scooping sand (below the head)
-const DIG1 = [
-  '.............rRRRRWWWWWWRRRRr...............',
-  '...........rrRRRRRRWWWWRRRRRRrr.............',
-  '...........rrRLLnRRRRRRRRRRRRrr.............',
-  '.........rrRRLLLRRRRRRRRRRRRRRRr............',
-  '.........rrRLLLRRRRRRRRRRRRRRRRRSSss........',
-  '........rrRRLLRRRRRRRRRRRRRRRRRRSSss........',
-  '........rrRRLLRRRRRRRRRRRRRRRRRr....SSs.....',
-  '........rrRRLLRRRRRRRRRRRRRRRRrr....SSSs....',
-  '........rrRRRRRRRRRRRRRRRRRRRRrr.....SSSSS..',
-  '.......rrRRRRRRRRRRRRRRRRRRRRRRrr......SSS..',
-  '.......rRRRRRRRRRRRRRRRRRRRRRRRRr...........',
-  '......rrRRRRRRRRRRRRRRRRRRRRRRRRrr..........',
-  '......rrrrrRRRRRRRRRRRRRRRRRRrrrrrYYYYYYY...',
-  '.......rrrrrRRRRRRRRRRRRRRRRrrrrrrYYYYYYYY..',
-  '........SSssSSSS......SSssSSSS....YYYYYYYy..',
-  '........SSssSSS.......SSssSSSS.....YYYYyy...',
-  '......DDBBBBBB........DDBBBBBB......yyyyy...',
-  '......DDBBBBB..........DBBBBB........yy.....',
-];
-const DIG2 = [
-  '.............rRRRRWWWWWWRRRRr........SSS....',
-  '...........rrRRRRRRWWWWRRRRRRrr....SSSSS....',
-  '...........rrRLLnRRRRRRRRRRRRrr....SSs......',
-  '.........rrRRLLLRRRRRRRRRRRRRRRr.SSss.......',
-  '.........rrRLLLRRRRRRRRRRRRRRRRRSSSss.......',
-  '........rrRRLLRRRRRRRRRRRRRRRRRRSSs.........',
-  '........rrRRLLRRRRRRRRRRRRRRRRRr............',
-  '........rrRRLLRRRRRRRRRRRRRRRRrr............',
-  '........rrRRRRRRRRRRRRRRRRRRRRrr............',
-  '.......rrRRRRRRRRRRRRRRRRRRRRRRrr...........',
-  '.......rRRRRRRRRRRRRRRRRRRRRRRRRr...........',
-  '......rrRRRRRRRRRRRRRRRRRRRRRRRRrr..........',
-  '......rrrrrRRRRRRRRRRRRRRRRRRrrrrrYYYYYYY...',
-  '.......rrrrrRRRRRRRRRRRRRRRRrrrrrrYYYYYYYY..',
-  '........SSssSSSS......SSssSSSS....YYYYYYYy..',
-  '........SSssSSS.......SSssSSSS.....YYYYyy...',
-  '......DDBBBBBB........DDBBBBBB......yyyyy...',
-  '......DDBBBBB..........DBBBBB........yy.....',
-];
+const DIG1 = fit([
+  '...........rrRWWWWRrr',
+  '.........rrRRRRWWRRRRrr',
+  '........rrRLLnRRRRRRRRrr',
+  '.......rrRLLRRRRRRRRRRrrr',
+  '.......rRRRLRRRRRRRRRRRrSSs',
+  '......rrRRLRRRRRRRRRRRRr.SSs',
+  '......rRRRRRRRRRRRRRRRRr..SSs',
+  '......rRRRRRRRRRRRRRRRRrr..SSs',
+  '.....rrRRRRRRRRRRRRRRRRrr..SSS',
+  '......rrrrRRRRRRRRRRrrrr.yyyyyy',
+  '.......SSSSsrrrrrrSSSSs.YeYYYy',
+  '.......SSSs.......SSSs..YeYYYy',
+  '......DBBBBB.....DBBBBB..YYYy',
+  '......DBBBB......DBBBB....yy',
+]);
+const DIG2 = fit([
+  '...........rrRWWWWRrr.....SSS',
+  '.........rrRRRRWWRRRRrr..SSSS',
+  '........rrRLLnRRRRRRRRrr.SSs',
+  '.......rrRLLRRRRRRRRRRrrSSs',
+  '.......rRRRLRRRRRRRRRRRrSSs',
+  '......rrRRLRRRRRRRRRRRRr',
+  '......rRRRRRRRRRRRRRRRRr',
+  '......rRRRRRRRRRRRRRRRRrr',
+  '.....rrRRRRRRRRRRRRRRRRrr',
+  '......rrrrRRRRRRRRRRrrrr.yyyyyy',
+  '.......SSSSsrrrrrrSSSSs.YeYYYy',
+  '.......SSSs.......SSSs..YeYYYy',
+  '......DBBBBB.....DBBBBB..YYYy',
+  '......DBBBB......DBBBB....yy',
+]);
 // sitting in the sand (or on the boat's thwart), legs out in front, the bucket in their lap
-const SIT = [
-  '.............rRRRRWWWWWWRRRRr...............',
-  '...........rrRRRRRRWWWWRRRRRRrr.............',
-  '...........rrRLLnRRRRRRRRRRRRrr.............',
-  '.........rrRRLLLRRRRRRRRRRRRRRRrr...........',
-  '.........rrRLLLRRRRRRRRRRRRRRRRrr...........',
-  '........rrRRLLRRRRRRRRRRRRRRRRRRrr..........',
-  '........rrRRLLRRRRRRRRRRRRRRRRRRrr..........',
-  '........rrrRLLRRRRRRRRRRRRRRRRRRrSS.........',
-  '........rrRRRRRRRRRRRRRRRRRRRRRRSSSS........',
-  '.......rrRRRRRRRRRRRRRRRRRRRRRRSSShhhhh.....',
-  '.......rrRRRRRRRRRRRRRRRRRRRRRrSSyyyyyyyy...',
-  '......rrRRRRRRRRRRRRRRRRRRRRRRrSSYeYYYYYy...',
-  '......rrrRRRRRRRRRRRRRRRRRRRRrrSSYeYYYYYy...',
-  '......rrrrrRRRRRRRRRRRRRRRRRRrrrSYYYYYYy....',
-  '.......rrrrrrRRRRRRRRRRRRRRRrrSSSyyyyyySSBB.',
-  '........rrrrrrrrrrrrrrrrrrrrrSSSSSSSSSSsDBB.',
-];
+const SIT = fit([
+  '...........rrRWWWWRrr',
+  '.........rrRRRRWWRRRRrr',
+  '........rrRLLnRRRRRRRRrr',
+  '.......rrrRLLRRRRRRRRRrr',
+  '.......rrRRLRRRRRRRRRRrr',
+  '.......rrrRLRRRRRRRRRRrSS',
+  '.......SSrRRRRRRRRRRRRSSS',
+  '........SrRRRRRRRRRRRSSh.h',
+  '........rRRRRRRRRRRRRyyyyyyy',
+  '.......rrRRRRRRRRRRRRYeYYYYy..DB',
+  '.......rrRRRRRRRRRRRRYeYYYYy.SDB',
+  '......rrrRRRRRRRRRRRRrYYYYySSSDB',
+  '......rrrrRRRRRRRRRrrSSSSSSSSSDB',
+  '......rrrrrrrrrrrrrrrssssssssssB',
+]);
 const FRAMES = {
   stand: [...HEAD, ...TORSO, ...LEGS.stand],
   step1: [...HEAD, ...TORSO, ...LEGS.step1],
   step2: [...HEAD, ...TORSO, ...LEGS.step2],
   balance: [...HEAD, ...BALANCE, ...LEGS.step1],
-  jump: [...HEAD.slice(0, 22), ...JUMP],
-  dig1: [...Array(6).fill('.'.repeat(FRAME_W)), ...HEAD, ...DIG1],
-  dig2: [...Array(6).fill('.'.repeat(FRAME_W)), ...HEAD, ...DIG2],
+  jump: [...over(HEAD, 9, ARMS_UP), ...JUMP],
+  dig1: [...HEAD, ...DIG1],
+  dig2: [...HEAD, ...DIG2],
   sit: [...HEAD, ...SIT],
 };
 const HOLDS_BUCKET = ['stand', 'step1', 'step2', 'balance', 'sit'];   // frames where the bucket hangs upright (it can show water, and the shovel)
 // The red shovel, standing in the bucket blade up (its handle down inside): drawn from the rim up.
-const SPADE = ['.RR.', 'RRRR', 'RRRR', 'RRRr', '.RRr', '..R.', '..R.', '..R.'];
+const SPADE = ['RR.', 'RRR', 'RRr', '.Rr', '.R.', '.R.'];
 const SPADE_C = { R: P.red, r: P.rust };
 // Damage that stays with Ichigo, added one by one with each fall: [rows below the collar, column,
-// colour (or null to tear a hole)], each mark a 2×2 block. Measured from the collar so it lands in
+// colour (or null to tear a hole), width, height], in pixels. Measured from the collar so it lands in
 // the same place in every frame.
 const SCARS = [
-  [[16, 14, 'W'], [18, 16, 'W']],             // a salt stain on the jersey
-  [[6, 24, '#1f3b6b'], [6, 26, '#1f3b6b']],   // a patch
-  [[-8, 30, 'r']],                            // a scratch on the cheek
-  [[20, 14, null], [20, 22, null], [20, 28, null]],   // the hem torn ragged
-  [[8, 12, 'W']],                             // a bandage
+  [[9, 11, 'W', 2, 1], [10, 12, 'W', 2, 1], [11, 11, 'W', 1, 1]],        // a salt stain on the jersey
+  [[11, 17, 'r', 3, 1], [10, 18, 'r', 1, 3]],                            // a small tear, darned in dark red
+  [[-4, 14, 'm', 2, 1], [-3, 15, 'm', 1, 1]],                            // a scratch on the cheek
+  [[15, 8, null, 2, 1], [14, 14, null, 1, 2], [15, 15, null, 1, 1], [15, 21, null, 2, 1]],   // the hem torn ragged
+  [[6, 7, 'W', 2, 2]],                                                   // a bandage
 ];
 // Permanent marks: they stay with Ichigo from level to level (S.marks, kept in the save), unlike the
-// fall marks above. Same [rows below the collar, column, colour] as SCARS, plus an optional size
-// (width, height; 2×2 if left out). Some marks look different over time: the chin is a red cut, then
-// a strawberry plaster for the rest of Level 1, then a pale scar from Level 2 on.
-// A few other touches use the same table: Ichigo's lip wobbling, and water in the bucket.
-// (The eye is painted out with skin, and a short lid line put in low down.)
-const ASLEEP = [[-12, 28, 'S', 4, 4], [-9, 27, 'E', 6, 1]];
+// fall marks above. Same [rows below the collar, column, colour, width, height] as SCARS. Some marks
+// look different over time: the chin is a red cut, then a strawberry plaster for the rest of Level 1,
+// then a pale scar from Level 2 on.
+// A few other touches use the same table: Ichigo's lip wobbling, their eyes shut, and water in the bucket.
 const MARKS = {
-  'chin-cut':     [[-4, 27, P.red]],                                   // just fallen on the shovel
-  'chin-plaster': [[-4, 26, P.pink, 3, 2], [-3, 26, P.rose, 3, 1], [-4, 28, P.red, 1, 1]],   // Kaa-chan's strawberry plaster (its rose edge keeps it from vanishing into the skin)
-  'chin-scar':    [[-3, 27, P.tan, 2, 1]],                             // what's left of it
-  'asleep':       ASLEEP,   // eyes shut
-  'pout':         [[-6, 28, 'S', 3, 1], [-6, 29, 'm', 1, 1], [-5, 28, 'm', 1, 1], [-5, 29, 'S', 1, 1], [-5, 30, 'm', 1, 1], [-5, 31, 'S', 1, 1]],   // the lip wobbling (every other frame)
+  'chin-cut':     [[-2, 18, P.red, 2, 1]],                               // just fallen on the shovel
+  'chin-plaster': [[-2, 17, P.pink, 3, 1], [-1, 17, P.rose, 3, 1], [-2, 18, P.red, 1, 1]],   // Kaa-chan's strawberry plaster (its rose edge keeps it from vanishing into the skin)
+  'chin-scar':    [[-2, 18, P.tan, 2, 1]],                               // what's left of it
+  'asleep':       [[-7, 15, 'S', 2, 3], [-7, 21, 'S', 2, 3], [-5, 14, 'E', 3, 1], [-5, 21, 'E', 3, 1]],   // eyes shut: painted out with skin, and a short lid line put in low down
+  'pout':         [[-3, 18, 'S', 2, 1], [-3, 17, 'm', 1, 1], [-4, 18, 'm', 2, 1], [-3, 20, 'm', 1, 1]],   // the lip wobbling (every other frame)
 };
 // Which permanent marks to draw, from S.marks (the chin shows its plaster in Level 1 and its scar
 // after), and the shovel Ichigo carries in the bucket.
@@ -272,10 +241,7 @@ export function markIds() {
   return ids;
 }
 
-// Ichigo's number: big (6×10 digits, for the full-size sprite) and small (3×5, for the 3/4 one).
-const FIFTEEN = ['..##..######', '.###..##....', '####..##....', '..##..#####.', '..##..######', '..##......##',
-                 '..##......##', '..##..##..##', '..##..######', '..##...####.'];
-const FIFTEEN_SMALL = ['.#.###', '##.#..', '.#.##.', '.#...#', '.#.##.'];
+const FIFTEEN = ['.#.###', '##.#..', '.#.##.', '.#...#', '.#.##.'];   // Ichigo's number
 
 // Add a one-pixel outline around a grid of colours (null = see-through), padding it by a pixel.
 export function outline(grid) {
@@ -285,7 +251,7 @@ export function outline(grid) {
     if (!out[y][x] && (filled(x - 1, y) || filled(x + 1, y) || filled(x, y - 1) || filled(x, y + 1))) out[y][x] = OUTLINE;
   return out;
 }
-// Shrink a grid of colours to k of its size: each new pixel takes the colour that covers most of
+// Shrink a grid of colours to k of its size (for the grown-ups, people.js, who are drawn larger): each new pixel takes the colour that covers most of
 // the old pixels under it (see-through only if that's at least half of them; on a tie, the small
 // details win: eye, catchlight, mouth, eyebrow).
 const DETAIL = [SP.E, SP.e, SP.m, P.red, P.pink, P.rose, P.tan, P.rust, SP.K];   // (the chin's marks are details too)
@@ -315,13 +281,13 @@ export function small(grid, k = .75) {
 function windswept(rows, dx, dy) {
   const g = [Array(FRAME_W).fill('.'), Array(FRAME_W).fill('.'), ...rows.map(r => [...r])];
   const hair = ch => ch === 'K' || ch === 'H', top = g.findIndex(r => r.some(hair));
-  if (dx) for (let r = top; r < top + 11; r++) {   // the back of the hair (frames face right, so the left edge) flicks out
-    const L = g[r].findIndex(hair), ext = Math.round(dx * (1 - (r - top) / 11) + (r % 3 === 0 ? .4 : 0));
+  if (dx) for (let r = top; r < top + 9; r++) {   // the back of the hair (frames face right, so the left edge) flicks out
+    const L = g[r].findIndex(hair), ext = Math.round(dx * (1 - (r - top) / 9) + (r % 3 === 0 ? .4 : 0));
     for (let x = Math.max(0, L - ext); x < L; x++) g[r][x] = 'K';
   }
   if (dy) for (let c = 0; c < FRAME_W; c++) {   // the crown lifts, a strand at a time
     const t = g.findIndex(r => hair(r[c]));
-    if (t < 0 || t > top + 3) continue;
+    if (t < 0 || t > top + 2) continue;
     for (let y = t - Math.min(2, dy - (c % 4 === 0 ? 1 : 0)); y < t; y++) g[y][c] = 'K';
   }
   return g.map(r => r.join(''));
@@ -329,20 +295,20 @@ function windswept(rows, dx, dy) {
 
 const cache = new Map();
 // marks: ids from MARKS to paint on, plus 'water' for a full bucket.
-function picture(frame, scars, mini, [hx, hy] = [0, 0], marks = []) {
-  const key = [frame, scars, mini, hx, hy, marks.join('+')].join();
+function picture(frame, scars, [hx, hy] = [0, 0], marks = []) {
+  const key = [frame, scars, hx, hy, marks.join('+')].join();
   if (cache.has(key)) return cache.get(key);
   const rows = windswept(FRAMES[frame], hx, hy);
   const collar = rows.findIndex(r => r.includes('W'));
   let grid = rows.map(r => [...r].map(ch => ch === '.' ? null : SP[ch]));
   let number = null;
   rows.forEach((r, y) => { const x = r.indexOf('n'); if (x >= 0) number = { x, y }; });
-  for (let i = 0; i < Math.min(scars, SCARS.length); i++) for (const [dr, c, col] of SCARS[i])
-    for (const [dy, dx] of [[0, 0], [0, 1], [1, 0], [1, 1]]) {
+  for (let i = 0; i < Math.min(scars, SCARS.length); i++) for (const [dr, c, col, w, h] of SCARS[i])
+    for (let dy = 0; dy < h; dy++) for (let dx = 0; dx < w; dx++) {
       const y = collar + dr + dy, x = c + dx;
       if (grid[y] && grid[y][x]) grid[y][x] = col === null ? null : (SP[col] || col);
     }
-  for (const id of marks) for (const [dr, c, col, w = 2, h = 2] of MARKS[id] || [])
+  for (const id of marks) for (const [dr, c, col, w, h] of MARKS[id] || [])
     for (let dy = 0; dy < h; dy++) for (let dx = 0; dx < w; dx++) {
       const y = collar + dr + dy, x = c + dx;
       if (grid[y] && grid[y][x]) grid[y][x] = SP[col] || col;
@@ -351,24 +317,20 @@ function picture(frame, scars, mini, [hx, hy] = [0, 0], marks = []) {
     const y = rows.findIndex(r => r.includes('yyyyy')), x0 = rows[y].indexOf('yyyyy'), x1 = rows[y].lastIndexOf('y');   // the bucket's rim
     if (marks.includes('water')) for (let x = x0 + 1; x < x1; x++) grid[y][x] = x === x0 + 2 ? P.aqua : P.sea;   // a full bucket: water inside its rim
     if (marks.includes('shovel')) SPADE.forEach((r, j) => [...r].forEach((ch, i) => {   // the shovel standing in it
-      const yy = y - SPADE.length + j, xx = x1 - 4 + i;
+      const yy = y - SPADE.length + j, xx = x1 - 3 + i;
       if (ch !== '.' && grid[yy] && xx < grid[yy].length) grid[yy][xx] = SPADE_C[ch];
     }));
   }
-  const k = mini ? .75 : 1;
-  if (mini) grid = small(grid, k);
-  const pic = { grid: outline(grid), anchor: Math.floor(ANCHOR * k), digits: mini ? FIFTEEN_SMALL : FIFTEEN,
-                number: number && { x: Math.floor(number.x * k), y: Math.floor(number.y * k) + 1 } };
+  const pic = { grid: outline(grid), anchor: ANCHOR, number: number && { x: number.x, y: number.y + 2 } };   // (the outline adds a row on top)
   cache.set(key, pic); return pic;
 }
-const mini = () => PIXEL > 1.1;   // the 16:9 screen: draw Ichigo at 3/4 size
-export const spriteHeight = () => picture('stand', 0, mini()).grid.length;
+export const spriteHeight = () => picture('stand', 0).grid.length;
 
 // x = centre, y = feet, in art pixels. face = 1 (right) or -1 (left). hair = [how far it's blown
 // back, how far it's lifted], in pixels (see windswept).
 // marks: what else to paint on (see MARKS; usually markIds(), plus 'water' when the bucket is full).
 export function drawSprite(g, frame, x, y, face, scars, hair, marks) {
-  const { grid, number, anchor, digits } = picture(frame, scars, mini(), hair, marks), h = grid.length, w = grid[0].length;
+  const digits = FIFTEEN, { grid, number, anchor } = picture(frame, scars, hair, marks), h = grid.length, w = grid[0].length;
   const ox = Math.round(x), oy = Math.round(y) - h + 1;   // the outline under the feet hangs one pixel below
   const col = c => face > 0 ? ox + c - anchor : ox + anchor - c;
   for (let r = 0; r < h; r++) for (let c = 0; c < w; c++) {

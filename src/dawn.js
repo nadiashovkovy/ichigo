@@ -1,9 +1,9 @@
 // ============================================================================
 // dawn.js — after a fall, a new tomorrow dawns as one of Hokusai's Thirty-six Views of Mount Fuji,
-// a different print each fall (in turn), recreated cell by cell with the game's own palette:
-//   Fine Wind, Clear Morning ("Red Fuji") · The Lake at Hakone · At Sea off Kazusa · Lake Suwa ·
-//   Rainstorm Beneath the Summit · The Inume Pass · Umezawa · Tago Bay near Ejiri · Under Mannen Bridge
-//   at Fukagawa · Reflection in Lake at Misaka
+// a different print each fall (each level has its own order), recreated cell by cell with the game's own palette:
+//   Fine Wind, Clear Morning ("Red Fuji") · Rainstorm Beneath the Summit · Under Mannen Bridge at
+//   Fukagawa · At Sea off Kazusa · Tago Bay near Ejiri · Reflection in Lake at Misaka · Shichiri Beach ·
+//   Mishima Pass · The Inume Pass · Umezawa · Lake Suwa
 // (Chosen for their land, sea and sky: the ones full of people don't come out well this small.)
 // (All recreated by hand, in code, from the prints: no images.) They share one palette and one look:
 // a thin night-blue band at the top of every sky (Hokusai's shading), flat shapes edged in a darker
@@ -18,6 +18,7 @@
 // cw and ch are the real (fine) grid's size.
 // ============================================================================
 import { LW, LH, P } from './config.js';
+import { S } from './state.js';
 import { hsh, fujiCells } from './art.js';
 import { pixelText, LETTER } from './text.js';
 import { scale2x, pack, dither } from './pixel.js';   // (pack: a colour as a 32-bit pixel, for painting into ImageData)
@@ -312,86 +313,110 @@ const PRINTS = [
     boat(cell, x, S(100), true, S);
     for (let j = 0; j < S(10); j++) if (j % S(3) < S(2)) cell(x + S(16) + j, S(101) + Math.round(Math.sin(t * 2 + j) * .5), P.white);   // its wake
   } },
-  { title: 'THE LAKE AT HAKONE IN SAGAMI PROVINCE', draw: (k) => {
-    // The still lake in the mountains: a bare brown hill over yellow ones, cedars standing in clumps
-    // round the shore, the blue roofs of the shrine, and Fuji small and white at the far end. Bands of
-    // peach-coloured mist with rounded ends lie across everything, edged in ink.
+  { title: 'SHICHIRI BEACH IN SAGAMI PROVINCE', draw: (k) => {
+    // A bay at sunset: an orange sky with towers of pale cloud low in it, little wooded islands of blue
+    // rock, surf coming in on a long beach, a green hill spotted with bushes, and Fuji beyond. Nobody there.
     // (Positions: x as a fraction of the width, y in design rows, after the print.)
-    const { cw, ch, s, S, cell, bands } = k, X = f => Math.round(cw * f);
-    bands([[3, P.navy], [8, P.deep], [42, P.teal], [999, P.pale]], 0, S(70));
-    // Fuji, white, with dark woods at its left foot
-    for (let r = 0; r < S(17); r++) { const q = r / S(17), l = S(1.6 + 15 * q ** 1.15), w = S(1.6 + 19 * q ** 1.25); for (let x = -l; x <= w; x++) cell(X(.22) + x, S(38) + r, r === 0 || x === -l || x === w ? P.outline : P.white); }
-    clump(k, X(.185), S(50), S(4), P.navy, P.outline, P.deep, 3.1); clump(k, X(.205), S(52.5), S(3), P.navy, P.outline, P.deep, 8.4);
-    const slope = (pts, colour) => {   // a hill: its ridge through these points (smoothly), inked; colour(x, d, f): d cells down
-      for (let x = X(pts[0][0]); x < X(pts[pts.length - 1][0]); x++) {
-        const f = x / cw; let i = 1; while (i < pts.length - 1 && pts[i][0] < f) i++;
-        const [f0, y0] = pts[i - 1], [f1, y1] = pts[i], q = (f - f0) / (f1 - f0);
-        const ya = (pts[i - 2] || pts[i - 1])[1], yb = (pts[i + 1] || pts[i])[1];   // (a curve through the points, with no corners)
-        const top = S(y0 + .5 * q * (y1 - ya + q * (2 * ya - 5 * y0 + 4 * y1 - yb + q * (3 * (y0 - y1) + yb - ya))));
-        for (let y = top; y < S(70); y++) cell(x, y, y - top < S(.5) ? P.outline : colour(x, y, y - top));
-      }
-    };
-    const yellow = (x, y) => (hsh(Math.floor(x / 2) * 1.7 + Math.floor(y / 2) * 9.1) < .035 ? P.pine : dither(x, y) < .35 ? P.grass : P.gold);
-    slope([[0, 44.5], [.04, 43.5], [.1, 46], [.17, 51], [.2, 53.5], [.26, 53], [.3, 52], [.37, 56.5]], yellow);
-    slope([[.33, 53], [.42, 48], [.5, 37], [.57, 25.5], [.63, 18.5], [.7, 14.5], [.78, 17], [.9, 22], [1, 24]], (x, y, d) =>
-      (hsh(Math.floor(x / 3) * 3.3 + Math.floor(y / 3) * 7.7) < .02 ? P.outline : dither(x, y) < Math.min(1, Math.max(0, (y / s - 24 + (.62 - x / cw) * 40) / 22)) ? P.gold : d < S(5) ? P.wood : dither(x, y) < .4 ? P.wood : P.brown));
-    slope([[.585, 44], [.62, 35], [.67, 31], [.72, 32.5], [.76, 40]], yellow);
-    slope([[.72, 31], [.77, 26.5], [.85, 25], [.9, 29], [1, 31]], yellow);
-    // a cedar: a tall narrow tree, its branches sweeping down in a ragged edge
-    const cedar = (f, bottom, tall, wide, dark) => {
-      const cx = X(f), h = S(tall), w = S(wide);
-      for (let r = 0; r < h; r++) {
-        const q = r / h, saw = 1 - ((r % S(3)) / S(3)) * .35, half = Math.max(0, Math.round(w * q ** .75 * (.65 + .35 * saw)));
-        for (let x = -half; x <= half; x++) {
-          const v = hsh(Math.floor((cx + x) / 2) * 3.1 + Math.floor((r + Math.abs(x)) / 3) * 5.7);
-          cell(cx + x, S(bottom) - h + r, Math.abs(x) === half ? P.pine : v < (dark ? .5 : .26) + (dark ? .4 : .1) * (1 - q) ? P.pine : v > .9 && !dark ? P.grass : P.leaf);
-        }
-      }
-    };
-    const grove = (f0, f1, bottom, tall, wide, n, seed, dark) => { for (let x = X(f0); x < X(f1); x++) for (let y = S(bottom - 2 - 1.2 * Math.abs(Math.sin(x / s * .2 + seed))); y < S(bottom + 1); y++) cell(x, y, hsh(x * 1.3 + y * 7.1) < .25 ? P.pine : P.leaf); for (let i = 0; i < n; i++) cedar(f0 + (f1 - f0) * (i + .2 + hsh(seed + i) * .6) / n, bottom + hsh(seed * 3 + i) * 2, tall * (.65 + hsh(seed * 7 + i) * .5), wide, dark); };
-    grove(.69, .9, 22, 13, 2.6, 13, 4); grove(.92, 1.02, 28, 11, 2.4, 6, 9); grove(.355, .48, 50, 9, 2.2, 8, 14);
-    // mist: a band with a rounded end (left, right, or neither), peach, inked along its edge
-    const mist = (f0, f1, y0, y1, round) => {
-      const r = S(y1 - y0) / 2, a = X(f0), b = X(f1);
-      for (let x = a; x < b; x++) {
-        const l = round.includes('l') && x - a < r * 3 ? Math.sqrt(1 - (1 - (x - a) / (r * 3)) ** 2) : 1, q = round.includes('r') && b - x < r * 3 ? Math.sqrt(1 - (1 - (b - x) / (r * 3)) ** 2) : 1;
-        const half = r * Math.min(l, q), mid = S(y0) + r;
-        for (let y = Math.round(mid - half); y < mid + half; y++) cell(x, y, Math.min(l, q) < .99 && (y - (mid - half) < 1 || mid + half - y <= 1 || (Math.min(l, q) < .3)) ? P.outline : dither(x, y) < .55 ? P.skin : P.sky);
-      }
-    };
-    mist(.72, 1, 28, 34.5, 'l'); mist(.78, 1, 34, 39.5, 'l'); mist(.575, 1, 39.5, 45, 'l'); mist(.66, 1, 44.5, 50, 'l'); mist(.345, 1, 49.5, 58, 'l'); mist(0, 1, 57.5, 68.5, '');
-    grove(.02, .11, 59, 13, 2.6, 5, 21); grove(.12, .3, 63, 12, 2.8, 8, 31);
-    slope([[.79, 59], [.85, 50], [.92, 46], [1, 48]], yellow); grove(.81, 1, 52, 13, 2.8, 9, 41); mist(.82, 1, 55, 60, 'l'); mist(.78, 1, 64, 69, 'l');
-    // the lake, paling to nothing at the near left
-    for (let y = S(68); y < S(115); y++) for (let x = 0; x < cw; x++) {
-      const d = y / s; if (d < 69 && x < X(.29)) continue;
-      const fade = Math.max(0, (d - 97) / 14) * Math.max(0, 1 - x / cw * 1.6);
-      cell(x, y, dither(x, y) < fade ? P.foam : dither(x + 1, y + 2) < fade * 1.6 ? P.steel : dither(x, y) < .25 + .2 * Math.sin(y / s * .9) ? P.sea : P.deep);
+    const { cw, ch, s, S, cell, line, bands } = k, X = f => Math.round(cw * f);
+    bands([[4, P.navy], [7, P.deep], [10, P.pale], [26, P.foam], [36, P.sky], [44, P.skin], [999, P.dawn]], 0, S(59));
+    billow(k, [[.13, 55, 3], [.16, 53, 3.4], [.2, 54, 3.6], [.24, 54, 3.4], [.28, 55, 3], [.24, 47, 3.2], [.265, 45, 3], [.25, 50, 3.6], [.285, 51, 2.6], [.33, 55, 3.4], [.35, 52, 3], [.38, 50, 3.8], [.36, 42, 4], [.375, 35, 3.4], [.4, 37, 3.4], [.39, 44, 4.6], [.42, 48, 4.4], [.4, 54, 4.4], [.44, 55, 4]], P.sky, P.dawn);
+    // Fuji, the colour of the paper, its lower slopes streaked blue on the left and green on the right
+    const fl = ridgeOf(k, [[.5, 55], [.56, 47], [.6, 41], [.64, 34.5], [.668, 29], [.688, 29], [.72, 34], [.77, 40.5], [.83, 46.5], [.915, 52.5]]);
+    for (let x = X(.5); x < X(.915); x++) for (let y = fl(x); y < S(53); y++) {
+      const f = x / cw, d = (y / s - 34 - hsh(Math.floor(x / 4) * 2.3) * 9) / 15, left = f < .683;
+      cell(x, y, y - fl(x) < 2 ? P.outline : dither(x, y) < d * (left ? 1.2 : 1) - (left ? .2 : .25) + (hsh(Math.floor(x / 3) * 1.7 + Math.floor(y / 5) * 9.1) < d * .35 ? .5 : 0) ? (left ? P.deep : P.leaf) : P.foam);
     }
-    // the headlands: lumps of yellow ground, inked, with bushes
-    const lump = (f, y, rx, ry, col = yellow) => { const cx = X(f), cy = S(y), a = cw * rx, b = S(ry); for (let j = -b; j <= b; j++) for (let x = -a; x <= a; x++) { const q = (x / a) ** 2 + (j / b) ** 2; if (q <= 1) cell(cx + x, cy + j, ((Math.abs(x) + 1.4) / a) ** 2 + (j / b) ** 2 > 1 || (x / a) ** 2 + ((Math.abs(j) + 1.4) / b) ** 2 > 1 ? P.outline : col(Math.round(cx + x), cy + j)); } };
-    grove(-.01, .2, 79, 17, 3.4, 9, 51); grove(.2, .31, 76, 13, 3, 5, 57);
-    lump(.2, 78, .13, 9, (x, y) => (dither(x, y) < Math.max(0, Math.min(1, (y / s - 70) / 8)) ? yellow(x, y) : P.wood)); lump(.04, 82, .07, 4); lump(.13, 84, .09, 5);
-    for (const [f, y, r] of [[.15, 76, 3], [.195, 78, 4], [.115, 82, 3], [.02, 82, 3.4], [.22, 81, 3]]) clump(k, X(f), S(y), S(r), P.leaf, P.pine, P.grass, f * 40);
-    grove(.53, .62, 72, 16, 3, 4, 61); grove(.62, .72, 66, 12, 2.8, 5, 66);
-    lump(.6, 73, .065, 3.4); lump(.72, 72.5, .05, 3);
-    for (const [f, y, r] of [[.66, 67, 6], [.7, 65, 5], [.74, 66, 4.5], [.64, 71, 4], [.69, 70, 5], [.8, 74, 5], [.84, 76, 6], [.9, 76, 7], [.96, 74, 7], [.99, 64, 6], [.95, 78, 6]]) clump(k, X(f), S(y), S(r), P.leaf, P.pine, P.grass, f * 71);
-    lump(.79, 81, .045, 3.4);
-    const roof = (f, y, w, h) => { for (let r = 0; r < S(h); r++) for (let x = 0; x < S(w); x++) cell(X(f) + x - Math.round(r * .5), S(y) + r, r < S(.6) ? P.deep : x % S(1.6) < 2 ? P.deep : P.navy); };
-    for (let r = 0; r < S(4); r++) for (let x = 0; x < S(5); x++) cell(X(.607) + x, S(66) + r, x % S(1.4) < 2 ? P.grey2 : P.white);
-    roof(.605, 63, 8, 4); roof(.85, 66.5, 13, 5); roof(.915, 63.5, 12, 5); roof(.94, 67, 15, 5);
-    mist(.795, 1, 81, 89, 'l');
-    cedar(.735, 90, 13, 4); cedar(.72, 91, 8, 4); cedar(.755, 91, 8, 4);
-    mist(.625, 1, 90, 98, 'l');
-    // the cedars in front, black against the water
-    grove(.68, .84, 106, 8, 3.2, 7, 71, true); grove(.4, .7, 108, 19, 4, 15, 81, true); cedar(.56, 106, 34, 5.4, true); cedar(.468, 106, 21, 4.6, true); grove(.28, .41, 114, 12, 3, 7, 91);
-    mist(.72, 1, 99, 107, 'l'); mist(.375, 1, 106.5, 115, 'l'); mist(0, 1, 114, 121, '');
-  }, live: (k, t) => {
+    for (const [f0, f1, y] of [[.86, 1, 43], [.91, 1, 46], [.88, .98, 49], [.93, 1, 51]]) for (let x = X(f0); x < X(f1); x++) cell(x, S(y), P.dawn);   // streaks of evening cloud
+    bands([[66, P.foam], [76, P.pale], [91, P.teal], [97, P.pale], [999, P.foam]], S(59), ch);
+    for (let x = 0; x < X(.46); x++) cell(x, S(59), P.outline);   // the horizon
+    const far = ridgeOf(k, [[.2, 58.6], [.25, 57], [.3, 57.6], [.36, 56.4], [.42, 56], [.48, 54]]);
+    for (let x = X(.2); x < X(.48); x++) for (let y = far(x); y < S(59); y++) cell(x, y, y - far(x) < 1 ? P.outline : x / cw < .28 ? P.deep : P.pine);
+    const rock = (f0, f1, pts, base) => {   // blue rock, hatched in ink toward the water
+      const r = ridgeOf(k, pts);
+      for (let x = X(f0); x < X(f1); x++) { const top = r(x), foot = S(base) - Math.round(hsh(Math.floor(x / 3) * 3.3) * S(1.6)); for (let y = top; y < foot; y++) { const q = (y - top) / Math.max(1, foot - top), v = hsh(Math.floor((x + y) / 3) * 2.1 + Math.floor(y / 2) * 7.7); cell(x, y, y - top < 1 || v < q * .55 ? P.outline : dither(x, y) < .25 + q * .4 ? P.navy : P.deep); } }
+    };
+    const trees = list => { for (const [f, y, r, c] of list) clump(k, X(f), S(y), S(r), c ? P.navy : P.pine, P.outline, c ? P.deep : P.leaf, f * 83 + y); };
+    // the two little islands
+    rock(.1, .25, [[.1, 67], [.14, 65], [.2, 64], [.25, 66]], 68.5); trees([[.09, 64, 3.4], [.11, 62, 4], [.13, 64, 3.6], [.15, 63, 3.4], [.18, 64, 3], [.21, 63.4, 3], [.23, 64, 2.4], [.085, 69, 2]]);
+    rock(.33, .48, [[.33, 70], [.38, 68], [.42, 67], [.48, 70]], 73); trees([[.33, 69, 3.4], [.35, 68.6, 3.4], [.37, 69.4, 3], [.41, 69, 2.6, 1]]);
+    // the big one: rock, a path up it, and tall trees standing on top
+    rock(.452, .86, [[.452, 63], [.47, 58], [.5, 55], [.56, 56], [.6, 59], [.64, 56], [.7, 57], [.76, 59], [.82, 63], [.86, 68]], 73);
+    rock(.48, .62, [[.48, 72], [.53, 70], [.62, 71]], 76.5);
+    for (const [a, b, c, d] of [[.475, 57, .466, 44], [.5, 57, .5, 38], [.505, 57, .53, 38], [.55, 57, .553, 42], [.56, 58, .59, 46]]) for (let o = 0; o < 3; o++) line(X(a) + o, S(b), X(c) + o, S(d), o === 1 ? P.steel : P.outline);
+    trees([[.425, 49, 4.6], [.455, 50, 4.6], [.44, 44, 5], [.415, 47, 3.6], [.47, 47, 4], [.48, 37, 5], [.495, 33.6, 4], [.5, 41, 4.4], [.53, 35, 5.4], [.55, 32, 4.4], [.545, 40, 4.6], [.568, 36, 3.6], [.58, 46, 5], [.59, 43, 4.4], [.6, 49, 4.6], [.56, 50, 4], [.6, 55, 4.6], [.63, 59, 5], [.6, 60, 4], [.66, 55, 5], [.69, 52, 5], [.71, 54, 4.6], [.67, 60, 4], [.7, 49.4, 3]]);
+    for (const y of [56, 57.4, 59, 61]) for (let x = X(.74 + (y - 56) * .02); x < X(.92 - (y - 56) * .006); x++) for (let d = 0; d < 3; d++) cell(x, S(y) + d, d === 0 ? P.outline : P.deep);   // spits of land, far off
+    trees([[.76, 61, 4], [.8, 63, 4], [.83, 63, 4], [.88, 62, 5], [.89, 60, 4], [.87, 67, 5], [.92, 67, 5], [.96, 64, 5], [.99, 66, 5.5], [.95, 71, 6], [1, 74, 6], [.9, 73, 5], [.97, 78, 5], [.64, 70, 6], [.66, 64, 5], [.68, 68, 6], [.72, 66, 5], [.75, 65, 5.4], [.66, 76, 6.4], [.7, 76, 6], [.74, 76, 5.4], [.78, 70, 6], [.82, 69, 5], [.77, 78, 5], [.64, 81, 4.6], [.67, 82, 4], [.8, 75, 4]]);
+    for (const [f, y] of [[.72, 73], [.735, 71.6], [.755, 72.4], [.7, 81], [.72, 83], [.745, 84.5], [.765, 82]]) for (let r = 0; r < S(2.2); r++) { const h = S(1.9) * Math.sqrt(Math.min(1, (r + 1) / S(1.6))); for (let x = -h; x <= h; x++) cell(X(f) + x, S(y) + r, r < 1 || Math.abs(x) > h - 1.3 ? P.outline : P.foam); }   // the roofs of a village among them
+    // the surf: long lines of it, hatched blue underneath
+    for (let i = 0; i < 9; i++) { const y = 97.5 + i * 1.9, x0 = X(Math.max(0, .2 - i * .05)), x1 = X(.64 - i * .062); for (let x = x0; x < x1; x++) { const up = Math.round(Math.sin(x * .05 + i * 2) * s * .4), yy = S(y) + up; cell(x, yy, (x + i * 7) % 40 < 34 ? P.outline : P.deep); for (let d = 1; d < S(1.3); d++) cell(x, yy + d, (x + d * 2 + i * 3) % 5 === 0 ? P.deep : P.white); } }
+    // the beach and the hill, green fading to bare paper at the bottom
+    const land = ridgeOf(k, [[0, 117], [.08, 115], [.16, 113], [.23, 110], [.3, 107.5], [.4, 104.5], [.5, 102.6], [.58, 101.6], [.65, 99.5], [.7, 95], [.75, 88], [.78, 82], [.81, 75], [.84, 71.5], [.87, 71.5], [.895, 74.5], [.92, 79], [1, 81]]);
+    for (let x = 0; x < cw; x++) for (let y = land(x); y < ch; y++) { const d = (y - land(x)) / s; cell(x, y, d < .5 ? P.outline : dither(x, y) < Math.max(0, (y / s - 104) / 15) ? P.foam : dither(x, y) < .45 ? P.leaf : P.teal); }
+    for (const pts of [[[.75, 101], [.8, 91], [.83, 88], [.9, 89]], [[.88, 82], [.93, 84], [.97, 90], [1, 91]], [[.86, 92], [.92, 94], [.97, 94]]]) { const r = ridgeOf(k, pts); for (let x = X(pts[0][0]); x < X(pts[pts.length - 1][0]); x++) { cell(x, r(x), P.outline); for (let d = 1; d < S(4); d++) if (dither(x, r(x) + d) < .6 * (1 - d / S(4))) cell(x, r(x) + d, P.pine); } }
+    trees([[.685, 93, 3.4, 1], [.675, 96, 2.6, 1], [.71, 90, 3], [.6, 98.5, 3.2], [.63, 100, 2.4, 1], [.55, 101.6, 3], [.36, 104.6, 2.8], [.33, 105.4, 3.2], [.3, 107.4, 2.6], [.2, 111.4, 2.4], [.18, 112.6, 2]]);
+    trees([[.77, 92.5, 2.6], [.84, 81, 1.8, 1], [.87, 80, 2, 1], [.88, 83, 1.8], [.95, 83, 1.6], [.97, 87, 2], [.85, 87, 2.2, 1], [.89, 88, 2], [.83, 96, 2.2, 1], [.79, 98, 1.8, 1], [.74, 98, 2, 1], [.745, 103, 2.2, 1], [.8, 103, 2.4, 1], [.835, 101, 2, 1], [.76, 107, 2.2, 1], [.7, 110, 2.4, 1], [.73, 111.6, 1.6, 1], [.8, 108.6, 2, 1], [.87, 106, 2.2, 1], [.91, 103, 2, 1], [.935, 100, 2, 1], [.95, 106, 2.2, 1], [.99, 108, 2, 1], [.84, 110, 3.4], [.88, 114.6, 2.6]]);
+    for (let i = 0; i < 130; i++) { const f = .25 + hsh(i * 1.9) * .75, y = S(104 + hsh(i * 3.1) * 12); if (y > land(X(f)) + S(2)) { cell(X(f), y, P.outline); cell(X(f) + 1, y, P.outline); } }   // specks of scrub
+  }, live: (k, t) => {   // the surf running up the beach
     const { cw, s, S, cell } = k;
-    for (let i = 0; i < 12; i++) {   // glints drifting on the lake
-      const x = Math.round(cw * (.32 + hsh(i * 3.7) * .2) + Math.sin(t * .9 + i) * 3 * s), y = S(74 + hsh(i * 5.3) * 24), n = S(2 + hsh(i) * 3);
-      if (Math.sin(t * 2.2 + i * 1.7) > 0) for (let j = 0; j < n; j++) cell(x + j, y, P.white);
+    for (let i = 0; i < 9; i++) { const n = S(7), x = Math.round(cw * (.02 + hsh(i * 3.1) * .4)) - Math.round(((t * 5 + i * 2.3) % 6) * s), y = S(97.5 + i * 1.9); for (let j = 0; j < n; j++) if (x + j < cw * (.62 - i * .062)) { const up = Math.round(Math.sin((x + j) * .05 + i * 2) * s * .4); cell(x + j, y + up - 1, P.white); cell(x + j, y + up, P.white); } }
+  } },
+  { title: 'MISHIMA PASS IN KAI PROVINCE', draw: (k) => {
+    // A giant cedar, so tall the print can't hold it, in the middle of the pass; heaps of white cloud
+    // boiling up round the foot of Fuji, which is dark blue with a cloud for a hat; green hills.
+    // (The print has travellers linking arms round the trunk to measure it. They've gone home.)
+    const { cw, ch, s, S, cell, line, bands } = k, X = f => Math.round(cw * f);
+    bands([[5, P.navy], [8, P.deep], [11, P.pale], [50, P.foam], [62, P.pale], [74, P.teal], [999, P.teal]]);
+    // Fuji: navy, down through blue to nothing, its broad foot coming out of the mist grey-brown
+    const f0 = ridgeOf(k, [[.18, 94.5], [.26, 89], [.34, 82], [.42, 73.5], [.5, 65], [.56, 57], [.625, 48.5], [.67, 42], [.7, 35.5], [.725, 31.5], [.745, 32], [.765, 37.5], [.8, 45.5], [.84, 53], [.87, 58], [.9, 62], [1, 68]]);
+    for (let x = X(.18); x < cw; x++) for (let y = f0(x); y < S(112); y++) {
+      const r = y / s, v = dither(x, y);
+      const c = r < 56 ? (v < (r - 40) / 8 ? (v < (r - 48) / 4 ? (v < (r - 52) / 4 ? P.foam : P.pale) : P.deep) : P.navy) : v < (r - 64) / 10 ? (v < (r - 72) / 9 ? (v < (r - 79) / 10 ? P.rosewood : P.bark) : P.grey1) : P.foam;
+      const brown = c === P.rosewood ? (dither(x + 2, y + 1) < .6 ? P.brown : P.mauve) : c;
+      cell(x, y, y - f0(x) < (r < 60 ? 1 : 2) ? P.outline : r > 38 && r < 62 && hsh(Math.floor(x / 2) * 1.9 + Math.floor(y / 3) * 7.3) < .03 * (1 - Math.abs(x / cw - .725) * 9) ? P.outline : brown);
     }
+    const puffs = list => billow(k, list, P.foam, P.outline);
+    puffs([[.18, 90, 3.6], [.17, 93, 2.4], [.21, 92, 3], [.24, 91, 3], [.19, 85, 3.8], [.21, 83, 3], [.2, 78, 3.6], [.23, 75, 4], [.215, 73.4, 3.2], [.24, 79, 4], [.25, 85, 4], [.27, 76, 3.8], [.285, 79, 3.4], [.27, 83, 3.6], [.295, 85, 2.6], [.34, 78, 3.2], [.36, 76.6, 3], [.38, 77, 2.2]]);
+    puffs([[.29, 65, 3.4], [.31, 63, 4], [.34, 63, 4.4], [.35, 61, 3.4], [.38, 65, 4], [.32, 68, 4], [.36, 69, 4.4], [.39, 69, 3], [.4, 72, 2.8], [.43, 70.4, 2.6], [.45, 69.4, 2]]);
+    puffs([[.77, 61, 4], [.785, 59, 3.4], [.81, 62, 4], [.8, 67, 4.4], [.84, 62, 4], [.85, 66, 4], [.83, 70, 4.4], [.86, 70, 3.4], [.83, 75, 3], [.86, 74, 3]]);
+    puffs([[.87, 52, 3.8], [.9, 50, 4], [.925, 49.6, 4.2], [.95, 53, 4], [.965, 55, 3], [.88, 56, 3.6], [.92, 57, 4.4], [.95, 59, 3.6], [.9, 61, 3.4], [.98, 60, 3], [.88, 65, 3], [.92, 64, 3]]);
+    puffs([[.745, 78, 2.8], [.755, 75, 2.4], [.75, 82, 3], [.765, 79, 2.6], [.76, 85, 2]]);
+    for (const [dy, f1] of [[0, 1], [1.8, 1], [3.6, 1]]) for (let x = X(.8); x < X(f1); x++) { const y = S(24.5 + dy + Math.sin((x / cw - .8) * 26) * 1.7 - (x / cw - .8) * 8); for (let d = 1; d < S(1.8); d++) cell(x, y + d, P.foam); cell(x, y, P.outline); cell(x, y + 1, P.outline); }   // the cloud trailing off in the wind
+    puffs([[.7, 25.5, 2.4], [.72, 24.6, 2.4], [.755, 24.4, 2.8], [.78, 24, 2.8], [.8, 25.4, 2.6], [.82, 27, 2.4], [.84, 28, 1.8], [.68, 31, 3], [.665, 33, 2.2], [.7, 30, 3], [.73, 29.6, 3.4], [.755, 31, 2.8], [.69, 34, 2.4], [.77, 34.6, 2.6], [.745, 37, 2.8], [.725, 37, 2.2], [.76, 38, 2]]);
+    // the green hills
+    const grass = (pts, col) => { const r = ridgeOf(k, pts); for (let x = X(pts[0][0]); x < X(pts[pts.length - 1][0]); x++) for (let y = r(x); y < ch; y++) { const d = (y - r(x)) / s; cell(x, y, d < .5 ? P.outline : col(x, y, d)); } };
+    const green = fade => (x, y, d) => (dither(x, y) < (d - 4) / fade ? P.foam : dither(x + 1, y + 3) < .4 + (d - 2) / fade ? P.grass : P.leaf);
+    grass([[0, 85], [.06, 85.6], [.11, 88.4], [.18, 94], [.24, 96.6], [.32, 99], [.4, 101], [.51, 102]], green(24));
+    grass([[.83, 78], [.87, 71], [.91, 66.6], [.95, 64], [1.01, 62]], green(30)); grass([[.87, 86], [.9, 81], [.94, 78], [1.01, 74]], green(26));
+    const bush = list => { for (const [f, y, r] of list) clump(k, X(f), S(y), S(r), P.pine, P.outline, P.leaf, f * 71 + y); };
+    bush([[.78, 80, 4], [.8, 76.6, 3.6], [.83, 82, 4], [.86, 84, 4.6], [.82, 86, 4], [.88, 88, 4.6], [.91, 92, 5], [.93, 96, 4.6], [.97, 99, 4], [.71, 90, 4], [.73, 86.6, 3], [.69, 95, 4.4], [.67, 99, 4], [.28, 97, 2.6], [.32, 96, 3.2], [.36, 93, 4.4], [.39, 96, 4.6], [.34, 91, 3], [.43, 94, 4.4], [.47, 92, 4.6], [.46, 87, 3.6], [.49, 86, 4.4], [.42, 99, 4], [.48, 98, 4.4]]);
+    grass([[.695, 104], [.715, 97], [.745, 90], [.775, 86.6], [.81, 86], [.85, 89], [.885, 94], [.91, 99], [.925, 104]], green(22));
+    grass([[.36, 108], [.39, 103.4], [.43, 100.8], [.48, 100], [.53, 101], [.58, 104]], green(18));
+    for (let i = 0; i < 190; i++) { const zone = [[.08, .34, 98, 12], [.74, .9, 91, 14], [.9, 1, 68, 8], [.92, 1, 80, 12]][i % 4], f = zone[0] + hsh(i * 2.9) * (zone[1] - zone[0]), y = zone[2] + hsh(i * 5.3) * zone[3]; for (let j = 0; j < 3; j++) cell(X(f) + j, S(y) + (j >> 1), P.outline); }   // tufts of grass
+    // the path, bare paper
+    const path = ridgeOf(k, [[0, 110], [.3, 108], [.4, 111], [.55, 114], [.65, 108.5], [.72, 109.5], [.8, 110.4], [.88, 109], [.93, 105], [1, 103]]);
+    for (let x = 0; x < cw; x++) for (let y = path(x); y < ch; y++) cell(x, y, x / cw > .62 && y - path(x) < 1 ? P.outline : dither(x, y) < .15 ? P.sky : P.foam);
+    bush([[.71, 104, 2.4], [.9, 104, 2.6], [.87, 107, 2], [.44, 111, 2.4], [.4, 108, 2.4]]);
+    // the cedar: its bark ridged and furrowed, straight up out of the picture
+    const edge = (y, seed) => Math.round((hsh(Math.floor(y / S(1.4)) * 2.7 + seed) - .5) * S(.9));
+    for (let y = 0; y < S(116); y++) {
+      const q = y / s / 116, flare = Math.max(0, q - .82) ** 2 * 1.1, l = X(.512 - flare * .35 - .004 * q) + edge(y, 1), r = X(.613 + .03 * q ** 2 + flare * .5) + edge(y, 9);
+      for (let x = l; x <= r; x++) {
+        const u = (x - l) / (r - l), wob = Math.sin(y * .045 + Math.floor(u * 9) * 1.9) * .016 + Math.sin(y * .013) * .01, lane = (u + wob) * 8.5, at = lane - Math.floor(lane), dark = hsh(Math.floor(lane) * 3.3 + Math.floor(y / S(4.5)) * 1.7);
+        const gone = y > S(110) && hsh(Math.floor(x / 4) * 3.1) * S(7) < y - S(109);   // (its roots, ragged)
+        if (gone) continue;
+        cell(x, y, x - l < 2 || r - x < 2 ? P.outline : at < (dark < .5 ? .3 : .1) && hsh(x * .9 + y * 2.1) < .85 ? P.outline : dark > .86 && at > .4 && at < .7 && hsh(Math.floor(y / 3) * 1.1 + x) < .6 ? P.pine : dither(x, y) < (u < .2 ? .15 : .45) + u * .2 ? P.leaf : P.teal);
+      }
+    }
+    // its lowest branches: one long one reaching out to the left, dark sprays of leaves hanging from them
+    const limb = pts => { for (let i = 1; i < pts.length; i++) { const [a, b] = pts[i - 1], [c, d] = pts[i], w = Math.max(1, S(1.1 - i * .15)); for (let o = -1; o <= w; o++) line(X(a), S(b) + o, X(c), S(d) + o, o < 0 || o === w ? P.outline : P.leaf); } };
+    limb([[.5, -3], [.44, 3], [.4, 10], [.36, 17], [.32, 23], [.28, 29], [.21, 33]]); limb([[.36, 17], [.31, 20], [.25, 20]]); limb([[.29, 28], [.275, 34], [.262, 40]]); limb([[.43, 6], [.45, 14], [.46, 22]]);
+    const spray = list => { for (const [f, y, r] of list) { clump(k, X(f), S(y), S(r), P.pine, P.outline, P.leaf, f * 103 + y); for (let i = 0; i < 4; i++) clump(k, X(f) + S((hsh(f * 37 + i) - .5) * r * 2.2), S(y + (hsh(y * 7 + i) - .3) * r * 1.4), S(r * .5), P.pine, P.outline, P.grass, f * 17 + i); } };
+    spray([[.39, 2, 4.6], [.43, 4, 5], [.46, 8, 4.6], [.48, 3, 5], [.49, 12, 4], [.46, 15, 4], [.43, 14, 3.4], [.47, 21, 3], [.45, 24, 2.4], [.4, 4, 4], [.34, 13, 2.8], [.365, 12, 2.6], [.37, 21, 3], [.39, 18, 2.6], [.26, 18, 2.8], [.285, 18.6, 2.2], [.235, 22, 2.6], [.25, 25, 2], [.22, 30, 2.6], [.205, 34, 2.6], [.23, 35.4, 2], [.285, 28, 2.4], [.3, 26, 2], [.285, 35, 2.4], [.265, 38, 2.2], [.255, 41, 1.8], [.5, 7, 4], [.5, 17, 2.6]]);
+    spray([[.56, 1, 5], [.6, 3, 4.6], [.63, 6, 4.6], [.625, 13, 3], [.65, 3, 4.6], [.68, 2, 4.4], [.71, 4, 4.4], [.7, 10, 3.2], [.715, 15, 2.8], [.68, 12, 2], [.74, 4, 3.4], [.75, 9, 2], [.53, 4, 4.4], [.515, 10, 3]]);
+  }, live: (k, t) => {   // needles drifting down from the cedar, and a puff of cloud trailing off Fuji's hat
+    const { cw, s, S, cell } = k;
+    for (let i = 0; i < 12; i++) { const p = (t * .22 + hsh(i * 3.7)) % 1, x = Math.round(cw * (.24 + hsh(i * 2.3) * .46) + Math.sin(t * 2 + i) * 2 * s - p * 5 * s), y = S(16 + hsh(i * 5.1) * 8 + p * 80); cell(x, y, P.pine); cell(x + 1, y, P.pine); cell(x + 1, y + 1, P.leaf); }
+    for (let i = 0; i < 3; i++) { const p = (t * .25 + i / 3) % 1, x = cw * (.82 + p * .18), r = s * 1.3 * (1 - p * .6); for (let y = -r; y <= r; y++) for (let d = -r * 1.8; d <= r * 1.8; d++) if ((d / 1.8) ** 2 + y * y <= r * r) cell(x + d, S(27 + Math.sin(p * 6) * 1.2 - p * 1.5) + y, P.foam); }
   } },
   { title: 'THE INUME PASS IN KAI PROVINCE', draw: (k) => {
     // A green hill sweeping up to the right over a sea of white mist, travellers and their packhorses
@@ -515,13 +540,44 @@ const PRINTS = [
     for (let r = 0; r < S(6); r++) for (let i = 0; i < S(4.4); i++) cell(x + S(7.5) + i + Math.round(r * .12), y - S(6.4) + r, i < 1 || r < 1 ? P.outline : P.deep);
   } },
 ];
-// The order they come in, one each fall. (The two great close-ups of the mountain, Red Fuji and the
-// Rainstorm, are kept apart.)
-const ORDER = ['FINE WIND, CLEAR MORNING', 'THE LAKE AT HAKONE IN SAGAMI PROVINCE', 'AT SEA OFF KAZUSA', 'LAKE SUWA IN SHINANO PROVINCE',
-  'RAINSTORM BENEATH THE SUMMIT', 'THE INUME PASS IN KAI PROVINCE', 'UMEZAWA IN SAGAMI PROVINCE', 'TAGO BAY NEAR EJIRI', 'UNDER MANNEN BRIDGE AT FUKAGAWA',
-  'REFLECTION IN LAKE AT MISAKA'];
-PRINTS.sort((a, b) => ORDER.indexOf(a.title) - ORDER.indexOf(b.title));
+// The order they come in, one each fall: a different order on every level, and a different print first.
+// (The two great close-ups of the mountain, Red Fuji and the Rainstorm, are kept apart.)
+const CLOSE_UPS = ['FINE WIND, CLEAR MORNING', 'RAINSTORM BENEATH THE SUMMIT'];
+const orders = new Map();
+function orderFor(level) {
+  if (!orders.has(level)) {
+    const n = PRINTS.length, first = (level * 4 + n - 4) % n;   // (Level 1 starts with Red Fuji, the first in the list; each level after, with another)
+    const rest = PRINTS.map((_, i) => i).filter(i => i !== first);
+    for (let i = rest.length - 1; i > 0; i--) { const j = Math.floor(hsh(level * 17.3 + i * 5.9) * (i + 1)); [rest[i], rest[j]] = [rest[j], rest[i]]; }   // shuffled, the same way each time
+    const order = [first, ...rest], close = i => CLOSE_UPS.includes(PRINTS[order[(i + n) % n]].title);
+    for (let i = 0; i < n; i++) if (close(i) && close(i + 1)) { const a = i + 1 < n && i + 1 > 0 ? i + 1 : i, b = (a + 3) % n || 4; [order[a], order[b]] = [order[b], order[a]]; break; }   // side by side (the last comes round to the first): move one along
+    orders.set(level, order);
+  }
+  return orders.get(level);
+}
 
+// A ridge line through points ([x as a fraction of the width, y in design rows]), smoothly, with no
+// corners: gives the row it's at in each column.
+function ridgeOf(k, pts) {
+  return x => {
+    const f = x / k.cw; let i = 1; while (i < pts.length - 1 && pts[i][0] < f) i++;
+    const [f0, y0] = pts[i - 1], [f1, y1] = pts[i], q = Math.max(0, Math.min(1, (f - f0) / (f1 - f0))), m0 = (y1 - (pts[i - 2] || pts[i - 1])[1]) / (f1 - (pts[i - 2] || pts[i - 1])[0]) * (f1 - f0), m1 = ((pts[i + 1] || pts[i])[1] - y0) / ((pts[i + 1] || pts[i])[0] - f0) * (f1 - f0);
+    return k.S(y0 * (1 + 2 * q) * (1 - q) ** 2 + m0 * q * (1 - q) ** 2 + y1 * q * q * (3 - 2 * q) + m1 * q * q * (q - 1));
+  };
+}
+// Heaped-up cloud: overlapping puffs ([x as a fraction, y in design rows, radius]), drawn as one shape,
+// its edge inked, with the top of each nearer puff drawn in over the ones behind.
+function billow(k, list, inside, ink) {
+  const { cw, s, S, cell } = k, P0 = list.map(([f, y, r]) => [cw * f, S(y), r * s * 1.32]), on = (x, y) => P0.some(([cx, cy, r]) => (x - cx) ** 2 + ((y - cy) * 1.12) ** 2 <= r * r);
+  P0.forEach(([cx, cy, r]) => {
+    for (let y = Math.floor(cy - r); y <= cy + r; y++) for (let x = Math.floor(cx - r); x <= cx + r; x++) {
+      const d = Math.sqrt((x - cx) ** 2 + ((y - cy) * 1.12) ** 2);
+      if (d > r) continue;
+      const out = !on(x - 1, y) || !on(x + 1, y) || !on(x, y - 1) || !on(x, y + 1), a = Math.atan2(y - cy, x - cx);
+      cell(x, y, out || (d > r - 1.4 && a < -.5 && a > -2.2 - hsh(cx) * .7) ? ink : inside);
+    }
+  });
+}
 // A scrap of thin cloud: a flat lens, white, shaded along its foot. n: its length; h: its height.
 function scrap(k, x0, y, n, h) {
   for (let j = 0; j < n; j++) { const q = j / n, t = Math.round(h * Math.sin(Math.PI * q) ** .7 * (.75 + .25 * Math.sin(j * .5 + y))); for (let d = 0; d <= t; d++) k.cell(x0 + j, y - d, d === 0 && q > .1 && q < .9 ? P.pale : P.white); }
@@ -666,11 +722,11 @@ function still(i) {
 // Paint the prints ahead of time, one at a time, so the first fall doesn't stutter.
 export function prepareDawns() { PRINTS.forEach((_, i) => setTimeout(() => still(i), 100 + i * 120)); }
 
-// Draw the dawn for the n-th fall at time t into it.
-export function drawDawn(g, t, n) {
+// Draw the dawn for the n-th fall on a level at time t into it.
+export function drawDawn(g, t, n, level = S.level.number) {
   const a = t < .5 ? t / .5 : t > 1.3 ? Math.max(0, 1 - (t - 1.3) / .4) : 1;
   if (a <= 0) return;
-  const i = ((n % PRINTS.length) + PRINTS.length) % PRINTS.length, print = PRINTS[i], k = canvas(g, t, a), img = still(i);
+  const i = orderFor(level)[((n % PRINTS.length) + PRINTS.length) % PRINTS.length], print = PRINTS[i], k = canvas(g, t, a), img = still(i);
   for (let x = 0; x < k.cw; x++) {   // as much of each column as the dawn has reached
     const [y0, y1] = k.span(x);
     if (y1 > y0) g.drawImage(img, x * C, y0 * C, C, (y1 - y0) * C, x * C, y0 * C, C, (y1 - y0) * C);

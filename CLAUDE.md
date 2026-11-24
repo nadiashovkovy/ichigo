@@ -33,7 +33,7 @@ If the spec and the script disagree, the spec wins for code and the script wins 
 | `src/player.js` | Ichigo's movement on rocking wreckage, falling in |
 | `src/sprite.js` | Ichigo's pixel frames (letter grids), fall marks (`SCARS`) |
 | `src/wreckage.js`, `src/sea.js` | Floating wreckage, the sea's height |
-| `src/art.js`, `src/title.js`, `src/dawn.js` | Scenery, title card, the Hokusai print shown at each new tomorrow |
+| `src/art.js`, `src/title.js`, `src/greatwave.js`, `src/dawn.js` | Scenery, title card, the Great Wave drawn on it, the Hokusai print shown at each new tomorrow |
 | `src/pixel.js`, `src/text.js` | Pixel pipeline (palette snapping), bitmap font and rainbow cover lettering |
 | `src/input.js`, `src/pc.js` | Keyboard and touch; the 1996 PC monitor around the game |
 | `src/beach.js`, `src/beachart.js`, `src/cards.js` | Level 1's playable beach and the wave; how the beach looks; story cards |

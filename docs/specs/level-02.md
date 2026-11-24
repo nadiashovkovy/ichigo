@@ -54,6 +54,15 @@ The star on the float is meant to pay off in Level 8, when Ojii-san points out t
 - *Colour and detail, evened out:* `RAMP` in `config.js` is the same few colours for the same material everywhere (sand, wood, straw, leaves, stone, cloth). The beach was toned down to it; the wreckage, Level 1's island (now the same sand on rock as Level 2's), the lantern, the carp streamers and Fuji were redrawn up to it.
 - *The older prints* (Red Fuji, Rainstorm, Kazusa, Tago Bay, Mannen Bridge, Misaka) were repainted with the newer ones' inked edges and shading.
 
+## Changes since it was merged
+
+- *Ichigo redrawn* (`src/sprite.js`) at the size they're shown: a sturdy small child, less chibi, fuller hair, a longer jersey, a clearer face. 45 px tall (was 46). The blue patch fall mark is now a small darned tear.
+- *The Great Wave* on the title and behind Level 1's beach is drawn in code (`src/greatwave.js`); no images.
+- *Dawn prints:* the Lake at Hakone is out; Shichiri Beach and Mishima Pass are in (eleven in all). Each level has its own order, starting with a different print.
+- *Music:* in miyako-bushi (E F A B C): koto, shakuhachi and taiko, no Western broken chords. The Lullaby itself is unchanged.
+- *Level 0's tide* washing up the sand is the same water as the sea, with a round smooth front.
+- *Fuji* on the horizon reaches down to the water (it stopped on the strip of haze above it).
+
 ## Build notes
 
 Numbers are in `TIDE` (`config.js`); the waves, tides and burn rates in `levels/level02.json`. `water.js` now takes the sea's resting height as a function of x, since the two sides draw back separately.

@@ -13,6 +13,7 @@ import { W, H, TOP, LW, TOP_PX, PIXEL, P, MOVE, BEACH } from './config.js';
 import { S, parts } from './state.js';
 import { lg, tg, topC, beginWorld, beginTop, pixelSpace, quantize } from './pixel.js';
 import { input, inLeft, inRight, inRun, inUse, keys } from './input.js';
+import { paintWaveAlone, waveLoop } from './greatwave.js';
 import { drawScenery, drawChartSea, CELL } from './art.js';
 import { drawSand, drawBeachThings, drawBeachFront } from './beachart.js';
 import { drawSprite, spriteHeight } from './sprite.js';
@@ -173,28 +174,23 @@ function updateTrip() {
 // ============================================================================
 // Drawing
 // ============================================================================
-// Hokusai's great wave (cut from the title card's chart, in the same colours as the sea) rises out
-// of the water behind the beach, its claws grasping, then pitches forward and crashes as the sea
-// climbs over everything.
-const greatWave = new Image(); greatWave.src = 'assets/great_wave.png';
-const WAVE_ROWS = 248;   // (the cut-out's rows below this are foreground sea; they stay under the water)
+// Hokusai's great wave (greatwave.js: the title card's, on its own) rises out of the water behind the
+// beach, its claws grasping, then pitches forward and crashes as the sea climbs over everything.
+const greatWave = waveLoop(paintWaveAlone, 16, 2.6);   // (its claws grasp faster than on the title card)
+const WAVE_W = 400, WAVE_ROWS = 248;   // how much of the picture it takes up (what's below stays under the water)
 // Where the wave is at time t: its left edge and top, in pixels. It's flipped to face Ichigo.
 function wavePlace(t) {
   const k = Math.min(1, Math.max(0, (t - 1.4) / 3)), e = k * k * (3 - 2 * k), late = Math.max(0, t - 4.4);
   const ix = 430 / PIXEL, horizon = (400 + TOP) / PIXEL, h = WAVE_ROWS * CELL;
-  return { x: Math.round((ix + 150 - e * 110 - late * 600) / CELL) * CELL, top: Math.round((horizon + 20 - e * (h - 30) + late * late * 1400) / CELL) * CELL, k: e };
+  return { x: Math.round((ix + 150 - e * 110 - late * 600) / CELL) * CELL, top: Math.round((horizon + 20 - e * (h - 30) + late * late * 1400) / CELL) * CELL };
 }
-// Draw the wave, a row of cells at a time so the claws at its crest can sway (as on the title card).
+// Draw the wave. (It's painted beforehand, a frame at a time, while Ichigo plays.)
 function drawGreatWave(g, t) {
-  if (t < 1.4 || !greatWave.width) return;
-  const { x, top, k } = wavePlace(t), w = greatWave.width, C = CELL, s = 4;   // (s: the cut-out's cells per cell of a 160-cell chart)
-  pixelSpace(g); g.imageSmoothingEnabled = false;
-  g.save(); g.translate(x + w * C, 0); g.scale(-1, 1);
-  for (let r = 0; r < WAVE_ROWS; r++) {
-    const claw = r >= 14 * s && r < 48 * s ? Math.sin(Math.PI * (r - 14 * s) / (34 * s)) : 0;
-    const dx = Math.round(Math.sin(S.T * 1.7 - r / s * .45) * .75 * s * claw * k);
-    g.drawImage(greatWave, 0, r, w, 1, dx * C, top + r * C, w * C, C);
-  }
+  greatWave.ready();
+  if (t < 1.4) return;
+  const { x, top } = wavePlace(t);
+  pixelSpace(g); g.save(); g.translate(x + WAVE_W, 0); g.scale(-1, 1);
+  g.drawImage(greatWave.at(S.T), 0, 0, WAVE_W, WAVE_ROWS, 0, top, WAVE_W, WAVE_ROWS);
   g.restore();
 }
 const beachSurf = T => wx => 414 + Math.sin(wx * .02 - T * 1.5) * 4;   // the sea along the shore

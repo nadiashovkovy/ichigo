@@ -15,8 +15,7 @@
 // PIXEL is how much of the world one art pixel covers, in game units: 4/3.
 // (The game used to have a 4:3 screen as well, 640×480 with PIXEL = 1. Some of the art can still draw
 // itself at that size.)
-// Pixel art drawn from pictures (Ichigo, lettering, the title card) keeps its size in pixels; see
-// sprite.js for how Ichigo keeps their size in the world.
+// Pixel art drawn from pictures (Ichigo, lettering, the title card) keeps its size in pixels.
 // ---------------------------------------------------------------------------
 export const VIEW_H = 480;                                          // game units of height on screen
 export const LW = 640, LH = 360;                                    // screen size, in art pixels
