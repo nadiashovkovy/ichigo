@@ -46,8 +46,11 @@ Run locally: `python3 -m http.server 8000`, then open http://localhost:8000.
 
 ## Rules of the game's design
 
-- **Wordless during play.** No text while the player is playing except titles, level cards and the tally of tomorrows. Ichigo speaks only the words they have learned, shown as an icon bubble. Other characters speak in pictogram bubbles.
-- **Story cards are the exception** (added at Nadia's request): short click-through text cards *between* moments, while the world waits, to tell the story and say what to do (`src/cards.js`). Level 0 (the prologue) is made of them; Level 1 has them at the start of the beach and on the white after the wave. Keep them few and short; any key goes on, Esc skips.
+- **Text is allowed during play** (Nadia's decision, 23 Nov 2026). Three kinds, all in the pixel font:
+  - *Story cards* (`src/cards.js`): short click-through cards that tell the story and say what to do; the world waits while one is up, any key goes on, Esc skips. Level 0 is made of them; Level 1 has them on the beach and on the white after the wave. Later levels can use them mid-level too. Keep them short.
+  - *Speech:* other characters' bubbles can carry their line as short text, with or without pictogram icons. The script's italic line after each pictogram is that text.
+  - *Hints:* a short line naming a new control the first time it's needed.
+- **Ichigo's own words stay limited** to the ones they've learned (an icon bubble; each level lists them in `"learns"`). Learning to talk is part of the story.
 - **Failure is never final.** Every failure is "a new tomorrow": the dawn print, then a retry from the last checkpoint. Never a game-over screen.
 - **Every level needs stakes:** a clock, a hazard, a scarce resource.
 - **Aging changes play.** Each age gains and loses abilities (see the aging table in the script's Through-lines and in the design doc).

@@ -1,6 +1,6 @@
 # Ichigo: Levels and Script
 
-*Exported 22 Nov 2026 from the Claude doc: https://claude.ai/artifact/TYjAzR9HUbgTkLrhpk7TZ4 (the doc is the live copy; this is a snapshot for project context).*
+*Exported 23 Nov 2026 from the Claude doc: https://claude.ai/artifact/TYjAzR9HUbgTkLrhpk7TZ4 (the doc is the live copy; this is a snapshot).*
 
 ## Overview
 
@@ -18,10 +18,14 @@ Everything here builds on `claude/ichigo-game-design.md` (pillars, aging table, 
 
 **How to read the script**
 
-- The game is wordless during play. Ichigo speaks only the few words they know, shown in play as a sound plus an icon bubble; the script writes the sound and puts the icon in brackets, e.g. ICHIGO: "Kaa-chan?" \[icon: a woman's face\].
-- Other characters speak in pictogram bubbles, because Ichigo can't understand most of what adults say. The script gives what the pictograms *mean* in italics; the player only sees the pictures.
-- SFX and MUSIC cues are for Zoe Cadogan-style sparse scoring: a single melody (the **Lullaby**) is introduced in Level 1 and recurs, changing as Ichigo grows.
+- **Text is allowed during play** (Nadia's decision, 23 Nov 2026). It comes in three forms:
+  - **Story cards:** short click-through cards that tell the story and say what to do. The world waits while one is up; any key goes on and Esc skips. Level 0 is made of them, and Level 1 uses them on the beach and on the white after the wave. Cards can also come mid-level when a level needs them.
+  - **Speech:** other characters' bubbles can carry their line as short text, with or without the pictogram icons. In the script, the italic line after each pictogram is that text. Ichigo doesn't understand most of what adults say, but the player does.
+  - **Hints:** a short line naming a new control the first time it's needed.
+- **Ichigo's own words stay limited** to the ones they've learned, shown as an icon bubble; the script writes the sound and puts the icon in brackets, e.g. ICHIGO: "Kaa-chan?" \[icon: a woman's face\]. Learning words is still the story of Ichigo growing up (*The Language Instinct*). Each level lists its new words, and the level-complete panel shows them.
+- SFX and MUSIC cues: a single melody (the **Lullaby**) is introduced in Level 1 and recurs, changing as Ichigo grows. All sound is synthesised in code.
 - Ichigo is they/them throughout (the Cellar Door design).
+- The screen is 16:9 (640 × 360 art pixels) inside a 1996 PC monitor.
 
 ## Through-lines
 
@@ -47,86 +51,102 @@ Four things run through every level: Ichigo's age, the words they can say, the m
 
 The genres follow the aging table in the design doc: each new game type uses the ability Ichigo has just gained (carrying water at 4, swimming at 5, ropes and rowing at 6, climbing at 7, building at 8, sailing at 9).
 
+## Level 0: Prologue
+
+**Card:** LEVEL 0 · always unlocked · *built*
+
+**Game type:** five story cards, each over a Hokusai print with the print's name on a paper label (the Great Wave, then the dawn prints). No play.
+
+**What it says:** Ichigo is a game from Gabrielle Zevin's novel; Sadie Green and Sam Masur make it and release it in 1997; a great wave sweeps Ichigo out to sea and they grow up over fifteen levels trying to get home; the look comes from Hokusai; this is a fan-made version that begins on a beach one evening. Then Level 1's beach.
+
+**Around it:** the title shows PRESS ANY KEY and "L: ALL LEVELS" with its own slow flute Lullaby. The level list shows 0–15; finishing a level unlocks the next. A settings gear (P or Esc) holds sound, story cards on or off, full screen, restart and erase save.
+
 ## Level 1: The Great Wave
 
-**Card:** 一 · 1 / 15 · Age 3 · *Odyssey* echo: the shipwreck (and *Twelfth Night*)
+**Card:** 一 · 1 / 15 · Age 3 · *Odyssey* echo: the shipwreck (and *Twelfth Night*) · *built*
 
-**Game type:** side-scrolling platformer on floating, rocking wreckage (built; see the design doc §3.1).
+**Game type:** a short playable beach, then a side-scrolling platformer on floating, rocking wreckage.
 
-**Goal:** cross the open sea from the ruined beach to a small island with a stone lantern.
+**Goal:** on the beach, dig a hole by the sandcastle and fill it with sea water. At sea, cross from the wreck of the village to a small island with a stone lantern.
 
-**Controls:** move, run, jump (hold for higher). No tools yet; the bucket hangs from Ichigo's wrist.
+**Controls:** ← → walk, Shift run. On the beach, ↓ digs, fills the bucket and pours it out (a ▼ marker shows when it will do something), and Ichigo can't jump. At sea, Space jumps (hold for higher).
 
-**Stakes:** decks tilt and are slippery, so standing still slides Ichigo into the sea. Straw mats sink. Waves grow as you travel. Falling in = a new tomorrow at the last carp streamer.
+**Stakes:** none on the beach. At sea, decks tilt and are slippery, so standing still slides Ichigo into the sea; straw mats sink; waves grow as you travel. Falling in = a new tomorrow (one of nine Hokusai prints, the Lullaby's first two notes) at the last carp streamer.
 
 **Beats**
 
-1. Prologue on the beach (interactive): walk to Kaa-chan, dig a hole, fill the bucket. Teaches movement with nothing at stake.
-2. The wave arrives. A short unplayable shot, then Ichigo is in the water.
-3. Gentle swells, wide steady planks and crates. Seven carp-streamer checkpoints.
-4. Mid-level: drifting planks and straw mats, waves growing.
-5. The oshiokuri boat as a breathing place, then the 150 px running jump that a walking jump misses on purpose.
-6. Small planks that tip you off in about 2 seconds, then the island.
+1. Story cards over the beach: who Ichigo is, Kaa-chan, and what to do.
+2. The beach. Ichigo sits by the sandcastle. Kaa-chan is inside the house and never seen; her humming and her bubbles come from the doorway.
+3. The trip on the way to the water: the chin cut and the strawberry plaster.
+4. Dig, fill, pour, three times. The third pour drains away: the sea pulls back, the gulls stop, Kaa-chan calls, and the wave comes with Ichigo wherever the player left them.
+5. White, two seconds of silence, then story cards on the white.
+6. The sea: gentle swells, then drifting planks and straw mats, the boat as a resting place, the running jump, small tipping planks, the island.
+7. Level complete: Ichigo sits by the lantern; a panel shows the level, how many times Ichigo fell in, and the words learned.
 
-**What Ichigo leaves with:** the word *Kaa-chan*; a cut on the chin under a strawberry plaster (it becomes a faint white scar that lasts the whole game); the yellow bucket and red shovel; the Lullaby.
+**What Ichigo leaves with:** the word *Kaa-chan*; a cut on the chin under a strawberry plaster (from Level 2 a faint pale scar that lasts the whole game); the yellow bucket and red shovel; the Lullaby.
 
 ### Script
 
-**TITLE.** The Great Wave curls left to right across warm paper. A small Fuji in the trough. Three oshiokuri boats. The rainbow-stacked title: ICHIGO. Below it, small: *A Child of the Sea.* PRESS ANY KEY.
+**TITLE.** The Great Wave curls across warm paper, gently moving. The rainbow-stacked title: ICHIGO. PRESS ANY KEY. L: ALL LEVELS. MUSIC: the Lullaby on a slow, high flute.
 
-**EXT. FISHING VILLAGE BEACH — LATE AFTERNOON**
+**EXT. FISHING VILLAGE BEACH — DUSK**
 
-Wide shot. Thatched wooden houses above a crescent of sand. Nets drying on poles. Carp streamers flap from one rooftop. On a bench by the boats, OJII-SAN, the old net-maker, bald with enormous eyebrows, dozes in the sun.
+A thatched wooden house on a low stone footing, a pine leaning toward the sea, the family boat pulled up on the sand. Fuji in the distance under a dusk sky. ICHIGO, three, bowl haircut, red jersey #15 worn to the knees, sits in the sand by a sandcastle with a yellow bucket and a red shovel.
 
-ICHIGO, three, bowl haircut, red jersey #15 worn to the knees, wooden flip-flops, sits in the sand with a yellow bucket and a red shovel. They dig.
+From inside the house, someone hums. MUSIC: the **Lullaby**, five notes rising and two falling, on a wooden flute.
 
-KAA-CHAN, Ichigo's mother, mends a net on the steps of the house. She hums. MUSIC: the **Lullaby**, five notes rising and two falling, on a single wooden flute.
+STORY CARDS:
 
-Player control begins. Ichigo walks in Sadie's walk: a few awkward sideways steps, speeding up, then forward.
+> ICHIGO LIVES BY THE SEA WITH KAA-CHAN, THEIR MOTHER, IN A HOUSE WITH A STRAW ROOF.
 
-If the player walks Ichigo toward the water, Ichigo trips over the shovel. A small *thup*. Ichigo sits up. A red dot on the chin. Their lip wobbles.
+> EVERY EVENING, WHILE KAA-CHAN MENDS THE NETS AND HUMS, ICHIGO PLAYS IN THE SAND WITH A BUCKET AND SHOVEL.
 
-Kaa-chan is already there. She kneels, takes a plaster printed with strawberries from her apron and presses it on Ichigo's chin. She taps Ichigo's nose.
+> ← → WALK. DOWN ARROW: DIG, FILL THE BUCKET, POUR IT OUT. DIG A HOLE BY THE SANDCASTLE, THEN FILL IT WITH SEA WATER.
 
-**KAA-CHAN:** \[pictogram: a strawberry, then a heart\] *My little strawberry.*
+Player control. Ichigo stands at the first step and walks in Sadie's walk: a few awkward sideways steps, speeding up, then forward.
+
+On the way to the water, Ichigo trips over the shovel. A small *thup*. Ichigo sits up. A red dot on the chin. Their lip wobbles. Then a plaster printed with strawberries is on the chin, and Ichigo turns toward the house.
+
+**KAA-CHAN** (from the doorway, unseen): \[pictogram: a strawberry, then a heart\] *My little strawberry.*
 
 **ICHIGO:** "Kaa-chan." \[icon: a woman's face\]
 
-She goes back to the net. (If the player never walks toward the water, Ichigo trips on the way back to the bucket instead. The cut always happens.)
+The player digs a hole in front of the sandcastle, fills the bucket at the water's edge and pours it in. The first two pours soak away slowly. On the third pour, the water drains away at once.
 
-The player fills the bucket at the water's edge and pours it into the hole. On the third pour, the water in the hole drains away by itself. The sea has pulled back. Fish flap on the bare sand. Ichigo looks up, delighted.
+The sea slides back from the beach. Fish flap on the bare sand. SFX: the gulls stop. The sound of the sea goes quiet.
 
-SFX: the gulls stop.
+**KAA-CHAN** (from the doorway, sharp): \[pictogram: Ichigo's face, an arrow, the house\] *Come here. Now.*
 
-Kaa-chan stands. The net slides off her lap. She looks past Ichigo at the horizon and drops the needle.
-
-**KAA-CHAN:** \[pictogram: Ichigo's face, an arrow, the house\] *Come here. Now.*
-
-The player can run. It doesn't matter. The camera pulls back and the Great Wave fills the left of the screen, claws of foam reaching right. It rises over the roofs.
+The player can run. It doesn't matter. The Great Wave rises out of the sea, claws of foam reaching toward the beach, and pitches forward. SFX: a rumble, then the crash.
 
 CUT TO WHITE. Silence for two seconds.
 
+STORY CARDS, on the white:
+
+> THE SEA CAME FOR THE VILLAGE, AND TOOK EVERYTHING WITH IT.
+
+> ICHIGO WAKES ON A PLANK IN THE OPEN SEA. FAR OFF, A STONE LANTERN SHINES ON AN ISLAND.
+
+> JUMP FROM WRECK TO WRECK TO REACH IT. DON'T STAND STILL: WET DECKS TILT, AND ICHIGO SLIDES.
+
 **EXT. OPEN SEA — DUSK**
 
-Ichigo surfaces beside a floating plank, the bucket still on their wrist, and hauls themselves onto it. The village is gone. Wreckage in every direction: planks, crates, roof pieces, straw mats. Far off, a small island with a stone lantern.
+Ichigo on a plank, the bucket still on their wrist. Wreckage in every direction. A carp streamer floats past.
 
 **ICHIGO:** "Kaa-chan?" \[icon: a woman's face, small and grey\]
 
-No answer. A carp streamer floats past, still bright.
-
-Play begins.
+No answer. MUSIC: koto and flute in the Lullaby's scale.
 
 **IN PLAY**
 
-- First time Ichigo slides on a tilted deck: they throw their arms out. No text.
-- First fall: fade to paper, a red sun rises over the sea, one tally mark appears in the corner. MUSIC: the first two notes of the Lullaby, every tomorrow.
-- Reaching the boat: Ichigo sits down for a moment and holds the bucket. If the player waits five seconds, Ichigo looks back the way they came.
+- Ichigo throws their arms out to balance when a deck tilts.
+- Each fall: a splash, then one of Hokusai's prints at dawn, the Lullaby's first two notes, and a tally mark in the corner. A small mark appears on Ichigo for each fall in this level.
+- The HUD: tally marks, a little boat on a rope toward the house, and 1/15.
+- On the boat, if the player waits, Ichigo sits down with the bucket in their lap. After five seconds they look back the way they came.
 
 **EXT. LANTERN ISLAND — NIGHT**
 
-Ichigo crawls onto black rock beside a stone lantern. They curl around the bucket. The great wave sits on the far horizon, small now.
-
-Card: 一 · 1 / 15.
+Ichigo climbs onto the rock and sits by the stone lantern. The panel: LEVEL ONE DONE, THE GREAT WAVE, how many times Ichigo fell in the sea, and LEARNED: \[Kaa-chan's face\].
 
 ## Level 2: The Tide Comes In
 
@@ -1079,7 +1099,7 @@ The ending happens only when the player stops moving Ichigo and leaves them stil
 
 Ichigo stands still.
 
-Kaa-chan kneels with the wet cloth, the way she knelt on the beach with the plaster. She wipes the salt off the stranger's face. Forehead. Cheeks. Chin.
+Kaa-chan kneels with the wet cloth. It's the first time the player has ever seen her: on the beach she was only a voice from the doorway. She wipes the salt off the stranger's face. Forehead. Cheeks. Chin.
 
 Her thumb stops on the pale line on the chin.
 
@@ -1118,3 +1138,6 @@ Card: 十五 · 15 / 15.
 - **The Fishermen's Island choice.** It currently changes only one moment in Level 15. Is that enough, or should it affect Level 13 (the Captain's boats passing) too?
 - **Level 12's failure loop.** Is an extra season passing the right "new tomorrow" for a level where Ichigo can't die?
 - **Sequel hook.** Leave out any Hanami (Ichigo II) hook so the ending stays whole, or add a post-credits beat?
+- **Speech as text.** Now that text is allowed, should other characters' bubbles show their line as words, pictograms, or both? Level 1 currently uses pictograms only. Should Ichigo's own bubbles also show the word under the icon?
+- **Ojii-san.** He's no longer on the Level 1 beach, so in Level 8 the player meets him for the first time, and in Level 15 his bench means nothing to them. Give him one line in a Level 1 story card, or let Level 8 introduce him?
+- **Kaa-chan unseen.** On the beach she is only a voice. Level 15 is then the first time the player sees her, which strengthens the ending. Keep her unseen everywhere before Level 15?
