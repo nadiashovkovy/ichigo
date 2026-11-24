@@ -33,7 +33,7 @@ export function makeWater(x0, cw, ground) {
 }
 
 // Let the water run for dt seconds. sea(x): the sea's surface at x, which fills the columns at both
-// ends (`edge` columns of them). tide: ground below this height fills by itself, at `seep` a second.
+// ends (`edge` columns of them). tide(x): the sea's resting height there; ground lower than it fills by itself, at `seep` a second.
 // soak: how fast water above the tide soaks away into the sand. onStep(dt) is called every small step.
 export function flow(w, dt, { sea, edge, tide, seep, soak, onStep }) {
   w.left = Math.min(w.left + dt, .1);
@@ -66,8 +66,8 @@ function step(w, dt, sea, edge, tide, seep, soak) {
   }
   for (let i = edge; i < n - edge; i++) {
     if (d[i] < 0) d[i] = 0;
-    const level = w.surface(i);
-    if (w.solid(i) < tide && level < tide) d[i] = Math.min(tide - w.solid(i), d[i] + seep * dt);        // the tide gets in everywhere
-    else if (d[i] > 0 && level > tide) d[i] = Math.max(0, d[i] - soak * dt);                           // puddles soak away
+    const level = w.surface(i), rest = tide(w.x0 + (i + .5) * cw);
+    if (w.solid(i) < rest && level < rest) d[i] = Math.min(rest - w.solid(i), d[i] + seep * dt);        // the tide gets in everywhere
+    else if (d[i] > 0 && level > rest) d[i] = Math.max(0, d[i] - soak * dt);                           // puddles soak away
   }
 }

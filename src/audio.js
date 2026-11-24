@@ -302,6 +302,31 @@ export function playScoop() {
   o.connect(g); g.connect(fx); o.start(at); o.stop(at + .3);
 }
 export function playPour() { if (ac) burst(ac.currentTime, .5, { from: 2200, to: 700, type: 'bandpass', q: .7, vol: .24, attack: .05, buf: noise }); }
+// Ichigo asleep: a soft little snore, a rattly breath in and a whistling breath out.
+export function playSnore() {
+  if (!ac) return;
+  const at = ac.currentTime, o = ac.createOscillator(), rattle = ac.createOscillator(), rg = ac.createGain(), f = ac.createBiquadFilter(), g = ac.createGain();
+  o.type = 'sawtooth'; o.frequency.setValueAtTime(88, at); o.frequency.linearRampToValueAtTime(112, at + .8);
+  rattle.type = 'square'; rattle.frequency.value = 24; rg.gain.value = .03; rattle.connect(rg); rg.connect(g.gain);   // (the rattle: its loudness flutters)
+  f.type = 'lowpass'; f.frequency.setValueAtTime(260, at); f.frequency.linearRampToValueAtTime(520, at + .7);
+  g.gain.setValueAtTime(0, at); g.gain.linearRampToValueAtTime(.06, at + .45); g.gain.linearRampToValueAtTime(0, at + .9);
+  const gate = ac.createGain(); gate.gain.setValueAtTime(0, at); gate.gain.linearRampToValueAtTime(1, at + .2); gate.gain.setValueAtTime(1, at + .7); gate.gain.linearRampToValueAtTime(0, at + .95);
+  o.connect(f); f.connect(g); g.connect(gate); gate.connect(fx); o.start(at); rattle.start(at); o.stop(at + 1); rattle.stop(at + 1);
+  burst(at + .1, .7, { from: 500, to: 1100, type: 'bandpass', q: 1.2, vol: .05, attack: .35, buf: noise });
+  burst(at + 1.25, .8, { from: 1500, to: 700, type: 'bandpass', q: 5, vol: .07, attack: .2, buf: noise });
+}
+// Ichigo, pinched: a small "waa", sliding down.
+export function playCry() {
+  if (!ac) return;
+  for (const [d, top, len] of [[0, 620, .3], [.38, 560, .45]]) {
+    const at = ac.currentTime + d, o = ac.createOscillator(), vib = ac.createOscillator(), vg = ac.createGain(), f = ac.createBiquadFilter(), g = ac.createGain();
+    o.type = 'triangle'; o.frequency.setValueAtTime(top * .8, at); o.frequency.linearRampToValueAtTime(top, at + .06); o.frequency.exponentialRampToValueAtTime(top * .62, at + len);
+    vib.frequency.value = 9; vg.gain.value = 14; vib.connect(vg); vg.connect(o.frequency);
+    f.type = 'bandpass'; f.frequency.value = 1000; f.Q.value = .8;
+    g.gain.setValueAtTime(0, at); g.gain.linearRampToValueAtTime(.14, at + .05); g.gain.exponentialRampToValueAtTime(.001, at + len);
+    o.connect(f); f.connect(g); g.connect(fx); o.start(at); vib.start(at); o.stop(at + len); vib.stop(at + len);
+  }
+}
 export function playHiss() { if (ac) { burst(ac.currentTime, 1.1, { from: 6500, to: 2500, type: 'highpass', vol: .22, attack: .03, buf: noise }); burst(ac.currentTime, .5, { from: 600, to: 200, vol: .4 }); } }
 export function playClick(pitch = 1) {
   if (!ac) return;

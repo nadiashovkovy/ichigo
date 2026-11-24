@@ -14,8 +14,8 @@ What it does:
   5. Takes screenshots of each moment worth looking at (tests/screens/),
      and reports page errors, where the bot fell in, whether it reached the lantern, and the save.
   6. Plays Level 2 on a sped-up clock: once doing nothing (the lantern must go out in the first set),
-     once walking the sandbar (the sea must take Ichigo), and once properly: sand walls for six sets,
-     the sandbar, the shell. Reports how it went.
+     once walking the sandbar (the sea must take Ichigo), and once properly: sea-fireflies to the
+     lantern till morning, the things from home, the sandbar, the shell. Looks at Ichigo's things (Tab). Reports how it went.
 
 Run it from the project folder:
     pip install playwright && playwright install chromium
@@ -88,29 +88,34 @@ FAST_CLOCK = r'''
 })();
 '''
 
-# Level 2's bot. window._mode: 'idle' (does nothing), 'walk' (builds, but walks the sandbar) or 'build'.
-# It keeps an inner wall on each side it needs, and an outer one while the tide is low.
+# Level 2's bot. window._mode: 'idle' (does nothing), 'walk' (walks the sandbar), 'near' (only takes the
+# sea-fireflies closest to the lantern) or 'play': follows each wave out, and runs back before the next.
 TIDE_BOT = r'''
-(() => { const { S, tide: N, keys, input, cards } = window.ichigo, slotX = i => 94 + i * 24, slotOf = x => Math.floor((x - 94) / 24);
-  const OUT_R = slotOf(600), OUT_L = slotOf(250), IN_R = slotOf(490), IN_L = slotOf(362);
-  let wait = 0, cur, back = false;
+(() => { const { S, tide: N, keys, input, cards } = window.ichigo, C = 427, LEAD = 3.6;
+  let wait = 0, fleeing = false; window._knocked = 0; let was = 0;
   window._tick = () => {
     if (cards.active()) { if (++wait > 20) { cards.next(); wait = 0; } return; }
     for (const k of ['ArrowLeft', 'ArrowRight', 'KeyS', 'ShiftLeft']) keys[k] = false;
     if (S.scene !== 'tide' || window._mode === 'idle') return;
+    if (N.stumble > .9 && was <= .9 && N.phase === 'waves') window._knocked++; was = N.stumble;
+    const go = (x, run = true) => { keys[N.x < x ? 'ArrowRight' : 'ArrowLeft'] = true; keys.ShiftLeft = run; };
     if (N.phase === 'calm' || N.phase === 'waves') {
-      const plan = N.set < 2 ? [IN_R, OUT_R] : N.set < 3 ? [IN_R, IN_L, OUT_R, OUT_L] : [IN_R, IN_L];
-      const wet = i => { let m = 0; for (let k = -1; k <= 3; k++) m = Math.max(m, N.w.d[i * 3 + k] || 0); return m > 4; };
-      const todo = plan.filter(i => N.walls[i] < (N.phase === 'calm' ? 2.9 : 2.85) && !wet(i));
-      if (cur !== undefined && (wet(cur) || N.walls[cur] >= 2.99 || !plan.includes(cur))) cur = undefined;
-      if (cur === undefined || (N.phase === 'waves' && todo.length)) cur = todo[0];
-      if (cur === undefined) { if (Math.abs(N.x - 427) > 60) keys[N.x < 427 ? 'ArrowRight' : 'ArrowLeft'] = true; return; }
-      // stand just inside the wall, facing it, and hold use (stepping back first if too close)
-      const mid = slotX(cur) + 12, side = mid > 427 ? 1 : -1, off = (N.x - (mid - side * 30)) * side;
-      if (off > 6) back = true; if (off < -10) back = false;
-      if (back) keys[side > 0 ? 'ArrowLeft' : 'ArrowRight'] = true;
-      else if (off < -5 || N.face !== side) { keys[side > 0 ? 'ArrowRight' : 'ArrowLeft'] = true; keys.ShiftLeft = off < -40; if (off > 3) back = true; }
-      else keys.KeyS = true;
+      const side = x => (x > C ? 'right' : 'left');
+      // a wave's on its way to that side, or has not yet drained
+      const danger = s => N.swells.some(v => v.side === s && v.t > LEAD - .35 && v.t < LEAD + 3.2);
+      const out = Math.abs(N.x - C);
+      if (danger(side(N.x)) && out > 100) return go(C);
+      if (N.held) return go(C);
+      if (N.load >= 5 || (N.load && (N.fuel < .25 || (fleeing && out < 100)))) { if (out > 40) return go(C); input.usePressed = true; fleeing = false; return; }
+      if (N.thing && N.thing.state === 'lying' && window._mode === 'play' && !danger(N.thing.side)) { if (Math.abs(N.x - N.thing.x) < 15) input.usePressed = true; else go(N.thing.x); return; }
+      let best = null, score = 1e9;
+      for (const g of N.glows) {
+        if (danger(side(g.x)) || (window._mode === 'near' && Math.abs(g.x - C) > 190)) continue;
+        const sc = Math.abs(g.x - N.x) - g.n * 30; if (sc < score) { score = sc; best = g; }
+      }
+      if (best) { if (Math.abs(best.x - N.x) < 16) keys.KeyS = true; else go(best.x); }
+      else if (N.load) { fleeing = true; if (out > 40) go(C); else input.usePressed = true; }
+      else if (out > 60) go(C);
     }
     if (N.phase === 'bar') {
       keys.ArrowRight = true; keys.ShiftLeft = window._mode !== 'walk';
@@ -127,7 +132,7 @@ async def play_tide(browser):
     async def open_level(mode):
         ctx = await browser.new_context(viewport={'width': 960, 'height': 540})
         await ctx.add_init_script(FAST_CLOCK)
-        await ctx.add_init_script("localStorage.setItem('ichigo.save', JSON.stringify({ words: ['kaa-chan'], marks: ['chin'], tomorrows: 0, done: [1], seenWave: true }))")
+        await ctx.add_init_script("localStorage.setItem('ichigo.save', JSON.stringify({ words: ['kaa-chan', 'umi'], marks: ['chin'], tomorrows: 0, done: [1], seenWave: true }))")
         page = await ctx.new_page(); page.on('pageerror', lambda e: errors.append(str(e)))
         await page.goto(f'http://127.0.0.1:{PORT}/index.html'); await page.wait_for_timeout(2000)
         await page.evaluate(f"window._mode = '{mode}'"); await page.add_script_tag(content=TIDE_BOT)
@@ -141,10 +146,19 @@ async def play_tide(browser):
         return True
     NOW = "N.phase === 'calm' && (N.phase = 'ebb', N.t = 0, N.tideFrom = N.tide, true)"   # (skip the night)
 
-    ctx, page = await open_level('idle')   # nothing built: the lantern goes out, and it's a new tomorrow in the same set
+    ctx, page = await open_level('idle')   # nothing done: the lantern goes out, and it's a new tomorrow in the same set
     await until(page, "N.phase === 'out' && N.t > .3", 'tide_lantern_out')
-    if await page.evaluate('ichigo.tide.set') != 0: notes.append('Level 2: with no walls, the lantern lasted past the first set')
+    if await page.evaluate('ichigo.tide.set') != 0: notes.append('Level 2: left alone, the lantern lasted past the first set')
     if not await until(page, "S.scene === 'tide' && S.deaths === 1 && N.phase === 'calm' && N.set === 0"): notes.append('Level 2: no retry after the lantern went out')
+    await ctx.close()
+
+    ctx, page = await open_level('idle')   # caught far out by a wave: it takes Ichigo, and the night starts again from the first set
+    await until(page, "N.set === 0 && N.phase === 'waves'")
+    await page.evaluate("Object.assign(ichigo.tide, { fuel: 1, set: 1, wave: 0, x: 427 + 340 })")
+    if not await until(page, "N.phase === 'under'", 'tide_under', 40): notes.append('Level 2: a wave far out did not take Ichigo')
+    await until(page, "S.scene === 'tide' && S.deaths === 1 && N.set === 0")
+    await page.evaluate("(N => { N.crabs = [{ side: 'right', x: N.x, dir: 1, t: 0, hide: 0 }]; })(ichigo.tide)")   # a crab pinches: Ichigo cries, and learns its name
+    if not await until(page, "N.cry > .5 && S.words.includes('kani')", 'tide_pinch', 10): notes.append('Level 2: a crab did not pinch Ichigo')
     await ctx.close()
 
     ctx, page = await open_level('walk')   # walking the sandbar is too slow
@@ -152,16 +166,18 @@ async def play_tide(browser):
     if await page.evaluate('ichigo.S.scene') == 'end': notes.append('Level 2: walking was fast enough for the sandbar')
     await until(page, "N.phase === 'bar' && S.scene === 'tide' && S.deaths === 1"); await ctx.close()
 
-    ctx, page = await open_level('build')
-    for js, shot in [("N.phase === 'wake' && N.t > 4.3", 'tide_wake'), ("N.phase === 'wake' && N.t > 5.9", 'tide_umi'), ("N.phase === 'waves' && N.wave === 1 && N.t > 2.8", 'tide_wall'),
-                     ("N.set === 1 && N.crabs.length && N.crabs[0].t > 1.5", 'tide_crab'), ("N.set === 3 && N.phase === 'calm' && N.t > 9", 'tide_high'), ("N.set === 5 && N.wave === 3 && N.t > 3", 'tide_last'),
-                     ("N.phase === 'ebb' && N.t > 3.6", 'tide_dawn'), ("N.phase === 'bar' && N.x > 1180", 'tide_sandbar'), ("N.shellT > .2", 'tide_shell'), ("S.scene === 'end' && S.sceneT > 3", 'tide_end')]:
+    ctx, page = await open_level('play')
+    for js, shot in [("N.phase === 'wake' && N.t > 2.2", 'tide_sleep'), ("N.set === 0 && N.phase === 'waves'", 'tide_umi'), ("N.phase === 'waves' && N.set === 0 && N.load >= 3", 'tide_scoop'), ("N.flare > .6", 'tide_feed'),
+                     ("N.held", 'tide_thing'), ("N.phase === 'waves' && N.set === 1 && N.swells.some(v => v.t > 4.9 && v.t < 5.2)", 'tide_wave'), ("N.set === 2 && N.glows.length > 5", 'tide_glow'), ("N.set === 3 && N.phase === 'waves'", 'tide_last'),
+                     ("N.phase === 'ebb' && N.t > 3.6", 'tide_dawn'), ("N.phase === 'bar' && N.x > 1180", 'tide_sandbar'), ("N.shellT > .2", 'tide_shell')]:
         if not await until(page, js, shot): break
-    report = await page.evaluate("({ scene: ichigo.S.scene, deaths: ichigo.S.deaths, seconds: Math.round(ichigo.S.levelT) })")
+    await page.keyboard.press('Tab'); await until(page, "S.thingsOpen", 'tide_things'); await page.keyboard.press('Tab'); await until(page, "!S.thingsOpen")
+    await until(page, "S.scene === 'end' && S.sceneT > 3", 'tide_end')
+    report = await page.evaluate("({ scene: ichigo.S.scene, deaths: ichigo.S.deaths, seconds: Math.round(ichigo.S.levelT), knocked: window._knocked, saved: ichigo.tide.saved })")
     report['save'] = json.loads(await page.evaluate("localStorage.getItem('ichigo.save')"))
     if report['scene'] != 'end': notes.append('Level 2: the bot did not finish')
     s = report['save']
-    if 'umi' not in s['words'] or 2 not in s['done'] or 'shell' not in s['things']: notes.append('Level 2: the save is missing umi, the shell or the level')
+    if 'kani' not in s['words'] or 2 not in s['done'] or 'shell' not in s['things']: notes.append('Level 2: the save is missing kani, the shell or the level')
     await ctx.close()
     return notes, errors, report
 
@@ -284,7 +300,7 @@ async def main():
         print('Save:', r['save'])
         if not SKIP_BEACH:
             s = r['save'] or {}
-            if s.get('words') != ['kaa-chan'] or s.get('marks') != ['chin']: print("Problem: expected words ['kaa-chan'] and marks ['chin']"); ok = False
+            if s.get('words') != ['kaa-chan', 'umi'] or s.get('marks') != ['chin']: print("Problem: expected words ['kaa-chan', 'umi'] and marks ['chin']"); ok = False
         if r['errors'] or r['notes']: ok = False
     if tide:
         notes, errors, report = tide

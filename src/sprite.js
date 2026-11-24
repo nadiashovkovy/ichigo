@@ -255,10 +255,13 @@ const SCARS = [
 // (width, height; 2×2 if left out). Some marks look different over time: the chin is a red cut, then
 // a strawberry plaster for the rest of Level 1, then a pale scar from Level 2 on.
 // A few other touches use the same table: Ichigo's lip wobbling, and water in the bucket.
+// (The eye is painted out with skin, and a short lid line put in low down.)
+const ASLEEP = [[-12, 28, 'S', 4, 4], [-9, 27, 'E', 6, 1]];
 const MARKS = {
   'chin-cut':     [[-4, 27, P.red]],                                   // just fallen on the shovel
   'chin-plaster': [[-4, 26, P.pink, 3, 2], [-3, 26, P.rose, 3, 1], [-4, 28, P.red, 1, 1]],   // Kaa-chan's strawberry plaster (its rose edge keeps it from vanishing into the skin)
   'chin-scar':    [[-3, 27, P.tan, 2, 1]],                             // what's left of it
+  'asleep':       ASLEEP,   // eyes shut
   'pout':         [[-6, 28, 'S', 3, 1], [-6, 29, 'm', 1, 1], [-5, 28, 'm', 1, 1], [-5, 29, 'S', 1, 1], [-5, 30, 'm', 1, 1], [-5, 31, 'S', 1, 1]],   // the lip wobbling (every other frame)
 };
 // Which permanent marks to draw, from S.marks (the chin shows its plaster in Level 1 and its scar
