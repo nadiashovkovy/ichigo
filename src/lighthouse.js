@@ -21,7 +21,7 @@ import { updateParts } from './player.js';
 import { learn, keepThing } from './save.js';
 import { seaSound, playWash, playClick, playFall, playBell, playSquawk, playStep, playSmash, playMeow, playSeen, playCut, playBolt, playThud } from './audio.js';
 
-const CARDS = ['IN THE NIGHT THE TIDE TAKES THE RAFT. ITS ROPE CATCHES IN THE BOATHOUSE, ACROSS THE ROCKS.', 'NO ONE LIVES HERE NOW. BUT THE LAMP IS LIT, AND IT LOOKS FOR WHATEVER MOVES.', "GET BACK TO THE RAFT. DON'T LET THE LIGHT SEE YOU."];
+const CARDS = ['WHILE ICHIGO SLEEPS, THE TIDE TAKES THE RAFT. ITS ROPE CATCHES IN THE BOATHOUSE, ACROSS THE ROCKS.', 'THE LAMP IS LIT AGAIN, BUT THERE IS NO ONE TO LIGHT IT. IT LOOKS FOR WHATEVER MOVES.', "GET BACK TO THE RAFT. DON'T LET THE LIGHT SEE ICHIGO."];
 
 // Everything about the level as it plays out. (Exposed on window.ichigo.light for the test bot.)
 // phase: 'play' → 'away' (the rope parts) → 'paddle' → 'gone'; 'caught' (a new tomorrow), 'fell' (into the sea: one too).
@@ -267,12 +267,12 @@ function tutor() {
     if (H.sleepers.some(g => g.kind === 'cat' && !g.away && near(g.x, 150))) hint('cat', 'A CAT ASLEEP BY THE FIRE. WALK.', 3.5);
     if (H.x > r.wall[0] - 140) hint('tunnel', 'A TUNNEL, AS HIGH AS THE BUCKET. HOLD DOWN ARROW AND GO THROUGH.', 5);
   } else {
-    if (!r && b.on && Math.abs(b.x - H.x) < 480) hint('beam', 'HIDE UNDER THE BUCKET, OR BEHIND A ROCK.', 5);
+    if (!r && b.on && Math.abs(b.x - H.x) < 480) hint('beam', 'ROCKS HIDE ICHIGO TOO.', 5);
     if (near(L.stones[0][0] - 90, 60)) hint('stones', 'STONES, ACROSS THE WATER. JUMP WHILE IT IS DARK.', 4.5);
     if (near(L.rooms.find(q => q.name === 'hull').from + 30, 70)) hint('hull', 'AN OLD WRECK. WALK IN THE DARK BETWEEN THE LIGHTS.', 5);
     if (H.cords.some(q => near(q.x, 60))) hint('cord', 'DOWN ARROW AT THE CORD: RING A BELL FAR AWAY. THE EYE WILL LOOK AT IT.', 5.5);
     if (H.sleepers.some(g => g.kind === 'gull' && !g.away && near(g.x, 130))) hint('gull', 'A GULL ASLEEP. WALK PAST IT.', 3.5);
-    if (near(L.rope, 120)) hint('cut', 'CUT THE ROPE WHILE IT IS DARK. DOWN ARROW.', 6);
+    if (near(L.rope, 120)) hint('cut', 'DOWN ARROW: CUT THE ROPE WHILE IT IS DARK.', 6);
   }
 }
 // Running or landing near something asleep wakes it; near a bottle, knocks it down.
@@ -310,7 +310,7 @@ function updateAway(dt) {
 function updatePaddle(dt, win) {
   const L = S.level;
   hint('paddle', 'RIGHT ARROW: PADDLE. HOLD DOWN ARROW: HIDE FROM THE LIGHT.', 6);
-  if (L.stacks.some(([a]) => H.raftX > a - 260 && H.raftX < a)) hint('stack', 'THE LIGHT GOES BY ANYTHING BEHIND A ROCK.', 4);
+  if (L.stacks.some(([a]) => H.raftX > a - 260 && H.raftX < a)) hint('stack', 'A ROCK. GO BEHIND IT.', 4);
   const was = H.hide; H.hide = H.phase === 'paddle' && inUse(); if (H.hide && !was) playClick(.6);
   H.paddling = H.phase === 'gone' || (inRight() && !H.hide);
   H.raftX += (H.paddling ? LIGHT.paddle : LIGHT.drift) * dt; H.x = H.raftX; H.face = 1; H.anim += dt * (H.paddling ? 1 : 0);

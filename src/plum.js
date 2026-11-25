@@ -24,15 +24,15 @@ import { learn, keepThing } from './save.js';
 import { seaSound, playWash, playScoop, playPour, playDig, playClick, playMunch, playRustle, playThud, playGrowl, playYawn, playSplash, playSnore, playBoing, playSting, cicadas } from './audio.js';
 
 const INTRO_CARDS = [
-  "ON THE FAR SIDE OF THE ISLAND THERE ARE PLUM TREES, AND A FEW PEOPLE WHO ARRIVED HERE BY BOAT A LONG TIME AGO. THEY DON'T DO MUCH.",
+  "THE PEOPLE HERE CAME BY BOAT, A LONG TIME AGO. THEY EAT PLUMS, AND SLEEP.",
   'THERE IS A RAFT IN THE REEDS AT THE FAR END. IT NEEDS A ROPE, A PADDLE AND A SAIL. FIND THEM.',
-  'ICHIGO IS HUNGRY. DOWN ARROW: PICK UP, DIG, EAT.',
+  'DOWN ARROW: PICK UP, DIG, EAT.',
 ];
 const parts3 = () => [['rope', M.rope === 'kept'], ['paddle', M.paddle], ['blanket', M.blanket]];   // what the raft needs, and whether Ichigo has it
 export const raftNeeds = parts3;
 // What it still needs, in words.
 const stillNeeds = () => { const no = parts3().filter(([, got]) => !got).map(([id]) => 'A ' + (id === 'blanket' ? 'SAIL' : id.toUpperCase())); return no.length > 1 ? no.slice(0, -1).join(', ') + ' AND ' + no[no.length - 1] : no[0]; };
-const END_CARDS = ['ICHIGO PUSHES THE RAFT OUT. THE CURRENT TAKES IT EAST.'];
+const END_CARDS = ['ICHIGO PUSHES THE RAFT OUT.'];
 
 // Everything about the level as it plays out. (Exposed on window.ichigo.plum for the test bot.)
 // phase: 'play' → 'asleep' (three plums, or too hungry: a new tomorrow) or 'leave' (on the raft, drifting off).
@@ -231,7 +231,7 @@ function updateSleepers(dt) {
     M.woman = 'refused'; M.womanT = 0; hush('woman');
     think('home'); learn('home');
   }
-  if (M.woman === 'refused' && M.womanT > 1.8 && !M.refused) { M.refused = true; say('woman', [], { text: 'EVERYONE WALKS ON AT FIRST.', time: 3.5 }); }
+  if (M.woman === 'refused' && M.womanT > 1.8 && !M.refused) { M.refused = true; say('woman', [], { text: 'NOBODY WANTS ONE AT FIRST.', time: 3.5 }); }
   if (M.woman === 'refused' && M.womanT > 6) M.woman = 'done';   // (asleep again)
   // the fisherman, shown a crab: he wakes, gives his rope away, and sits down on the grass to watch the crab
   M.fisherT += dt;

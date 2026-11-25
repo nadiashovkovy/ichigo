@@ -30,7 +30,7 @@ const INTRO_CARDS = [
 export const WAKE_CARDS = [
   'THE SEA CAME FOR THE VILLAGE, AND TOOK EVERYTHING WITH IT.',
 ];
-export const SEA_CARDS = ['A STONE LANTERN SHINES ON AN ISLAND. JUMP FROM WRECK TO WRECK TO REACH IT. DON\'T STAND STILL: WET DECKS TILT, AND ICHIGO SLIDES.'];   // (after the journey: story.js)
+export const SEA_CARDS = ['JUMP FROM WRECK TO WRECK TO REACH THE LIGHT. DON\'T STAND STILL: WET DECKS TILT, AND ICHIGO SLIDES.'];   // (after the journey: story.js)
 
 // Everything about the beach as it plays out. (Exposed on window.ichigo.beach for the test bot.)
 export const B = {};

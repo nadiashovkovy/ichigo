@@ -110,8 +110,8 @@ function paintRoom() {
   for (const y of [204, 212]) q(522, y, 11, 2, P.foam);
 }
 const shade = document.createElement('canvas');
-function shadow(frame, x, bottom) {   // Kaa-chan's shadow on the paper
-  shade.width = 90; shade.height = 110; const g = shade.getContext('2d'); drawPerson(g, 'kaachan', frame, 45, 108, -1);
+function shadow(frame, x, bottom, face) {   // Kaa-chan's shadow on the paper
+  shade.width = 90; shade.height = 110; const g = shade.getContext('2d'); drawPerson(g, 'kaachan', frame, 45, 108, face);
   g.globalCompositeOperation = 'source-in'; g.fillStyle = P.bark; g.fillRect(0, 0, 90, 110); g.globalCompositeOperation = 'source-atop'; g.fillStyle = P.mauve; for (let j = 0; j < 110; j++) for (let i = 0; i < 90; i++) if (dither(i, j) < .3) g.fillRect(i, j, 1, 1); g.globalCompositeOperation = 'source-over';
   lg.imageSmoothingEnabled = false; lg.drawImage(shade, 0, 0, 90, 109, Math.round(x - 90), Math.round(bottom - 218), 180, 218);   // (twice as big as she is: the lamp is behind her)
 }
@@ -148,7 +148,9 @@ export const SHOTS = {
   bedtime: { draw(t) {
     if (!room) paintRoom();
     lg.drawImage(room, 0, 0);
-    shadow(Math.floor(t * 1.6) % 2 ? 'sit1' : 'sit2', 440, 262);
+    // Kaa-chan going about the next room: across, a pause, and back
+    const turn = 4.6, q = (t % turn) / turn, back = Math.floor(t / turn) % 2, along = smooth((q - .06) / .74), still = q < .06 || q > .8, sx = back ? 470 - 290 * along : 180 + 290 * along;
+    lg.save(); lg.beginPath(); lg.rect(152, 78, 360, 168); lg.clip(); shadow(still ? 'stand' : Math.floor(t * 4) % 2 ? 'walk1' : 'walk2', sx, 276, back ? -1 : 1); lg.restore();
     for (let x = 152; x < 512; x += 45) r(x, 78, 2, 168, P.brown);
     for (let y = 78; y < 246; y += 42) r(152, y, 360, 2, P.brown);
     r(328, 74, 8, 173, P.outline); r(329, 74, 6, 172, P.wood);
@@ -159,12 +161,12 @@ export const SHOTS = {
       const q = (x, y, w, h, c) => { g.fillStyle = c; g.fillRect(x, y, w, h); }; g.clearRect(0, 0, 170, 64);
       for (let j = 0; j < 46; j++) { const w = 40 + Math.round(j * .34); q(85 - w - 1, 17 + j, w * 2 + 2, 1, P.outline); q(85 - w, 17 + j, w * 2, 1, j < 2 ? P.white : P.foam); q(85 + w - 3, 17 + j, 3, 1, P.grey0); }   // the mattress
       for (let j = 0; j < 15; j++) { const w = j < 2 || j > 12 ? 24 : 26; q(85 - w - 1, 14 + j, w * 2 + 2, 1, P.outline); if (j > 0 && j < 14) q(85 - w, 14 + j, w * 2, 1, j > 10 ? P.grey0 : P.white); }                       // the pillow
-      g.save(); g.beginPath(); g.rect(0, 0, 170, 31); g.clip(); ichigo('stand', 85, 2 + sh - 1, 1, ['asleep'], [0, 0], g); g.restore();
+      g.save(); g.beginPath(); g.rect(0, 0, 170, 31); g.clip(); ichigo('stand', 85, 2 + sh - 1, 1, t > 5.4 || t % 2.6 > 2.45 ? ['asleep'] : [], [0, 0], g); g.restore();
       for (let j = 0; j < 36; j++) { const y = 27 - up + j, w = 34 + Math.round(j * .36), mound = Math.max(0, 1 - Math.abs(j - 14) / 22); if (y > 63) break; q(85 - w - 1, y, w * 2 + 2, 1, P.outline); for (let i = -w; i < w; i++) { const fold = j < 4, c = fold ? (j === 3 ? P.grey0 : P.white) : clothAt(i + 100, j, false) === P.foam ? P.foam : Math.abs(i) < 15 * mound && dither((i + 100) & 255, j) < .6 ? P.deep : Math.abs(i) > w - 8 || dither((i + 100) & 255, j) < .35 ? P.indigo : P.navy; q(85 + i, y, 1, 1, j === 0 ? P.outline : c); } }
       put(BUCKET, 20, 60, false, g); q(134, 57, 18, 4, P.outline); q(135, 58, 9, 2, P.red); q(144, 58, 7, 1, P.grey1);
     }, 150, 190);
     glow(350, 200, 260, 130, P.gold, .16); edges();
-    if (t > 4) zs(332, 196);
+    if (t > 6) zs(332, 196);
   } },
   scared: { draw(t) {
     scenery('dusk', { cam: 120 + t * 10, view: 'dusk' }); nearSea('dusk', 402, 120);
