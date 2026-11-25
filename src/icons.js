@@ -135,6 +135,8 @@ ICONS.kani = [   // a crab, claws up
 ];
 
 ICONS.uchi = ICONS.house;   // home
+// Which picture stands for a word Ichigo has learned.
+export const wordIcon = w => ({ 'kaa-chan': 'kaachan', ichigo: 'strawberry' }[w] || w);
 
 ICONS.plum = [   // a plum, a leaf on its stalk
   '......b.....',

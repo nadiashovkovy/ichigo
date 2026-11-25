@@ -232,7 +232,7 @@ function updateSleepers(dt) {
     M.woman = 'refused'; M.womanT = 0; hush('woman');
     say('ichigo', ['uchi'], { note: true, time: 2.4 }); learnWord('uchi');
   }
-  if (M.woman === 'refused' && M.womanT > 1.8 && !M.refused) { M.refused = true; say('woman', [], { text: 'EVERYONE SAYS THAT AT FIRST.', time: 3.5 }); }
+  if (M.woman === 'refused' && M.womanT > 1.8 && !M.refused) { M.refused = true; say('woman', [], { text: 'EVERYONE WALKS ON AT FIRST.', time: 3.5 }); }
   if (M.woman === 'refused' && M.womanT > 6) M.woman = 'done';   // (asleep again)
   // the fisherman, shown a crab: he wakes, gives his rope away, and sits down on the grass to watch the crab
   M.fisherT += dt;

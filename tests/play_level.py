@@ -19,6 +19,8 @@ What it does:
   7. Plays Level 3 the same way: once doing nothing (too hungry: a new tomorrow), once running under the
      trees (bumped on the head, nothing eaten), once eating every plum (asleep: a new tomorrow), and once
      properly, to the raft.
+  8. Plays Level 4 the same way: once never hiding (caught: a new tomorrow), ringing a bell (the keeper must
+     come to it), and once properly, hiding from the light, to the open sea.
 
 Run it from the project folder:
     pip install playwright && playwright install chromium
@@ -131,12 +133,12 @@ TIDE_BOT = r'''
 '''
 
 async def moment(page, name, js, notes, shot, timeout):
-    """Wait for something on the sped-up clock (held still as soon as it's true), and take a picture of it."""
-    await page.evaluate(f"window._got = false; window._want = () => {{ const N = ichigo.tide, M = ichigo.plum, S = ichigo.S; try {{ return {js}; }} catch (e) {{ return false; }} }}")
+    """Wait for something on the sped-up clock (held still as soon as it's true, until the next of these), and take a picture of it."""
+    await page.evaluate(f"window._got = false; window._want = () => {{ const N = ichigo.tide, M = ichigo.plum, H = ichigo.light, S = ichigo.S; try {{ return {js}; }} catch (e) {{ return false; }} }}; window._hold = false")   # (it has been held still since the last one, so nothing is missed in between)
     ok = await wait_for(page, 'window._got', timeout, 30)
     if ok and shot: await page.wait_for_timeout(100); await page.screenshot(path=f'{SHOTS}/{shot}.png')
     if not ok: notes.append(f'{name}: never saw {js}')
-    await page.evaluate('window._want = null; window._hold = false')
+    await page.evaluate('window._want = null')
     return ok
 
 async def play_tide(browser):
@@ -145,7 +147,7 @@ async def play_tide(browser):
     async def open_level(mode):
         ctx = await browser.new_context(viewport={'width': 960, 'height': 540})
         await ctx.add_init_script(FAST_CLOCK)
-        await ctx.add_init_script("localStorage.setItem('ichigo.save', JSON.stringify({ words: ['kaa-chan', 'umi'], marks: ['chin'], tomorrows: 0, done: [1], seenWave: true }))")
+        await ctx.add_init_script("localStorage.setItem('ichigo.save', JSON.stringify({ words: [], marks: ['chin'], tomorrows: 0, done: [1], seenWave: true }))")
         page = await ctx.new_page(); page.on('pageerror', lambda e: errors.append(str(e)))
         await page.goto(f'http://127.0.0.1:{PORT}/index.html'); await page.wait_for_timeout(2000)
         await page.evaluate(f"window._mode = '{mode}'"); await page.add_script_tag(content=TIDE_BOT)
@@ -166,7 +168,7 @@ async def play_tide(browser):
     if not await until(page, "N.phase === 'under'", 'tide_under', 40): notes.append('Level 2: a wave far out did not take Ichigo')
     await until(page, "S.scene === 'tide' && S.deaths === 1 && N.set === 0")
     await page.evaluate("(N => { N.crabs = [{ side: 'right', x: N.x, dir: 1, t: 0, hide: 0 }]; })(ichigo.tide)")   # a crab pinches: Ichigo cries, and learns its name
-    if not await until(page, "N.cry > .5 && S.words.includes('kani')", 'tide_pinch', 10): notes.append('Level 2: a crab did not pinch Ichigo')
+    if not await until(page, "N.cry > .5", 'tide_pinch', 10): notes.append('Level 2: a crab did not pinch Ichigo')
     await ctx.close()
 
     ctx, page = await open_level('walk')   # walking the sandbar is too slow
@@ -185,7 +187,7 @@ async def play_tide(browser):
     report['save'] = json.loads(await page.evaluate("localStorage.getItem('ichigo.save')"))
     if report['scene'] != 'end': notes.append('Level 2: the bot did not finish')
     s = report['save']
-    if 'kani' not in s['words'] or 2 not in s['done'] or 'shell' not in s['things']: notes.append('Level 2: the save is missing kani, the shell or the level')
+    if s['words'] or 2 not in s['done'] or 'shell' not in s['things']: notes.append('Level 2: the save is missing the shell or the level')
     await ctx.close()
     return notes, errors, report
 
@@ -246,7 +248,7 @@ async def play_plum(browser):
     async def open_level(mode):
         ctx = await browser.new_context(viewport={'width': 960, 'height': 540})
         await ctx.add_init_script(FAST_CLOCK)
-        await ctx.add_init_script("localStorage.setItem('ichigo.save', JSON.stringify({ words: ['kaa-chan', 'umi', 'kani'], marks: ['chin'], things: ['shell'], tomorrows: 0, done: [1, 2], seenWave: true }))")
+        await ctx.add_init_script("localStorage.setItem('ichigo.save', JSON.stringify({ words: [], marks: ['chin'], things: ['shell'], tomorrows: 0, done: [1, 2], seenWave: true }))")
         page = await ctx.new_page(); page.on('pageerror', lambda e: errors.append(str(e)))
         await page.goto(f'http://127.0.0.1:{PORT}/index.html'); await page.wait_for_timeout(2000)
         await page.evaluate(f"window._mode = '{mode}'"); await page.add_script_tag(content=PLUM_BOT)
@@ -269,7 +271,7 @@ async def play_plum(browser):
     await until(page, "S.scene === 'plum' && S.deaths === 1 && M.sleep === 0 && M.rope === 'kept'"); await ctx.close()
 
     ctx, page = await open_level('play')
-    for js, shot in [("M.woman === 'offers' && M.womanT > 1", 'plum_woman'), ("S.words.includes('uchi')", None), ("M.bucket === 'crab'", 'plum_crab'), ("M.fisher === 'up' && M.fisherT > 1", 'plum_shown'), ("M.fisher === 'sat' && M.fisherT > 2.5", 'plum_fisherman'), ("M.rope === 'kept'", None), ("M.row >= 2 && M.vy < 0", 'plum_bounce'), ("M.on === 'leaves'", 'plum_treetop'), ("M.blanket", None),
+    for js, shot in [("M.woman === 'offers' && M.womanT > 1", 'plum_woman'), ("M.woman === 'refused'", None), ("M.bucket === 'crab'", 'plum_crab'), ("M.fisher === 'up' && M.fisherT > 1", 'plum_shown'), ("M.fisher === 'sat' && M.fisherT > 2.5", 'plum_fisherman'), ("M.rope === 'kept'", None), ("M.row >= 2 && M.vy < 0", 'plum_bounce'), ("M.on === 'leaves'", 'plum_treetop'), ("M.blanket", None),
                      ("M.eating > .3", 'plum_eat'), ("M.splashes === 1", 'plum_splash'), ("M.sailor === 'up' && M.sailorT > 1", 'plum_sailor'), ("M.paddle", None), ("M.phase === 'leave' && M.t > 3.4", 'plum_leave')]:
         if not await until(page, js, shot): break
     await until(page, "S.scene === 'end' && S.sceneT > 3", 'plum_end')
@@ -278,7 +280,84 @@ async def play_plum(browser):
     report['save'] = json.loads(await page.evaluate("localStorage.getItem('ichigo.save')"))
     if report['scene'] != 'end': notes.append('Level 3: the bot did not finish')
     s = report['save']
-    if 'uchi' not in s['words'] or 3 not in s['done'] or 'rope' not in s['things'] or 'paddle' not in s['things'] or 'blanket' not in s['things']: notes.append('Level 3: the save is missing uchi, the rope, the paddle, the blanket or the level')
+    if s['words'] or 3 not in s['done'] or 'rope' not in s['things'] or 'paddle' not in s['things'] or 'blanket' not in s['things']: notes.append('Level 3: the save is missing the rope, the paddle, the blanket or the level')
+    await ctx.close()
+    return notes, errors, report
+
+# Level 4's bot. window._mode: 'idle' (does nothing), 'bold' (walks on and never hides), 'noisy' (runs), or 'play'.
+LIGHT_BOT = r"""
+(() => { const { S, light: H, keys, input, cards } = window.ichigo; let wait = 0, held = 0;
+  window._tick = () => {
+    if (cards.active()) { if (++wait > 20) { cards.next(); wait = 0; } return; }
+    for (const k of ['ArrowLeft', 'ArrowRight', 'KeyS', 'ShiftLeft', 'Space']) keys[k] = false;
+    if (S.scene !== 'light' || window._mode === 'idle') return;
+    const L = S.level, V = window._lh, play = window._mode === 'play', b = V.beam(), e = H.eye, hide = () => { keys.KeyS = true; }, right = () => { keys.ArrowRight = true; };
+    const step = e.mode === 'sweep' ? e.dir * 130 : e.mode === 'turn' ? Math.sign(e.goal - e.x) * 420 : 0;
+    const soon = (x, y) => { if (!b.on && !H.ear) return false; for (let i = 0; i <= 8; i++) if (V.litAt(x, y, { ...b, on: true, x: b.x + step * i / 8 })) return b.on; return false; };
+    if (window._mode === 'tall') { H.seen = 0; right(); return; }
+    if (H.phase === 'paddle') { const dark = L.stacks.some(([p, q]) => H.raftX > p && H.raftX < q); if (play && !dark && b.on && Math.abs(b.x - H.raftX) < 250) hide(); else right(); return; }
+    if (H.phase !== 'play') return;
+    if (V.tunnelAt(H.x) && H.x < L.room + 14) { hide(); right(); return; }
+    if (held > 0) { held--; keys.Space = true; }
+    const r = V.roomAt(H.x), danger = play && H.on && (H.danger || soon(H.x, H.y - 14) || soon(H.x + 40, H.y - 14));
+    if (r && H.x > r.wall[0] - 30) { hide(); right(); return; }
+    const sh = L.shelters.find(([p, q]) => H.x > p + 6 && H.x < q - 6);
+    if (danger) { if (!sh) hide(); return; }
+    const stone = [...L.stones, [5900, 5975]], gap = H.x > 4700 && H.x < 5980 && H.on;
+    if (gap) {   // the stones: only jump just after the eye shuts, or as the light has gone by
+      const end = V.surfaceY(H.x + 10) > 440 || V.surfaceY(H.x + 18) > 440;
+      if (end) { if (play && !(e.mode === 'dark' && e.t < 1.1)) return; input.jumpBuffer = .1; held = 40; right(); return; }
+    }
+    if (H.on && V.groundY(H.x + 14) < H.y - 12) { input.jumpBuffer = .1; held = 14; }
+    if (window._mode === 'noisy') { right(); keys.ShiftLeft = true; return; }
+    const c = H.cords.find(q => Math.abs(q.x - H.x) < 14 && q.swing <= 0 && !q.done); if (play && c && !H.danger) { c.done = true; input.usePressed = true; return; }
+    const q = L.shutters.find(z => Math.abs(z.x - H.x) < 12 && !H.shut.has(z.window)); if (play && q && H.on && H.y > 400) { input.usePressed = true; return; }
+    if (H.x > L.rope - 14) { if (e.mode === 'dark' && e.t < .6 && !H.ear && H.digging <= 0) input.usePressed = true; return; }
+    const pool = L.pools.find(([p, z]) => H.x > p - 16 && H.x < z); if (pool && H.on) { input.jumpBuffer = .1; held = 16; } right();
+  };
+})();
+"""
+
+async def play_light(browser):
+    """Level 4. Returns (problems, page errors, what to report)."""
+    errors, notes, report = [], [], {}
+    async def open_level(mode):
+        ctx = await browser.new_context(viewport={'width': 960, 'height': 540})
+        await ctx.add_init_script(FAST_CLOCK)
+        await ctx.add_init_script("localStorage.setItem('ichigo.save', JSON.stringify({ words: [], marks: ['chin'], things: ['rope', 'paddle', 'blanket'], tomorrows: 0, done: [1, 2, 3], seenWave: true }))")
+        page = await ctx.new_page(); page.on('pageerror', lambda e: errors.append(str(e)))
+        await page.goto(f'http://127.0.0.1:{PORT}/index.html'); await page.wait_for_timeout(2000)
+        await page.evaluate("import('/src/lighthouse.js').then(m => { window._lh = m; })")
+        await page.evaluate(f"window._mode = '{mode}'"); await page.add_script_tag(content=LIGHT_BOT)
+        await page.evaluate('ichigo.begin(4)')
+        return ctx, page
+    async def until(page, js, shot=None, timeout=90): return await moment(page, 'Level 4', js, notes, shot, timeout)
+
+    ctx, page = await open_level('idle')   # without the bucket, the wall is a wall
+    await until(page, "H.t > .5"); await page.evaluate("window._mode = 'tall'; Object.assign(ichigo.light, { x: 700, y: 430 })")
+    await until(page, "S.levelT > 3"); x = await page.evaluate('ichigo.light.x')
+    if not 720 < x < 735: notes.append(f'Level 4: standing up, Ichigo got to {x} (the wall is at 740)')
+    await ctx.close()
+    ctx, page = await open_level('bold')   # never hiding: the light finds Ichigo
+    await until(page, "H.phase === 'caught' && H.t > .4", 'light_caught'); await until(page, "S.scene === 'light' && S.deaths === 1 && H.phase === 'play'")
+    await page.evaluate("window._mode = 'idle'; Object.assign(ichigo.light, { x: 7345, y: 426, check: 8, seen: 0, danger: false, fade: 0 }); Object.assign(ichigo.light.eye, { mode: 'dark', t: 0, lid: 1 })")   # a cord, pulled, sends the eye to its bell
+    await page.evaluate("ichigo.input.usePressed = true"); await until(page, "H.eye.mode === 'hold' && Math.abs(H.eye.x - 6990) < 200", 'light_bell')
+    await page.evaluate("Object.assign(ichigo.light, { x: 8290, y: 412, seen: 0, hide: false }); Object.assign(ichigo.light.eye, { mode: 'dark', t: 0, lid: 1 }); ichigo.keys.ShiftLeft = true; window._mode = 'noisy'")   # running past a gull wakes it, and the eye looks
+    await until(page, "H.sleepers.some(g => g.kind === 'gull' && g.away > 0)", 'light_gull', 10)
+    await page.evaluate("window._mode = 'idle'; Object.assign(ichigo.light, { x: 4868, y: 440, vy: 0, on: null, phase: 'play' })"); await until(page, "H.phase === 'fell'", 'light_fell', 10); await ctx.close()
+
+    ctx, page = await open_level('play')
+    for js, shot in [("H.check === -1 && H.x > 400 && H.eye.mode === 'sweep' && Math.abs(H.eye.x - H.x) < 200", 'light_room'), ("H.check < 2 && H.x > 775 && H.x < 820 && H.hide", 'light_tunnel'), ("H.check >= 0 && H.x > 1000", 'light_workshop'), ("H.check >= 1 && H.x > 1800", 'light_kitchen'), ("H.shut.size === 2", 'light_loft'),
+                     ("H.check >= 3 && H.danger", 'light_beam'), ("H.check >= 5 && H.x > 5060 && !H.on", 'light_stones'), ("H.x > 6400 && window._lh.beam().on", 'light_hull'), ("H.x > 7400 && H.eye.mode === 'hold'", 'light_flats'), ("H.x > 8900 && H.danger", 'light_headland'),
+                     ("H.cuts >= 1 && H.danger", 'light_cut'), ("H.phase === 'away' && H.t > 2.5", 'light_away'), ("H.phase === 'paddle' && H.hide && H.danger", 'light_paddle'), ("H.phase === 'paddle' && H.sheltered", 'light_stack')]:
+        if not await until(page, js, shot, 200): break
+    await until(page, "S.scene === 'end' && S.sceneT > 3", 'light_end', 150)
+    report = await page.evaluate("({ scene: ichigo.S.scene, deaths: ichigo.S.deaths, seconds: Math.round(ichigo.S.levelT), check: ichigo.light.check, x: Math.round(ichigo.light.x), phase: ichigo.light.phase })")
+    report['save'] = json.loads(await page.evaluate("localStorage.getItem('ichigo.save')"))
+    if report['scene'] != 'end': notes.append('Level 4: the bot did not finish')
+    s = report['save']
+    if 4 not in s['done']: notes.append('Level 4: the save is missing the level')
+    if s['words']: notes.append('Ichigo learned a word, and they are mute')
     await ctx.close()
     return notes, errors, report
 
@@ -389,6 +468,7 @@ async def main():
         runs = [('Level 1', await play(browser))] if ONLY in (None, 1) else []
         tide = await play_tide(browser) if ONLY in (None, 2) else None
         plum = await play_plum(browser) if ONLY in (None, 3) else None
+        light = await play_light(browser) if ONLY in (None, 4) else None
         await browser.close()
     httpd.shutdown()
 
@@ -402,9 +482,9 @@ async def main():
         print('Save:', r['save'])
         if not SKIP_BEACH:
             s = r['save'] or {}
-            if s.get('words') != ['kaa-chan', 'umi'] or s.get('marks') != ['chin']: print("Problem: expected words ['kaa-chan', 'umi'] and marks ['chin']"); ok = False
+            if s.get('words') or s.get('marks') != ['chin']: print("Problem: expected no words (Ichigo is mute) and marks ['chin']"); ok = False
         if r['errors'] or r['notes']: ok = False
-    for name, got in (('Level 2', tide), ('Level 3', plum)):
+    for name, got in (('Level 2', tide), ('Level 3', plum), ('Level 4', light)):
         if not got: continue
         notes, errors, report = got
         print(f'--- {name} ---')

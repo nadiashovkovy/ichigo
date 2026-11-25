@@ -172,10 +172,14 @@ const NIGHT = [[[0, 52], [4, 53, 'p']], [[0, 52], [3, 57], [6, 53]], [[0, 52, 'o
 const ISLE = [[[0, 55, 'o'], [3, 62], [6, 64]], [[0, 57], [4, 64], [6, 67]], [[0, 52, 'o'], [3, 59], [6, 62]], [[0, 50], [4, 57], [6, 59, 'p']],
   [[0, 55], [2, 59], [4, 62], [6, 67]], [[0, 69], [4, 67]], [[0, 64], [3, 62], [6, 59]], [[0, 55, 'o']]];
 const ISLE_LINES = [null, null, null, null, [[0, 74, 6]], [[0, 71, 4], [4, 69, 4]], [[0, 67, 8]], null, null, null, [[0, 62, 3], [3, 64, 5]], [[0, 67, 8]], [[0, 69, 2], [2, 71, 2], [4, 69, 4]], [[0, 67, 2], [2, 64, 6]], [[0, 62, 8]], null];
+// Level 4's night: hardly there. A low string, a drum like a heartbeat, a wooden clack; the shakuhachi once in a while.
+const PROWL = [[[0, 40]], [[0, 40], [5, 53, 'p']], [[0, 45]], [[2, 52], [6, 53]], [[0, 40, 'o']], [[4, 57, 'g']], [[0, 41]], [[0, 40], [6, 59]]];
+const PROWL_LINES = [null, null, null, null, null, null, [[0, 64, 4], [4, 65, 4]], [[0, 64, 7]], null, null, null, null, [[0, 59, 8]], [[0, 60, 2], [2, 59, 6]], null, null];
 // tempo: beats a minute; koto: its bars; bass: a low note under each bar, in turn; lines: the
 // shakuhachi's bars; loud: how loud the koto is, and the shakuhachi.
 const SONGS = {
   night: { tempo: 50, koto: NIGHT, bass: [28, 28, 28, 28], lines: [null, null, null, null, [[0, 64, 4], [4, 65, 4]], [[0, 64, 8]], null, null], taiko: [[[0, .5]], [], [[0, .4]], []], loud: [.16, .06] },
+  prowl: { tempo: 60, koto: PROWL, bass: [28, 28, 29, 28], lines: PROWL_LINES, taiko: [[[0, .55], [1, .3]], [[0, .5], [1, .28]], [[0, .55], [1, .3]], [[0, .5], [1, .28], [6, .25]]], loud: [.2, .05] },
   isle:  { tempo: 54, koto: ISLE, bass: [43, 45, 40, 38], lines: ISLE_LINES, taiko: [[], [], [], []], loud: [.2, .07], bell: 55, reeds: [62, 67, 69, 74] },
   sea:   { tempo: 66, koto: KOTO, bass: [40, 45, 41, 40], lines: LINES, taiko: TAIKO, loud: [.26, .1] },
 };
@@ -254,7 +258,7 @@ function bass(freq, at, len, out) {
 
 let step = 0, nextStep = 0, playing = null;
 // Call every frame. level: 1 = playing, a little = held quietly under something, 0 = fading away.
-// song: 'sea', 'night', 'isle' or 'title' (changing song starts the new one from the top).
+// song: 'sea', 'night', 'isle', 'prowl' or 'title' (changing song starts the new one from the top).
 // shift: how many semitones higher to play it (Level 2's night rises with the tide).
 export function music(level, song = 'sea', shift = 0) {
   if (!ac) return;
@@ -440,6 +444,15 @@ export function playBoing(k) {
   o.connect(g); g.connect(fx); o.start(at); w.start(at); o.stop(at + .6); w.stop(at + .6);
 }
 export function playSting() { if (!ac) return; const at = ac.currentTime, o = ac.createOscillator(), f = ac.createBiquadFilter(), g = ac.createGain(); o.type = 'sawtooth'; o.frequency.setValueAtTime(210, at); o.frequency.linearRampToValueAtTime(330, at + .25); f.type = 'bandpass'; f.frequency.value = 1400; f.Q.value = 1; g.gain.setValueAtTime(.16, at); g.gain.exponentialRampToValueAtTime(.001, at + .32); o.connect(f); f.connect(g); g.connect(fx); o.start(at); o.stop(at + .35); }
+// Level 4's: a bell rung; a gull woken; a footstep; being seen; a cut at the rope; the door's bolt.
+export function playBell() { if (ac) { rin(1150, ac.currentTime, .2, fx); rin(1480, ac.currentTime + .18, .12, fx); } }
+export function playSquawk() { if (ac) for (let i = 0; i < 4; i++) gullCry(ac.currentTime + i * .2, 1500 - i * 60, 0, .1); }
+export function playStep(vol) { if (ac && vol > .02) burst(ac.currentTime, .12, { from: 260, to: 110, vol: .5 * vol }); }
+export function playSmash() { if (ac) { burst(ac.currentTime + .25, .3, { from: 5200, to: 3000, type: 'highpass', vol: .25, buf: noise }); for (const f of [2100, 2900, 3700]) rin(f + Math.random() * 300, ac.currentTime + .25, .05, fx); } }
+export function playMeow() { if (!ac) return; const at = ac.currentTime, o = ac.createOscillator(), f = ac.createBiquadFilter(), g = ac.createGain(); o.type = 'sawtooth'; o.frequency.setValueAtTime(520, at); o.frequency.linearRampToValueAtTime(760, at + .16); o.frequency.exponentialRampToValueAtTime(420, at + .6); f.type = 'bandpass'; f.Q.value = 2; f.frequency.setValueAtTime(900, at); f.frequency.linearRampToValueAtTime(2000, at + .2); f.frequency.linearRampToValueAtTime(800, at + .6); g.gain.setValueAtTime(0, at); g.gain.linearRampToValueAtTime(.16, at + .08); g.gain.linearRampToValueAtTime(0, at + .62); o.connect(f); f.connect(g); g.connect(fx); o.start(at); o.stop(at + .65); }
+export function playSeen() { if (!ac) return; const at = ac.currentTime; for (const [f, d] of [[620, 0], [930, .09]]) { const o = ac.createOscillator(), g = ac.createGain(); o.type = 'square'; o.frequency.value = f; g.gain.setValueAtTime(.09, at + d); g.gain.exponentialRampToValueAtTime(.001, at + d + .3); o.connect(g); g.connect(fx); o.start(at + d); o.stop(at + d + .32); } }
+export function playCut() { if (ac) burst(ac.currentTime, .14, { from: 2600, to: 1200, type: 'bandpass', q: 2, vol: .28, buf: noise }); }
+export function playBolt() { if (ac) { burst(ac.currentTime, .1, { from: 700, to: 300, vol: .5 }); burst(ac.currentTime + .14, .25, { from: 420, to: 260, type: 'bandpass', q: 3, vol: .35 }); } }
 let nextCicada = 0;
 // Call every frame: near = how close Ichigo is to the trees, 0..1.
 export function cicadas(near) {

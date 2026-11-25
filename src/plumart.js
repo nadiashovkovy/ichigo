@@ -224,7 +224,7 @@ function reeds(list, front) {
   }
 }
 // The blanket: a persimmon-red cloth, a small white pattern of crosses on it. (i, j: where on it.)
-const clothAt = (i, j, edge) => { const a = (((i + (Math.floor(j / 7) % 2) * 4) % 8) + 8) % 8, b = ((j % 7) + 7) % 7; return edge ? P.outline : (a === 3 && b > 1 && b < 5) || (b === 3 && a > 1 && a < 5) ? P.foam : dither((i + 300) & 255, (j + 300) & 255) < j / 60 ? P.rosewood : P.rust; };
+export const clothAt = (i, j, edge) => { const a = (((i + (Math.floor(j / 7) % 2) * 4) % 8) + 8) % 8, b = ((j % 7) + 7) % 7; return edge ? P.outline : (a === 3 && b > 1 && b < 5) || (b === 3 && a > 1 && a < 5) ? P.foam : dither((i + 300) & 255, (j + 300) & 255) < j / 60 ? P.rosewood : P.rust; };
 // caught on a treetop, hanging down over the leaves and stirring in the wind
 function blanket(x, y) {
   for (let i = -14; i <= 14; i++) {
