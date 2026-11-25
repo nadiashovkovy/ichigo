@@ -7,11 +7,11 @@
 //     them of; pieces still missing are only dots. The row of islands along the bottom is the levels.
 // A new level's things only need adding to THINGS (and, if they say something about home, to PIECES).
 // ============================================================================
-import { P, LW, LH } from './config.js';
+import { P, LW, LH, ICHIGO_SPEAKS } from './config.js';
 import { S } from './state.js';
 import { lg, pixelSpace, scale2x } from './pixel.js';
 import { pixelText, LETTER, LINE } from './text.js';
-import { drawIcon, iconSize } from './icons.js';
+import { drawIcon, iconSize, wordIcon } from './icons.js';
 
 const C = { K: P.outline, Y: P.gold, y: P.ochre, R: P.red, r: P.rust, w: P.white, f: P.foam, b: P.wood, B: P.brown, a: P.aqua, o: P.ocean, n: P.navy, T: P.tan, t: P.tanD, p: P.pink, g: P.teal, s: P.sea, h: P.grey1, m: P.mist, d: P.deep };
 // Pictures: letter grids. Small ones lie on the sand; the panel shows them doubled.
@@ -25,6 +25,7 @@ export const THINGS = {
   shell: { name: 'A SHELL', text: 'FROM THE SANDBAR. IT SOUNDS LIKE THE SEA.', pic: ['...KKKK...', '..KTbpTK..', '.KTpbTpTK.', 'KTpTbTbTpK', 'KTbTKKpTTK', '.KTpwwTbK.', '..KTTTTK..', '...KKKK...'] },
   blanket: { name: 'A BLANKET', text: 'IT WAS UP IN A PLUM TREE. IT WILL DO FOR A SAIL.', pic: ['.KKKKKKKKKKK.', 'KrRRRRRRRRRrK', 'KRRfRRRfRRRRK', 'KRfffRfffRRRK', 'KRRfRRRfRRRRK', 'KrRRRRRRRRRrK', 'KRfRRRfRRRfRK', 'KfffRfffRfffK', 'KRfRRRfRRRfRK', 'KrrrrrrrrrrrK', '.KKKKKKKKKKK.'] },
   kite: { name: 'A KITE', text: 'ICHIGO AND KAA-CHAN FLEW ONE LIKE IT FROM THE HILL BEHIND THE HOUSE.', pic: ['.....KK.....', '....KRRK....', '...KRRRRK...', '..KRRwwRRK..', '.KRRwwwwRRK.', 'KRRRwnnwRRRK', '.KRRwwwwRRK.', '..KRRwwRRK..', '...KRRRRK...', '....KRRK....', '.....KK.....', '......KK....', '.....KK.KK..'] },
+  chime: { name: 'A WIND CHIME', text: 'IT SOUNDS LIKE THE ONE UNDER THE EAVES AT HOME.', pic: ['.....K.....', '...KKmKK...', '..KmmwmmK..', '.KmwmRmmmK.', '.KmwRRRmmK.', '.KmmmRmmaK.', '..KKKKKKK..', '.....K.....', '....KKK....', '....KfK....', '....KRK....', '....KfK....', '....KKK....'] },
   rope: { name: 'A ROPE', text: 'THE FISHERMAN GAVE IT TO ICHIGO, FOR A CRAB.', pic: ['...KKKKKK...', '..KTTTTTTK..', '.KTyKKKKyTK.', 'KTyKTTTTKyTK', 'KTKTyKKyTKTK', 'KTKTyKKyTKTK', 'KTyKTTTTKyTK', '.KTyKKKKyTK.', '..KTTTTTTTK.', '...KKKKKKTK.', '.........KK.'] },
   paddle: { name: 'A PADDLE', text: 'THE OLD SAILOR GAVE IT TO ICHIGO. HE DOES NOT NEED IT.', pic: ['.........KK.', '........KTbK', '.......KTbK.', '......KTbK..', '.....KTbK...', '....KTbK....', '..KKTbK.....', '.KTTbbK.....', 'KTTbbbK.....', 'KTbbbBK.....', '.KbbBK......', '..KKK.......'] },
 };
@@ -81,8 +82,8 @@ export function drawThings(inLevel) {
   wrap(th.text, Math.floor((PW - 32) / LETTER)).forEach((line, i) => pixelText(line, PX + 16, ty + LINE * (i + 1), P.mist));
   // the words, along the bottom
   let x = PX + 16; const wy = PY + PH - 36, s = iconSize(true);
-  pixelText('WORDS:', x, wy + 8, P.grey1); x += 7 * LETTER;
-  for (const w of S.words) { drawIcon(lg, w === 'kaa-chan' ? 'kaachan' : w, x, wy); x += s + 6; }
+  if (ICHIGO_SPEAKS) pixelText('WORDS:', x, wy + 8, P.grey1); x += 7 * LETTER;
+  if (ICHIGO_SPEAKS) for (const w of S.words) { drawIcon(lg, wordIcon(w), x, wy); x += s + 6; }
   pixelText('TAB: CLOSE', PX + PW - 44, wy + 8, P.grey1, 'right');
   drawWayHome(slot(COLS - 1).x + CELL + 20, PY + 14);
 }
@@ -98,6 +99,7 @@ const PIECES = [
   { thing: 'streamer', lines: [[P.brown, 178, 108, 178, 56], [P.sea, 178, 58, 196, 60, 206, 56, 206, 68, 196, 65, 178, 68]] },                            // the pole by the house
   { thing: 'sandal', lines: [[P.olive, 204, 90, 226, 72, 248, 90, 204, 90], [P.wood, 208, 90, 208, 110, 244, 110, 244, 90], [P.red, 222, 110, 222, 98, 232, 98, 232, 110]] },   // the house, its door
   { thing: 'kite', lines: [[P.leaf, 186, 108, 214, 84, 244, 66, 274, 58, 306, 62]] },                                                        // the hill behind the house
+  { thing: 'chime', lines: [[P.teal, 208, 90, 208, 94, 204, 98, 212, 98, 208, 94], [P.teal, 208, 98, 208, 102]] },                                         // the chime under the eaves
   { thing: 'shell', lines: [[P.sea, 12, 92, 24, 84, 36, 92, 48, 84, 60, 92, 72, 84, 84, 92], [P.sea, 60, 106, 72, 98, 84, 106, 96, 98, 108, 106, 120, 98, 132, 106]] },   // the sea between
 ];
 function stroke(x0, y0, [col, ...pts], solid) {

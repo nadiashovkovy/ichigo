@@ -7,7 +7,7 @@
 // the old). The scene drawing the characters says where their heads are (drawBubbles' `heads`).
 // Drawn in pixels, over everything but the HUD, kept on screen at the edges.
 // ============================================================================
-import { P, LW } from './config.js';
+import { P, LW, ICHIGO_SPEAKS } from './config.js';
 import { drawIcon, drawLetters, iconSize, NOTE } from './icons.js';
 import { pixelText, LETTER, LINE } from './text.js';
 
@@ -17,6 +17,7 @@ const bubbles = new Map();   // who → { icons, kind, t, time, grey, big, note 
 // Options: kind ('word' for Ichigo, else 'picto'), time (seconds on screen), grey (greyed out),
 // text (a line of speech), small (single-size icons), note (a musical note beside the word as it's spoken).
 export function say(who, icons, { kind = who === 'ichigo' ? 'word' : 'picto', time = 2.5, grey = false, small = false, note = false, text = '' } = {}) {
+  if (who === 'ichigo' && !ICHIGO_SPEAKS) return;   // (Ichigo is mute)
   bubbles.set(who, { icons, kind, t: 0, time, grey, big: !small, note, lines: text ? wrap(text) : [] });
 }
 // (broken into lines of 22 letters or so)

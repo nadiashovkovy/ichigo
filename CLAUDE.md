@@ -41,6 +41,7 @@ If the spec and the script disagree, the spec wins for code and the script wins 
 | `src/things.js` | What Ichigo carries and has learned, and their drawing of the way home (Tab) |
 | `src/tide.js`, `src/tideart.js`, `src/water.js` | Level 2: how it plays, how it looks, and its water (no drawing in `water.js`: it runs in Node for tuning) |
 | `src/plum.js`, `src/plumart.js` | Level 3: how it plays, and how it looks |
+| `src/lighthouse.js`, `src/lighthouseart.js` | Level 4: how it plays, and how it looks |
 | `src/audio.js` | All sound, synthesised: the Lullaby, music, sea, gulls, the tsunami, falling in |
 | `src/bubbles.js`, `src/icons.js`, `src/people.js`, `src/save.js` | Speech bubbles and their icons; Kaa-chan and Ojii-san (for later levels); the save |
 | `tests/play_level.py` | Headless play-test bot (Playwright) |
@@ -54,7 +55,7 @@ Run locally: `python3 -m http.server 8000`, then open http://localhost:8000.
   - *Speech:* other characters' bubbles can carry their line as short text, with or without pictogram icons. The script's italic line after each pictogram is that text.
   - *Hints:* a short line naming a new control the first time it's needed.
 - **Voice:** story cards and speech are plain and matter-of-fact, like Level 1's cards. Short sentences, no metaphors, no telling the player how to feel. See "Voice" at the top of `docs/levels-and-script.md`.
-- **Ichigo's own words stay limited** to the ones they've learned (an icon bubble; each level lists them in `"learns"`). Learning to talk is part of the story.
+- **Ichigo is mute** (Nadia's decision, 24 Nov 2026): they never say a word, in any level, and learn none. `ICHIGO_SPEAKS` in `src/config.js` is the switch. The script's *Learns* lines and Ichigo's lines are from before this. They show what they mean by what they do.
 - **Failure is never final.** Every failure is "a new tomorrow": the dawn print, then a retry from the last checkpoint. Never a game-over screen.
 - **Every level needs stakes:** a clock, a hazard, a scarce resource.
 - **Aging changes play.** Each age gains and loses abilities (see the aging table in the script's Through-lines and in the design doc).

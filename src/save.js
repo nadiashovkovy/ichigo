@@ -4,6 +4,7 @@
 // whether the sound is off, and which levels are finished. Kept in the browser's localStorage under 'ichigo.save'.
 // Storage can be blocked (private windows, strict settings): then the game simply doesn't remember.
 // ============================================================================
+import { ICHIGO_SPEAKS } from './config.js';
 import { S } from './state.js';
 
 const KEY = 'ichigo.save';
@@ -37,6 +38,6 @@ export function eraseSave() {
 }
 
 // Ichigo learns a word, gains a mark, or keeps something they found: remembered at once.
-export function learnWord(id) { if (!S.words.includes(id)) { S.words.push(id); save(); } }
+export function learnWord(id) { if (ICHIGO_SPEAKS && !S.words.includes(id)) { S.words.push(id); save(); } }
 export function keepThing(id) { if (!S.things.has(id)) { S.things.add(id); save(); } }
 export function gainMark(id) { if (!S.marks.has(id)) { S.marks.add(id); save(); } }

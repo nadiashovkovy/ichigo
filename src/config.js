@@ -205,3 +205,26 @@ export const PLUM = {
   drift: 85,          // how fast the current takes the raft, at the end
   crab: 30,           // how fast the crabs walk
 };
+
+// Ichigo is mute: they never say a word, in any level, and learn none. (true: one word a level, as first built.)
+export const ICHIGO_SPEAKS = false;
+
+// The Lighthouse (Level 4, lighthouse.js). Positions are in levels/level04.json.
+export const LIGHT = {
+  sea: 470,
+  jump: 600,          // how fast Ichigo leaves the ground
+  shuffle: 48,        // how fast they shuffle along under the bucket
+  // the beam: how fast it sweeps; seconds the eye is shut between sweeps; how wide the patch of light is; how far
+  // each side of Ichigo a sweep goes; how long Ichigo can be in it before they're seen
+  beam: { speed: 360, dark: 1.4, width: 250, span: 560, seen: .28 },
+  indoors: { dark: 1, span: 400 },   // in the shed, it's at the windows more of the time
+  water: { speed: 400, dark: 1.7, width: 260, span: 620, seen: .36 },   // the same, out on the water at the end
+  // it turns to look at a noise this fast, and looks for this long (longer for a bell)
+  turn: 1500, listen: 2, bell: 4.2,
+  // it stops to look at a bucket: this long the first time, longer each time after, up to `most`. (Hiding behind something, Ichigo is forgotten.)
+  stare: { first: .6, more: .4, most: 2 },
+  wait: .45,          // seconds from a noise until the eye turns
+  gull: { run: 92, near: 46, back: 16 },   // how near running, or landing, wakes a gull; seconds until it settles again
+  cuts: 3,            // cuts to part the rope
+  paddle: 92, drift: 10,
+};

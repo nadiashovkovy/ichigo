@@ -35,7 +35,7 @@ Ichigo gets a new sprite about every two levels, learns one word per level, and 
 | 1 | The Great Wave | 3 | Beach, then platformer on wreckage | Kaa-chan (mama) | Chin cut (plaster, then scar) | Bucket, red shovel |
 | 2 | The Tide Comes In | 3 | Build sand walls against the tide | Umi (sea) |  | A shell |
 | 3 | The Sleepy Island | 4 | Side-view adventure with the use key | Uchi (home) |  |  |
-| 4 | The One-Eyed Lighthouse | 4 | Stealth | Ichigo (their name) |  |  |
+| 4 | The Lighthouse | 4 | Stealth | Ichigo (their name) |  |  |
 | 5 | The Bag of Winds | 5 | Storm on a raft | Kaze (wind) | Rope burn on the wrist | Loses the red shovel |
 | 6 | Ship Graveyard | 5 | Swimming and exploring | Mite (look) |  | Whale-bone shovel |
 | 7 | The Kelp Garden | 6 | Rope and lever puzzle rooms | Arigatou (thank you) |  | Paper lantern |
@@ -223,7 +223,7 @@ STORY CARDS:
 
 End panel: LEVEL THREE DONE · THE SLEEPY ISLAND · LEARNED: \[house\]
 
-## Level 4: The One-Eyed Lighthouse
+## Level 4: The Lighthouse
 
 Age 4 · *Odyssey*: the Cyclops
 
@@ -283,7 +283,7 @@ The rope parts. The raft slides into the water. The keeper wakes up in the doorw
 
 The beam turns down onto the water. The wind picks up.
 
-End panel: LEVEL FOUR DONE · THE ONE-EYED LIGHTHOUSE · LEARNED: \[strawberry\]
+End panel: LEVEL FOUR DONE · THE LIGHTHOUSE · LEARNED: \[strawberry\]
 
 ## Level 5: The Bag of Winds
 
