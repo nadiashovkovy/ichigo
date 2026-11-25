@@ -12,7 +12,7 @@ The work is split between two Claudes:
 For each level:
 
 1. Read the level's section in `docs/levels-and-script.md` (the story and what the player does) and its spec in `docs/specs/level-NN.md` (what to build and how to check it).
-2. Work on a branch named `level-NN-<short-name>`.
+2. Work straight on `main` (Nadia's decision, Nov 2026): no branches or pull requests.
 3. Build the spec's tasks in order. The spec's **Acceptance checks** are the definition of done.
 4. Run `python tests/play_level.py` before saying a level is done, and look at the screenshots in `tests/screens/`.
 5. At the bottom of the spec, fill in its **Build notes** section: what you built, anything you changed from the spec and why, and open questions. That's how the claude.ai side learns what happened before it writes the next spec.
@@ -42,7 +42,7 @@ If the spec and the script disagree, the spec wins for code and the script wins 
 | `src/tide.js`, `src/tideart.js`, `src/water.js` | Level 2: how it plays, how it looks, and its water (no drawing in `water.js`: it runs in Node for tuning) |
 | `src/plum.js`, `src/plumart.js` | Level 3: how it plays, and how it looks |
 | `src/lighthouse.js`, `src/lighthouseart.js` | Level 4: how it plays, and how it looks |
-| `src/audio.js` | All sound, synthesised: the Lullaby, music, sea, gulls, the tsunami, falling in |
+| `src/audio.js`, `src/songs.js` | All sound, synthesised: the Lullaby, the instruments, sea, gulls, the tsunami, falling in; and the music written down, a song for each level |
 | `src/bubbles.js`, `src/icons.js`, `src/people.js`, `src/save.js` | Speech bubbles and their icons; Kaa-chan and Ojii-san (for later levels); the save |
 | `tests/play_level.py` | Headless play-test bot (Playwright) |
 
@@ -56,6 +56,7 @@ Run locally: `python3 -m http.server 8000`, then open http://localhost:8000.
   - *Hints:* a short line naming a new control the first time it's needed.
 - **Voice:** story cards and speech are plain and matter-of-fact, like Level 1's cards. Short sentences, no metaphors, no telling the player how to feel. See "Voice" at the top of `docs/levels-and-script.md`.
 - **Ichigo is mute** (Nadia's decision, Nov 2026): they never say a word, in any level. What they learn is about the world, not words: each level teaches something (`LEARNED` in `src/icons.js`), shown as a picture in a thought bubble at the moment it's learned, on the end panel, and on the Tab screen. Level 1 Kaa-chan and the sea, 2 crabs, 3 home, 4 the lighthouse. The script's *Learns* words and Ichigo's lines are from before this.
+- **Every level has its own music, and it's all one game's** (`src/songs.js`). Its own scale, metre, tempo, and one instrument no other level has. The same everywhere: a temple bell opens each round, koto and shakuhachi or flute, a shō in the middle, the same echo, and the Lullaby's seven notes hidden in it, in that song's scale.
 - **Failure is never final.** Every failure is "a new tomorrow": the dawn print, then a retry from the last checkpoint. Never a game-over screen.
 - **Every level needs stakes:** a clock, a hazard, a scarce resource.
 - **Aging changes play.** Each age gains and loses abilities (see the aging table in the script's Through-lines and in the design doc).

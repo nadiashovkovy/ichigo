@@ -149,8 +149,8 @@ function frame(now) {
   // the white after the wave (after its silence), on into the sea level.
   if (S.scene === 'title' || S.scene === 'prologue') music(1, 'title');
   else if (S.level.number === 3 && (S.scene === 'plum' || S.scene === 'dawn')) music(S.scene === 'dawn' ? .25 : 1, 'isle', -plum.sleep);   // (Level 3's: a semitone lower for each plum)
-  else if (S.level.number === 4 && (S.scene === 'light' || S.scene === 'dawn')) music(S.scene === 'dawn' ? .25 : 1, 'prowl');
-  else music(S.scene === 'play' || S.scene === 'tide' ? 1 : S.scene === 'dawn' ? .25 : S.scene === 'white' && reading ? .6 : 0, tide && !morning ? 'night' : 'sea', tide && !morning ? [0, 3, 5, 9][N.set] : 0);   // (the level list: just the sea)
+  else if (S.level.number === 4 && (S.scene === 'light' || S.scene === 'dawn')) music(S.scene === 'dawn' ? .25 : 1, 'prowl', 0, light.phase === 'caught' || light.seen > 0 ? 1 : light.eye.lid < .5 && light.phase !== 'gone' ? .5 : 0);   // (Level 4's listens to the eye: a block ticks while it's open)
+  else music(S.scene === 'play' || S.scene === 'tide' ? 1 : S.scene === 'dawn' ? .25 : S.scene === 'white' && reading ? .6 : 0, tide ? (morning ? 'morning' : 'night') : 'sea', tide && !morning ? [0, 3, 5, 9][N.set] : 0);   // (the level list: just the sea)
   if (S.scene === 'play' || (S.scene === 'dawn' && S.level.number === 1)) seaSound(.45 + .45 * Math.min(1, PL.x / ((S.level.sea && S.level.sea.growOver) || 5200)));
   else if (S.scene === 'end') seaSound(.25);   // a calm night sea
   else if (S.scene === 'levels') seaSound(.3);
