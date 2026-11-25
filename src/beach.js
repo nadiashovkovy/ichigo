@@ -17,9 +17,9 @@ import { paintWaveAlone, waveLoop } from './greatwave.js';
 import { drawScenery, drawChartSea, CELL } from './art.js';
 import { drawSand, drawBeachThings, drawBeachFront } from './beachart.js';
 import { drawSprite, spriteHeight } from './sprite.js';
-import { say, drawBubbles, clearBubbles } from './bubbles.js';
+import { say, think, drawBubbles, clearBubbles } from './bubbles.js';
 import { humming, seaSound, waveRumble, waveCrash, silence } from './audio.js';
-import { save, learnWord, gainMark } from './save.js';
+import { save, learn, gainMark } from './save.js';
 import { updateParts } from './player.js';
 import { showCards } from './cards.js';
 
@@ -160,14 +160,14 @@ function pour() {
 }
 
 // The trip, about 5 seconds: Ichigo sits up, lip wobbling; the plaster goes on; "my little
-// strawberry" from the house; "Kaa-chan." Then up again.
+// strawberry" from the house; Ichigo thinks of Kaa-chan. Then up again.
 function updateTrip() {
   const t = B.t;
   B.pout = t > .2 && t < 1.2 && Math.floor(t * 8) % 2 === 0;
   if (t > 1) B.face = -1;                                                                   // Ichigo turns toward the house
   if (t > 2.2 && !B.plaster) { B.plaster = true; gainMark('chin'); }
   if (t > 2.7 && !B.said) { B.said = 1; say('kaachan', ['strawberry', 'heart'], { time: 1.7 }); }          // "My little strawberry."
-  if (t > 3.4 && B.said === 1) { B.said = 2; say('ichigo', ['kaachan'], { note: true, time: 1.9 }); learnWord('kaa-chan'); }   // "Kaa-chan."
+  if (t > 3.4 && B.said === 1) { B.said = 2; think('kaachan', 1.9); learn('kaachan'); }
   if (t > 4.4) { B.phase = 'play'; B.t = 0; B.pout = false; }
 }
 

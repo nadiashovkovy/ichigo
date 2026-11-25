@@ -2,7 +2,6 @@
   "number": 3,
   "name": "The Sleepy Island",
   "age": 4,
-  "learns": ["uchi"],
   "length": 2640,
   "fuji": { "view": "day", "x": 560 },
   "start": 250,

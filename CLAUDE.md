@@ -55,7 +55,7 @@ Run locally: `python3 -m http.server 8000`, then open http://localhost:8000.
   - *Speech:* other characters' bubbles can carry their line as short text, with or without pictogram icons. The script's italic line after each pictogram is that text.
   - *Hints:* a short line naming a new control the first time it's needed.
 - **Voice:** story cards and speech are plain and matter-of-fact, like Level 1's cards. Short sentences, no metaphors, no telling the player how to feel. See "Voice" at the top of `docs/levels-and-script.md`.
-- **Ichigo is mute** (Nadia's decision, 24 Nov 2026): they never say a word, in any level, and learn none. `ICHIGO_SPEAKS` in `src/config.js` is the switch. The script's *Learns* lines and Ichigo's lines are from before this. They show what they mean by what they do.
+- **Ichigo is mute** (Nadia's decision, Nov 2026): they never say a word, in any level. What they learn is about the world, not words: each level teaches something (`LEARNED` in `src/icons.js`), shown as a picture in a thought bubble at the moment it's learned, on the end panel, and on the Tab screen. Level 1 Kaa-chan and the sea, 2 crabs, 3 home, 4 the lighthouse. The script's *Learns* words and Ichigo's lines are from before this.
 - **Failure is never final.** Every failure is "a new tomorrow": the dawn print, then a retry from the last checkpoint. Never a game-over screen.
 - **Every level needs stakes:** a clock, a hazard, a scarce resource.
 - **Aging changes play.** Each age gains and loses abilities (see the aging table in the script's Through-lines and in the design doc).

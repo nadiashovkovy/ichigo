@@ -2,7 +2,7 @@
 // scenes.js — what's on screen: the title, play, a new tomorrow, the level's end. (The beach before
 // the wave is in beach.js.)
 // ============================================================================
-import { W, H, TOP, LW, LH, TOP_PX, PIXEL, P, px, onPixel, toPx, ICHIGO_SPEAKS } from './config.js';
+import { W, H, TOP, LW, LH, TOP_PX, PIXEL, P, px, onPixel, toPx } from './config.js';
 import { S, parts } from './state.js';
 import { lg, tg, topC, beginWorld, beginTop, pixelSpace, quantize, scale2x } from './pixel.js';
 import { pixelText, drawCover, LETTER, LINE } from './text.js';
@@ -13,7 +13,7 @@ import { floating, drawWreckage, updateWreckage } from './wreckage.js';
 import { PL, spawn } from './player.js';
 import { drawSprite, spriteHeight, markIds } from './sprite.js';
 import { drawBubbles, clearBubbles } from './bubbles.js';
-import { drawIcon, iconSize, wordIcon } from './icons.js';
+import { drawIcon, iconSize, LEARNED } from './icons.js';
 import { drawTitleArt } from './title.js';
 import { drawDawn } from './dawn.js';
 
@@ -84,10 +84,10 @@ export function drawPlay() {
 
 // The level's end: the world stays, Ichigo sitting by the lantern; a panel
 // like the story cards' (night, edged in pale ink) says which level is done, how it went, and any
-// word Ichigo learned. All in the pixel font.
+// thing Ichigo learned. All in the pixel font.
 export function drawEndFg(t) {
   if (t < 1) return;
-  const L = S.level, learned = (ICHIGO_SPEAKS ? L.learns || [] : []).filter(w => S.words.includes(w));   // (the words this level teaches: levels/*.json)
+  const L = S.level, learned = S.learned.filter(id => LEARNED[id].level === L.number);   // (what this level teaches)
   const lines = [
     [`LEVEL ${NUMBER_WORDS[L.number]} DONE`, P.gold],
     [L.name.toUpperCase(), P.mist],
@@ -99,11 +99,11 @@ export function drawEndFg(t) {
   lg.fillStyle = P.night; lg.fillRect(x, y, w, h);
   lines.forEach((ln, i) => ln && pixelText(ln[0], LW / 2, y + pad + i * LINE, ln[1], 'center'));
   let yy = y + pad + lines.length * LINE + 6;
-  if (learned.length) {   // the words learned, as their pictures
+  if (learned.length) {   // what was learned, in pictures
     const label = 'LEARNED:', lw = label.length * LETTER + 8, total = lw + learned.length * (s + 6);
     let xx = Math.round(LW / 2 - total / 2);
     pixelText(label, xx, yy + (s - 14) / 2, P.mist); xx += lw;
-    for (const wd of learned) { drawIcon(lg, wordIcon(wd), xx, yy); xx += s + 6; }
+    for (const id of learned) { drawIcon(lg, LEARNED[id].icon, xx, yy); xx += s + 6; }
     yy += s + 12;
   }
   if (t > 2.5 && Math.sin(S.T * 4) > -0.3) pixelText('PRESS ANY KEY', LW / 2, y + h - pad - 10, P.grey1, 'center');

@@ -22,9 +22,9 @@ import { H as light, startLight, updateLight, retryLight } from './lighthouse.js
 import { drawLight } from './lighthouseart.js';
 import { B, startBeach, updateBeach, drawBeachScene, drawWhite, WAKE_CARDS } from './beach.js';
 import { showCards, cardsActive, updateCards, nextCard, drawCards, clearCards } from './cards.js';
-import { say, updateBubbles } from './bubbles.js';
+import { think, updateBubbles } from './bubbles.js';
 import { playLullaby, music, seaSound, gulls, soundAge } from './audio.js';
-import { loadSave, save, learnWord } from './save.js';
+import { loadSave, save, learn } from './save.js';
 import { prepareDawns } from './dawn.js';
 
 // Every built level's data, loaded at the start: LEVELS[n] (Level 0, the prologue, has none).
@@ -125,11 +125,9 @@ function frame(now) {
     updateParts(dt);
     if (S.scene !== 'end') {
       S.levelT += dt;
-      // Level 1: a second after play fades in, Ichigo calls for their mother. Small and grey: no one answers.
-      if (S.level.number === 1 && S.levelT > 1.5 && S.levelT - dt <= 1.5) say('ichigo', ['kaachan'], { grey: true, small: true, time: 2.5 });
     }
-    // Level 1 is all waves: a little way out on them, Ichigo has a word for the sea
-    if (S.scene === 'play' && PL.x > 720 && PL.ground && !S.words.includes('umi')) { say('ichigo', ['umi'], { note: true, time: 2 }); learnWord('umi'); }
+    // Level 1 is all waves: a little way out on them, Ichigo has learned the sea
+    if (S.scene === 'play' && PL.x > 720 && PL.ground && !S.learned.includes('sea')) { think('sea', 2); learn('sea'); }
     const target = Math.max(0, Math.min(S.level.length - W, PL.x - W * 0.38));
     S.camX += (target - S.camX) * Math.min(1, dt * 5);
   }

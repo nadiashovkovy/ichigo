@@ -10,6 +10,7 @@ import { lg, beginWorld, pixelSpace, dither, pack, pixelBuffer, scale2x } from '
 import { pixelText, LETTER, LINE } from './text.js';
 import { drawScenery, drawChartSea, hsh } from './art.js';
 import { drawSprite, spriteHeight, markIds, outline, SP } from './sprite.js';
+import { drawBubbles } from './bubbles.js';
 import { drawDawn } from './dawn.js';
 import { drawHUD, drawEndFg } from './scenes.js';
 import { THINGS } from './things.js';
@@ -411,6 +412,7 @@ export function drawLight() {
   const head = feet - (H.hide ? 20 : sitting || water ? 34 : spriteHeight());
   if (S.scene === 'light') {
     seenEye(ix, head - 8);
+    drawBubbles(lg, { ichigo: [ix, head] });
     const act = action(); if (act && !H.hide) marker(X(act.x) + (act.do === 'cord' ? 6 : 0), Math.round(Math.min(gx(act.x) - 52, head - 10) + Math.sin(S.T * 5) * 1.5));
   }
   if (H.fade > 0) dots(P.night, H.fade);

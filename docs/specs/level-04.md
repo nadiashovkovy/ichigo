@@ -34,14 +34,14 @@ Stealth, by night, as a small child with a bucket. No one lives here. The lighth
 - [x] A cord, pulled, sends the eye to its bell.
 - [x] Running past a gull wakes it.
 - [x] Falling in the water is a new tomorrow.
-- [x] The level can be won, and the save has the level and no words.
+- [x] The level can be won, and the save has the level and *lighthouse*.
 - [x] `python tests/play_level.py` reports no page errors, and Levels 1 to 3 still pass.
 - [ ] Played and enjoyed by Nadia.
 
 ## Changes from the script
 
 - **No keeper, and no one else** (Nadia's call). So no shelf he puts Ichigo on, no name scene, no calling after the raft. Ichigo sleeps in the shed, and the tide takes the raft to the boathouse.
-- **Ichigo is mute, in every level** (Nadia's call; "pretty sure"). `ICHIGO_SPEAKS` in `config.js` is the one switch. Off: no bubbles, no words learned, no LEARNED line, no words in Ichigo's things. In Level 3 the woman now says EVERYONE WALKS ON AT FIRST. **The script's later levels still have words** ("Learns"), and Level 14's shout and Level 15's *tadaima* depend on them: for the claude.ai side to rework.
+- **Ichigo is mute, in every level, and what they learn is about the world, not words** (Nadia's calls). `LEARNED` in `icons.js` has it all: Kaa-chan and the sea (Level 1), crabs (2), home (3), the lighthouse (4). Each is a picture: a thought over Ichigo's head when it's learned, LEARNED on the end panel, and a row on the Tab screen. In Level 4 it's once the raft is out of the light's reach. (Not *light*: the lantern saved them in Level 2.) In Level 3 the woman now says EVERYONE WALKS ON AT FIRST. **The script's later levels still teach words**, and Level 14's shout and Level 15's *tadaima* depend on speech: for the claude.ai side to rework.
 - *New:* windows and shutters, the stones, the wreck, the cords and bells, the gulls and the cat, the sea stacks.
 - *Caught* goes back to the last place of safety, not always the storeroom.
 

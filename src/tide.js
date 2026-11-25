@@ -12,10 +12,10 @@ import { W, MOVE, BEACH, TIDE, P } from './config.js';
 import { S, parts } from './state.js';
 import { input, inLeft, inRight, inRun, inUse } from './input.js';
 import { makeWater, flow } from './water.js';
-import { say, clearBubbles } from './bubbles.js';
+import { think, clearBubbles } from './bubbles.js';
 import { showCards } from './cards.js';
 import { updateParts } from './player.js';
-import { learnWord, keepThing } from './save.js';
+import { learn, keepThing } from './save.js';
 import { THINGS } from './things.js';
 import { seaSound, playWash, playScoop, playPour, playHiss, playClick, playFall, playSnore, playCry } from './audio.js';
 
@@ -168,7 +168,7 @@ export function updateTide(dt, win) {
   if (N.phase === 'wake') {   // one wave reaches Ichigo's feet and goes back, leaving the first lights on the sand
     if (N.t > TIDE.asleep && !N.said) { launch('both', TIDE.wakeWave, TIDE.pull.lead + .4); N.said = 'wave'; }
     if (N.asleep && N.said === 'wave' && (depthAt(N.x + 14) > 1 || N.t > TIDE.asleep + 4.2)) { N.asleep = false; N.sulk = .9; N.woke = N.t; }
-    if (!N.asleep && N.t > N.woke + .5) { say('ichigo', ['umi'], { time: 2 }); N.seated = false; startSet(); }
+    if (!N.asleep && N.t > N.woke + .5) { N.seated = false; startSet(); }
   } else if (N.phase === 'calm') {
     N.tide = lerp(N.tideFrom, set.tide, smooth(N.t / TIDE.calm));
     if (N.t > (N.set ? TIDE.calm : .5)) { N.phase = 'waves'; N.t = set.gap; }
@@ -190,7 +190,7 @@ export function updateTide(dt, win) {
   updateLantern(dt, set);
   updateIchigo(dt);
   updateParts(dt);
-  if (N.phase === 'bar' && N.x > S.level.bar.goal) { learnWord('kani'); N.done = true; N.seated = true; N.v = 0; N.moving = false; parts.length = 0; win(); }
+  if (N.phase === 'bar' && N.x > S.level.bar.goal) { learn('crab'); N.done = true; N.seated = true; N.v = 0; N.moving = false; parts.length = 0; win(); }
   input.usePressed = false;
 
   // the camera: still all night, following Ichigo along the sandbar
@@ -249,7 +249,7 @@ function updateThing() {
 
 // Crabs, walking up and down the sand (under it while a wave's over them). A pinch makes Ichigo cry.
 function pinched(c, time, hide) {
-  if (!N.kani) { N.kani = true; say('ichigo', ['kani'], { note: true, time: 2 }); learnWord('kani'); }   // (they learn the word the hard way)
+  if (!N.kani) { N.kani = true; think('crab', 2); learn('crab'); }   // (they learn about crabs the hard way)
   N.stumble = time; N.cry = time; c.hide = hide; playClick(1); playCry();
   for (let i = 0; i < 8; i++) parts.push({ x: N.x + N.face * 8, y: yOf(N.z) - 2, vx: (Math.random() - .5) * 120, vy: -40 - Math.random() * 80, life: .45, c: P.tanD });
 }

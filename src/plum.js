@@ -17,10 +17,10 @@ import { W, MOVE, BEACH, PLUM, P } from './config.js';
 import { S, parts } from './state.js';
 import { input, inLeft, inRight, inRun, inUse, inJump } from './input.js';
 import { hsh } from './art.js';
-import { say, hush, clearBubbles } from './bubbles.js';
+import { say, think, hush, clearBubbles } from './bubbles.js';
 import { showCards } from './cards.js';
 import { updateParts } from './player.js';
-import { learnWord, keepThing } from './save.js';
+import { learn, keepThing } from './save.js';
 import { seaSound, playWash, playScoop, playPour, playDig, playClick, playMunch, playRustle, playThud, playGrowl, playYawn, playSplash, playSnore, playBoing, playSting, cicadas } from './audio.js';
 
 const INTRO_CARDS = [
@@ -230,7 +230,7 @@ function updateSleepers(dt) {
   if (M.woman === 'asleep' && near(L.woman, 70) && M.on === 'ground' && M.phase === 'play' && M.x > L.woman - 70) { M.woman = 'offers'; M.womanT = 0; say('woman', [], { text: 'HAVE ONE. YOU CAN STAY HERE.', time: 4 }); }
   if (M.woman === 'offers' && Math.abs(M.x - L.woman) > 130) {
     M.woman = 'refused'; M.womanT = 0; hush('woman');
-    say('ichigo', ['uchi'], { note: true, time: 2.4 }); learnWord('uchi');
+    think('home'); learn('home');
   }
   if (M.woman === 'refused' && M.womanT > 1.8 && !M.refused) { M.refused = true; say('woman', [], { text: 'EVERYONE WALKS ON AT FIRST.', time: 3.5 }); }
   if (M.woman === 'refused' && M.womanT > 6) M.woman = 'done';   // (asleep again)
