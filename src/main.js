@@ -21,6 +21,8 @@ import { drawPlum } from './plumart.js';
 import { H as light, startLight, surfaceY, updateLight, retryLight } from './lighthouse.js';
 import { drawLight } from './lighthouseart.js';
 import { V as story, setPlaces, startStory, updateStory, drawStory, storyActive, nextStory, clearStory } from './story.js';
+import { R as storm, startStorm, updateStorm, retryStorm, gusting, warned } from './storm.js';
+import { drawStorm } from './stormart.js';
 import { B, startBeach, setBeach, updateBeach, drawBeachScene, drawWhite, WAKE_CARDS, SEA_CARDS } from './beach.js';
 import { showCards, cardsActive, updateCards, nextCard, drawCards, clearCards, onSkip } from './cards.js';
 import { say, think, updateBubbles } from './bubbles.js';
@@ -51,7 +53,7 @@ function begin(n, { story = true } = {}) {
   useLevel(Math.max(1, n));
   if (n === 0) startPrologue(startShore);   // Level 0, the prologue, leads into Level 1's beach
   else if (n === 1) startShore();
-  else { const start = { 2: startTide, 3: startPlum, 4: startLight }[n]; if (story) startStory(n, start); else start(); }
+  else { const start = { 2: startTide, 3: startPlum, 4: startLight, 5: startStorm }[n]; if (story) startStory(n, start); else start(); }
 }
 const startShore = () => startStory('beach', startBeach);   // Level 1's beach, its story first
 const startSea = () => { startLevel(); showCards(SEA_CARDS); };   // Level 1's sea, after its journey
@@ -78,6 +80,7 @@ setPlaces({
   },
   start3: { enter: as('start', set(3, startPlum)), draw(t) { const k = Math.min(1, t / 2.2); Object.assign(plum, { x: S.level.start - 56 * (1 - k), moving: k < 1, v: k < 1 ? 60 : 0, anim: t * 9, face: 1 }); plum.y = plumGround(plum.x); drawPlum(); } },
   ashore: { enter: as('start', set(4, startLight, () => { Object.assign(light, { seated: false, fade: 0, raftX: 3330 }); S.camX = 2790; })), draw(t) { const k = Math.max(0, Math.min(1, (t - 1.6) / 4.4)); Object.assign(light, { x: 3290 - 250 * k, face: t < 1.6 ? 1 : -1, moving: k > 0 && k < 1, v: k > 0 && k < 1 ? -60 : 0, anim: t * 9 }); light.y = surfaceY(light.x); drawLight(); } },
+  start5: { enter: as('start', set(5, startStorm, () => { storm.fade = 0; storm.u = -70; storm.seated = false; })), draw(t) { storm.u = -70; storm.face = t > 1.5 && t < 3 ? -1 : 1; drawStorm(); } },
   start4: { enter: as('asleep', set(4, startLight, () => { light.fade = 0; light.seated = true; })), draw(t) { S.still = t > 3.4 ? 'start' : 'asleep'; drawLight(); if (t < 3.4) SHOTS.sleeping(Math.round(light.x / PIXEL), Math.round(light.y / PIXEL + TOP_PX)); } },
 });
 const win = () => { S.scene = 'end'; S.sceneT = 0; };
@@ -91,7 +94,7 @@ const act = {
   levels: () => { clearCards(); clearStory(); openMenu(); },
   title: () => { clearCards(); clearStory(); S.scene = 'title'; S.sceneT = 0; },
   restart: () => { clearCards(); if (S.level.number !== 1) begin(S.level.number, { story: S.scene === 'story' }); else if (S.scene === 'story' && story.n === 'beach') startShore(); else if (S.scene === 'beach' || S.scene === 'white') startBeach(); else startSea(); },
-  inLevel: () => ['beach', 'white', 'play', 'story', 'tide', 'plum', 'light', 'dawn'].includes(S.scene),
+  inLevel: () => ['beach', 'white', 'play', 'story', 'tide', 'plum', 'light', 'storm', 'dawn'].includes(S.scene),
 };
 function frame(now) {
   if (!pc.on) {   // the PC is switched off: the game waits, exactly where it was
@@ -106,7 +109,7 @@ function frame(now) {
   // move between scenes
   // (while the settings or a story card are up, the world waits: see settings.js, cards.js)
   const reading = cardsActive(), wasOpen = S.settingsOpen || S.thingsOpen;
-  const canLook = ['beach', 'play', 'tide', 'plum', 'light'].includes(S.scene) && !reading;   // (Ichigo's things: things.js)
+  const canLook = ['beach', 'play', 'tide', 'plum', 'light', 'storm'].includes(S.scene) && !reading;   // (Ichigo's things: things.js)
   if (S.settingsOpen) updateSettings(dt, key, click, act);
   else if (S.thingsOpen) updateThings(key, click);
   else if (canLook && (key === 'Tab' || key === 'KeyI' || onThings(click))) openThings();
@@ -139,6 +142,12 @@ function frame(now) {
   else if (S.scene === 'dawn' && S.level.number === 4) {
     if (S.sceneT > .9 && S.sceneT - dt <= .9) retryLight();
     if (S.sceneT > 1.7) { S.scene = 'light'; S.sceneT = 1; }
+  }
+
+  else if (S.scene === 'storm') updateStorm(dt, win);
+  else if (S.scene === 'dawn' && S.level.number === 5) {
+    if (S.sceneT > .9 && S.sceneT - dt <= .9) retryStorm();
+    if (S.sceneT > 1.7) { S.scene = 'storm'; S.sceneT = 1; }
   }
 
   if (S.scene === 'tide' && !S.settingsOpen && !S.thingsOpen) snore(dt);   // (asleep under the opening cards too)
@@ -179,16 +188,20 @@ function frame(now) {
   else if (S.scene === 'story') music(story.n === 'beach' ? 0 : .85, 'journey');   // (before the beach, there's only Kaa-chan's humming)
   else if (S.level.number === 3 && (S.scene === 'plum' || S.scene === 'dawn')) music(S.scene === 'dawn' ? .25 : 1, 'isle', -plum.sleep);   // (Level 3's: a semitone lower for each plum)
   else if (S.level.number === 4 && (S.scene === 'light' || S.scene === 'dawn')) music(S.scene === 'dawn' ? .25 : 1, 'prowl', 0, light.phase === 'caught' || light.seen > 0 ? 1 : light.eye.lid < .5 && light.phase !== 'gone' ? .5 : 0);   // (Level 4's listens to the eye: a block ticks while it's open)
+  else if (S.level.number === 5 && (S.scene === 'storm' || S.scene === 'dawn')) {   // (the fair wind; nothing, as it drops; the storm; nothing again)
+    const was = storm.phase === 'over' ? storm.was : storm.phase, fair = was === 'sail', hush = (was === 'turn' && storm.t < 4.4) || was === 'calm' || was === 'broken';
+    music(hush ? 0 : S.scene === 'dawn' ? .25 : 1, fair ? 'sail' : 'storm', 0, gusting() || storm.waves.some(w => !w.passed) ? 1 : warned() ? .5 : 0);
+  }
   else music(S.scene === 'play' || S.scene === 'tide' ? 1 : S.scene === 'dawn' ? .25 : S.scene === 'white' && reading ? .6 : 0, tide ? (morning ? 'morning' : 'night') : 'sea', tide && !morning ? [0, 3, 5, 9][N.set] : 0);   // (the level list: just the sea)
   if (S.scene === 'play' || (S.scene === 'dawn' && S.level.number === 1)) seaSound(.45 + .45 * Math.min(1, PL.x / ((S.level.sea && S.level.sea.growOver) || 5200)));
   else if (S.scene === 'end') seaSound(.25);   // a calm night sea
   else if (S.scene === 'levels') seaSound(.3);
   else if (S.scene === 'title') seaSound(0);
-  gulls(S.scene === 'play' || (tide && morning) || (S.scene === 'beach' && B.phase !== 'recede'));   // (they fall silent when the sea pulls back)
+  gulls(S.scene === 'play' || (S.scene === 'storm' && storm.phase === 'sail') || (tide && morning) || (S.scene === 'beach' && B.phase !== 'recede'));   // (they fall silent when the sea pulls back)
 
   // draw (the camera moves in whole pixels so nothing shimmers)
   const cam = S.camX; S.camX = Math.round(S.camX / PIXEL) * PIXEL;
-  if (S.scene === 'title') drawTitle(); else if (S.scene === 'levels') drawMenu(); else if (S.scene === 'prologue') drawPrologue(); else if (S.scene === 'story') drawStory(); else if (S.scene === 'beach') drawBeachScene(); else if (S.scene === 'white') drawWhite(); else if (S.level.number === 2) drawTide(); else if (S.level.number === 3) drawPlum(); else if (S.level.number === 4) drawLight(); else drawPlay();
+  if (S.scene === 'title') drawTitle(); else if (S.scene === 'levels') drawMenu(); else if (S.scene === 'prologue') drawPrologue(); else if (S.scene === 'story') drawStory(); else if (S.scene === 'beach') drawBeachScene(); else if (S.scene === 'white') drawWhite(); else if (S.level.number === 2) drawTide(); else if (S.level.number === 3) drawPlum(); else if (S.level.number === 4) drawLight(); else if (S.level.number === 5) drawStorm(); else drawPlay();
   S.camX = cam;
   drawCards();
   drawThings(canLook);
@@ -205,4 +218,4 @@ let resized; addEventListener('resize', () => { clearTimeout(resized); resized =
 
 // Handy for testing in the browser console: window.ichigo.S, window.ichigo.PL …
 import { keys } from "./input.js";
-window.ichigo = { plum, light, story, S, PL, input, keys, startLevel, begin, spawn, beach: B, tide: N, save, cards: { active: () => cardsActive() || storyActive(), next: () => (cardsActive() ? nextCard() : nextStory()) } };
+window.ichigo = { plum, light, storm, story, S, PL, input, keys, startLevel, begin, spawn, beach: B, tide: N, save, cards: { active: () => cardsActive() || storyActive(), next: () => (cardsActive() ? nextCard() : nextStory()) } };

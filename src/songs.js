@@ -12,6 +12,8 @@
 //   between   journey   yo             4 beats, very slow    bits of the Lullaby, coming back to Ichigo
 //   level 3   isle      Ryūkyū         3 beats, swaying      sanshin and bamboo: a hammock
 //   level 4   prowl     iwato          5 beats, on tiptoe    temple block and bowed kokyū: the eye
+//   level 5   sail      ritsu          6 beats, rolling      koto and flute, running before the wind
+//             storm     kumoi          7 beats, headlong     the big drums, and a nohkan shrieking over them
 //
 // A song: tempo (beats a minute; a step is half a beat), steps to a bar, bars to a round, its strings (the scale,
 // up the koto), bass (a low note for each bar, in turn), bell and reeds (the shō's notes, and the bar they come in).
@@ -121,6 +123,32 @@ export const SONGS = {
       ['block', .16, [[[1, .5], [3, .5], [5, .5], [7, .5], [9, .6]]], 'seen'],
       ['taiko', .6, [[[2, .5], [4, .8], [5, .5], [6, .9], [8, .7], [9, .9]]], 'seen'],
       ['kokyu', .06, [[[0, 69, 5], [5, 70, 5]], [[0, 70, 5], [5, 69, 5]]], 'seen'],
+    ],
+  },
+
+  // Level 5, the Storm. First the fair wind: a rolling six, bright, always going up...
+  sail: {
+    tempo: 100, steps: 6, bars: 16, strings: [48, 50, 53, 55, 57, 60, 62, 65, 67, 69, 72, 74, 77, 79, 81], bass: [41, 48, 43, 48], bell: 53, reeds: [[60, 65, 67, 72], 8, 4],
+    parts: [
+      ['koto', .2, [[[0, 53, 'o'], [2, 60], [3, 65], [5, 67]], [[0, 60], [2, 67], [3, 72], [5, 69]], [[0, 55, 'o'], [2, 62], [3, 67], [5, 69]], [[0, 60], [2, 65], [3, 67], [5, 72]], [[0, 53, 'o'], [2, 60], [3, 65], [5, 69]], [[0, 60], [2, 67], [3, 74], [5, 72]], [[0, 55, 'o'], [2, 62], [3, 69], [5, 67]], [[0, 53], [3, 65, 'r']]]],
+      ['flute', .09, [R, R, R, R, [[0, 65, 1], [1, 67, 1], [2, 69, 1], [3, 72, 1], [4, 74, 2]], [[0, 72, 3], [3, 69, 3]], [[0, 67, 5]], R, R, R, R, R, [[0, 77, 3], [3, 74, 3]], [[0, 72, 2], [2, 74, 1], [3, 69, 3]], [[0, 67, 3], [3, 69, 3]], [[0, 65, 5]]]],   // the Lullaby
+      ['shime', .4, [[[0, .5], [3, .35], [5, .25]], [[0, .4], [2, .2], [3, .4]]]],
+      ['taiko', .5, [[[0, .8]], R]],
+    ],
+  },
+  // ...then the wind off the land. Seven beats, so it's always a step too soon; the drums never stop. While a gust or a wave is
+  // coming the small drum runs, and when it's here the nohkan screams.
+  storm: {
+    tempo: 132, steps: 7, bars: 16, strings: [38, 40, 41, 45, 47, 50, 52, 53, 57, 59, 62, 64, 65, 69, 71, 74, 76, 77], bass: [38, 38, 41, 40], bell: 50, reeds: [[62, 64, 69, 76], 8, 3],
+    parts: [
+      ['taiko', .85, [[[0, 1], [3, .6], [5, .8]], [[0, .9], [2, .4], [3, .6], [5, .8], [6, .5]], [[0, 1], [3, .6], [5, .8]], [[0, 1], [1, .5], [3, .8], [4, .5], [5, .9], [6, .7]]]],
+      ['shamisen', .16, [[[0, 50], [1, 50], [3, 52], [5, 53], [6, 52]], [[0, 50], [2, 57], [3, 53], [5, 52]], [[0, 50], [1, 50], [3, 53], [5, 57], [6, 53]], [[0, 52], [2, 53], [3, 52], [5, 50]]]],
+      ['pizz', .3, [[[0, 38], [3, 38], [5, 41]], [[0, 38], [3, 40]], [[0, 38], [3, 38], [5, 45]], [[0, 41], [3, 40], [5, 38]]]],
+      ['koto', .2, [R, R, R, [[3, 69, 'p']], R, R, R, [[0, 74, 'r']], R, R, R, R, R, R, R, [[0, 62, 't']]]],
+      ['nohkan', .045, [R, R, R, R, R, R, R, R, [[0, 74, 1], [1, 76, 1], [2, 77, 1], [3, 81, 1], [4, 83, 3]], [[0, 81, 3], [3, 77, 4]], [[0, 76, 7]], R, R, R, R, R]],   // the Lullaby
+      ['shime', .9, [[[0, .5], [1, .35], [2, .4], [3, .5], [4, .35], [5, .5], [6, .45]]], 'open'],
+      ['nohkan', .04, [[[0, 86, 3], [3, 83, 4]], [[0, 88, 7]]], 'seen'],
+      ['taiko', .7, [[[1, .5], [2, .6], [4, .6], [6, .8]]], 'seen'],
     ],
   },
 };

@@ -361,6 +361,64 @@ async def play_light(browser):
     await ctx.close()
     return notes, errors, report
 
+# Level 5's bot. window._mode: 'idle' (does nothing) or 'play'.
+STORM_BOT = r"""
+(() => { const { S, storm: R, keys, input, cards } = window.ichigo; let wait = 0, held = 0;
+  window._tick = () => {
+    if (cards.active()) { if (++wait > 20) { cards.next(); wait = 0; } return; }
+    for (const k of ['ArrowLeft', 'ArrowRight', 'KeyS', 'ShiftLeft', 'Space']) keys[k] = false;
+    if (S.scene !== 'storm' || window._mode === 'idle') return;
+    const V = window._st, to = (u, near = 8, run = true) => { const d = u - R.u - R.vu * .06; if (Math.abs(d) < near) return true; keys[d > 0 ? 'ArrowRight' : 'ArrowLeft'] = true; keys.ShiftLeft = run; return false; }, hold = () => { if (Math.abs(R.u) < 20) keys.KeyS = true; else to(0, 12); };
+    if (held > 0) { held--; keys.Space = true; }
+    if (R.phase === 'sail') { if (R.pinwheel === 'sea' && V.pinX() - R.x < 330 && V.pinX() > R.x + R.hw - 50) { if (to(R.hw - 22, 14) && Math.abs(V.pinX() - (R.x + R.hw + 14)) < 40) input.usePressed = true; return; } if (R.puffs.some(p => Math.abs(p.x - R.x) < p.w / 2)) hold(); else to(0, 12, false); return; }
+    if (['wind', 'rain'].includes(R.phase)) {
+      const b = R.creatures.find(q => !q.hit && Math.abs(q.u - R.u) < 50 + q.w && Math.sign(q.v) === Math.sign(R.u - q.u));
+      if (b && !R.air && !R.gust) { input.jumpBuffer = .1; held = 12; return; }
+      if (R.gust) { hold(); return; }
+      if (R.loose && R.loose.t < 8) { if (Math.abs(R.u - R.loose.u) < 20) keys.KeyS = true; else to(R.loose.u, 8); return; }
+      if (R.water > .12 && (R.gustIn > 1 || R.phase === 'wind')) { if (Math.abs(R.u - R.pool) < 22 + R.water * 40) keys.KeyS = true; else to(Math.max(-R.hw + 20, Math.min(R.hw - 20, R.pool)), 10); return; }
+      to(0, 14); return;
+    }
+    if (R.phase === 'waves') { const w = V.coming(); if (w) { if (w.kind === 'swell') to(R.hw * .6, 10); else hold(); return; } if (R.water > .15 && R.waveIn > 1.2) { if (Math.abs(R.u - R.pool) < 22 + R.water * 40) keys.KeyS = true; else to(Math.max(-R.hw + 20, Math.min(R.hw - 20, R.pool)), 10); return; } to(0, 14); return; }
+    if (R.phase === 'swim') { const w = R.waves.find(q => !q.passed && q.x - R.x < 130); if (w && R.cling === null) { keys.KeyS = true; return; } const at = L => S.level.swim.planks.some((_, i) => Math.abs(R.x - V.plankX(i)) < 28); if (at() && R.strength < .92) return; keys.ArrowRight = true; }
+  };
+})();
+"""
+
+async def play_storm(browser):
+    """Level 5. Returns (problems, page errors, what to report)."""
+    errors, notes, report = [], [], {}
+    async def open_level(mode):
+        ctx = await browser.new_context(viewport={'width': 960, 'height': 540})
+        await ctx.add_init_script(FAST_CLOCK)
+        await ctx.add_init_script("localStorage.setItem('ichigo.save', JSON.stringify({ marks: ['chin'], things: ['rope', 'paddle', 'blanket'], tomorrows: 0, done: [1, 2, 3, 4], seenWave: true }))")
+        page = await ctx.new_page(); page.on('pageerror', lambda e: errors.append(str(e)))
+        await page.goto(f'http://127.0.0.1:{PORT}/index.html'); await page.wait_for_timeout(2000)
+        await page.evaluate("import('/src/storm.js').then(m => { window._st = m; })")
+        await page.evaluate(f"window._mode = '{mode}'"); await page.add_script_tag(content=STORM_BOT)
+        await page.evaluate('ichigo.begin(5)')
+        return ctx, page
+    async def until(page, js, shot=None, timeout=90): return await moment(page, 'Level 5', js.replace('R.', 'ichigo.storm.'), notes, shot, timeout)
+
+    ctx, page = await open_level('idle')   # not holding on: the first gusts take Ichigo, and it's a new tomorrow in the same part
+    await until(page, "S.scene === 'storm' && R.t > 1"); await page.evaluate("ichigo.storm.dist = 4690 * 4800 / 6400")
+    await until(page, "R.phase === 'turn' && R.t > 4.8", 'storm_turn'); await until(page, "R.phase === 'over'", 'storm_over'); await until(page, "S.scene === 'storm' && S.deaths === 1 && R.phase === 'wind'")
+    await ctx.close()
+
+    ctx, page = await open_level('play')
+    for js, shot in [("R.phase === 'sail' && R.full > .8", 'storm_sail'), ("R.dist > 3000", 'storm_land'), ("R.phase === 'wind' && R.gust && R.gust.t > 1.6", 'storm_gust'), ("R.tying > .3", 'storm_tie'), ("R.phase === 'torn' && R.t > 1", 'storm_torn'),
+                     ("R.phase === 'rain' && R.creatures.some(c => c.kind === 'turtle') && R.air", 'storm_creature'), ("R.phase === 'waves' && R.flash > .3", 'storm_flash'), ("R.waves.some(w => w.kind === 'swell' && Math.abs(w.x - R.x) < 120)", 'storm_swell'), ("R.waves.some(w => w.kind === 'last' && w.x - R.x < 260)", 'storm_last'), ("R.phase === 'broken' && R.t > 2", 'storm_broken'),
+                     ("R.phase === 'swim' && R.waves.some(w => w.x - R.x < 150 && w.x > R.x)", 'storm_swim'), ("R.phase === 'swim' && R.cling !== null", 'storm_plank'), ("R.phase === 'calm' && R.t > 5", 'storm_calm')]:
+        if not await until(page, js, shot, 200): break
+    await until(page, "S.scene === 'end' && S.sceneT > 3", 'storm_end', 120)
+    report = await page.evaluate("({ scene: ichigo.S.scene, deaths: ichigo.S.deaths, seconds: Math.round(ichigo.S.levelT), phase: ichigo.storm.phase })")
+    report['save'] = json.loads(await page.evaluate("localStorage.getItem('ichigo.save')"))
+    if report['scene'] != 'end': notes.append('Level 5: the bot did not finish')
+    s = report['save']
+    if 5 not in s['done'] or 'wind' not in s['learned'] or 'rope' not in s['marks'] or 'pinwheel' not in s['things']: notes.append('Level 5: the save is missing the level, the wind, the rope mark or the pinwheel')
+    await ctx.close()
+    return notes, errors, report
+
 def serve():
     class Quiet(http.server.SimpleHTTPRequestHandler):
         def log_message(self, *a): pass
@@ -469,6 +527,7 @@ async def main():
         tide = await play_tide(browser) if ONLY in (None, 2) else None
         plum = await play_plum(browser) if ONLY in (None, 3) else None
         light = await play_light(browser) if ONLY in (None, 4) else None
+        storm = await play_storm(browser) if ONLY in (None, 5) else None
         await browser.close()
     httpd.shutdown()
 
@@ -484,7 +543,7 @@ async def main():
             s = r['save'] or {}
             if s.get('learned') != ['kaachan', 'sea'] or s.get('marks') != ['chin']: print("Problem: expected learned ['kaachan', 'sea'] and marks ['chin']"); ok = False
         if r['errors'] or r['notes']: ok = False
-    for name, got in (('Level 2', tide), ('Level 3', plum), ('Level 4', light)):
+    for name, got in (('Level 2', tide), ('Level 3', plum), ('Level 4', light), ('Level 5', storm)):
         if not got: continue
         notes, errors, report = got
         print(f'--- {name} ---')

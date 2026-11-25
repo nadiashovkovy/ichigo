@@ -50,6 +50,10 @@ const SKIES = {
   day:   { bands: [[.16, P.navy], [.3, P.deep], [.5, P.steel], [.76, P.pale], [9, P.foam]],
            body: [P.pale, P.foam, P.white, P.foam], lit: [P.steel, P.pale, P.pale, P.sky], edge: P.deep,
            glow: P.pale, caps: [P.steel, P.white, P.aqua] },
+  // Level 5's storm: heavy, low, a band of sick light at the horizon
+  storm: { bands: [[.24, P.night], [.46, P.outline], [.64, P.plum], [.8, P.slate], [.93, P.grey3], [9, P.olive]],
+           body: [P.outline, P.night, P.plum, P.slate], lit: [P.plum, P.slate, P.grey3, P.grey2], edge: P.night,
+           glow: P.olive, caps: [P.grey3, P.steel, P.steel] },
   late:  { bands: [[.2, P.deep], [.38, P.steel], [.54, P.pale], [.72, P.sky], [.88, P.tan], [9, P.ochre]],
            body: [P.steel, P.pale, P.sky, P.tan], lit: [P.pale, P.foam, P.foam, P.gold], edge: P.slate,
            glow: P.ochre, caps: [P.tan, P.gold, P.aqua] },
@@ -259,6 +263,7 @@ export const CELL = 1;   // (pixels per cell: every pixel its own cell, at the s
 const SEA_TONES = {
   dusk:  { white: P.white, mist: P.mist, aqua: P.aqua, line: P.night, depth: [P.aqua, P.ocean, P.indigo, P.abyss, P.night] },
   day:   { white: P.white, mist: P.mist, aqua: P.aqua, line: P.navy, depth: [P.aqua, P.sea, P.deep, P.ocean, P.navy] },
+  storm: { white: P.mist, mist: P.pale, aqua: P.steel, line: P.night, depth: [P.slate, P.ocean, P.abyss, P.navy, P.night] },
   night: { white: P.mist, mist: P.aqua, aqua: P.steel, line: P.night, depth: [P.deep, P.ocean, P.navy, P.abyss, P.night] },
 };
 // above = the layer of the cell above it (it's worked out going down each column, so passed along).

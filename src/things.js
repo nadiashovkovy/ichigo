@@ -26,13 +26,16 @@ export const THINGS = {
   blanket: { name: 'A BLANKET', text: 'SOMEONE LEFT IT UP IN A PLUM TREE.', pic: ['.KKKKKKKKKKK.', 'KrRRRRRRRRRrK', 'KRRfRRRfRRRRK', 'KRfffRfffRRRK', 'KRRfRRRfRRRRK', 'KrRRRRRRRRRrK', 'KRfRRRfRRRfRK', 'KfffRfffRfffK', 'KRfRRRfRRRfRK', 'KrrrrrrrrrrrK', '.KKKKKKKKKKK.'] },
   kite: { name: 'A KITE', text: 'ICHIGO AND KAA-CHAN FLEW ONE LIKE IT FROM THE HILL BEHIND THE HOUSE.', pic: ['.....KK.....', '....KRRK....', '...KRRRRK...', '..KRRwwRRK..', '.KRRwwwwRRK.', 'KRRRwnnwRRRK', '.KRRwwwwRRK.', '..KRRwwRRK..', '...KRRRRK...', '....KRRK....', '.....KK.....', '......KK....', '.....KK.KK..'] },
   chime: { name: 'A WIND CHIME', text: 'IT SOUNDS LIKE THE ONE UNDER THE EAVES AT HOME.', pic: ['.....K.....', '...KKmKK...', '..KmmwmmK..', '.KmwmRmmmK.', '.KmwRRRmmK.', '.KmmmRmmaK.', '..KKKKKKK..', '.....K.....', '....KKK....', '....KfK....', '....KRK....', '....KfK....', '....KKK....'] },
+  pinwheel: { name: 'A PINWHEEL', text: 'IT TURNS WHEN ANYTHING MOVES. THERE WAS ONE ON THE FENCE.', pic: ['...KK..KKK..', '..KRRKKwwwK.', '..KRRRKwwK..', '.KKKRRwwKKK.', 'KaaaKYYKRRRK', 'KaaaaYYRRRRK', '.KKKwwaaKKK.', '..KwwKaaaK..', '.KwwwKKaaK..', '..KKK.KbKK..', '......KbK...', '......KbK...', '......KbK...'] },
   rope: { name: 'A ROPE', text: 'THE FISHERMAN GAVE IT TO ICHIGO, FOR A CRAB.', pic: ['...KKKKKK...', '..KTTTTTTK..', '.KTyKKKKyTK.', 'KTyKTTTTKyTK', 'KTKTyKKyTKTK', 'KTKTyKKyTKTK', 'KTyKTTTTKyTK', '.KTyKKKKyTK.', '..KTTTTTTTK.', '...KKKKKKTK.', '.........KK.'] },
   paddle: { name: 'A PADDLE', text: 'THE OLD SAILOR WAS ASLEEP ON IT.', pic: ['.........KK.', '........KTbK', '.......KTbK.', '......KTbK..', '.....KTbK...', '....KTbK....', '..KKTbK.....', '.KTTbbK.....', 'KTTbbbK.....', 'KTbbbBK.....', '.KbbBK......', '..KKK.......'] },
 };
 for (const th of Object.values(THINGS)) { th.big = scale2x(th.pic); th.grid = th.pic.map(r => [...r].map(ch => (ch === '.' ? null : C[ch]))); }
 const ORDER = Object.keys(THINGS);
-const SLOTS = 12, COLS = 4, CELL = 52;
-const has = id => THINGS[id].always || S.things.has(id);
+const SLOTS = 15, COLS = 5, CELL = 42;
+// (the storm took the shovel, and the raft with everything it was made of)
+const LOST = ['shovel', 'blanket', 'rope', 'paddle'];
+const has = id => (THINGS[id].always || S.things.has(id)) && !(S.done.has(5) && LOST.includes(id));
 const found = () => ORDER.filter(has);
 
 const V = { sel: 0 };
@@ -100,6 +103,7 @@ const PIECES = [
   { thing: 'sandal', lines: [[P.olive, 204, 90, 226, 72, 248, 90, 204, 90], [P.wood, 208, 90, 208, 110, 244, 110, 244, 90], [P.red, 222, 110, 222, 98, 232, 98, 232, 110]] },   // the house, its door
   { thing: 'kite', lines: [[P.leaf, 186, 108, 214, 84, 244, 66, 274, 58, 306, 62]] },                                                        // the hill behind the house
   { thing: 'chime', lines: [[P.teal, 208, 90, 208, 94, 204, 98, 212, 98, 208, 94], [P.teal, 208, 98, 208, 102]] },                                         // the chime under the eaves
+  { thing: 'pinwheel', lines: [[P.wood, 268, 108, 268, 88], [P.red, 268, 88, 262, 80, 268, 78, 268, 88, 276, 82, 278, 88, 268, 88, 274, 96, 268, 98, 268, 88, 260, 94, 258, 88, 268, 88]] },   // the pinwheel on the fence
   { thing: 'shell', lines: [[P.sea, 12, 92, 24, 84, 36, 92, 48, 84, 60, 92, 72, 84, 84, 92], [P.sea, 60, 106, 72, 98, 84, 106, 96, 98, 108, 106, 120, 98, 132, 106]] },   // the sea between
 ];
 function stroke(x0, y0, [col, ...pts], solid) {

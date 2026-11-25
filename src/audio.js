@@ -250,6 +250,14 @@ function kokyu(freq, at, len, out, vol) {
   g.gain.setValueAtTime(0, at); g.gain.linearRampToValueAtTime(vol, at + Math.min(.16, len * .3)); g.gain.setTargetAtTime(vol * .7, at + len * .4, len * .3); g.gain.setTargetAtTime(0, at + len * .94, .07);
   o.connect(f); f.connect(g); g.connect(out); for (const x of [o, vib]) { x.start(at); x.stop(at + len + .5); }
 }
+// A nohkan, the flute of the old plays: high, all breath, its pitch never quite settling, shrieking up at the end of a note.
+function nohkan(freq, at, len, out, vol) {
+  const o = ac.createOscillator(), g = ac.createGain(), n = ac.createBufferSource(), bp = ac.createBiquadFilter(), ng = ac.createGain();
+  o.type = 'triangle'; o.frequency.setValueAtTime(freq * .9, at); o.frequency.exponentialRampToValueAtTime(freq * 1.012, at + Math.min(.16, len * .3)); o.frequency.linearRampToValueAtTime(freq * .99, at + len * .7); o.frequency.exponentialRampToValueAtTime(freq * 1.09, at + len);
+  g.gain.setValueAtTime(0, at); g.gain.linearRampToValueAtTime(vol, at + .05); g.gain.setTargetAtTime(vol * .6, at + .1, len * .4); g.gain.setTargetAtTime(0, at + len * .95, .04);
+  n.buffer = noise; n.loop = true; bp.type = 'bandpass'; bp.frequency.value = freq * 1.5; bp.Q.value = 2.2; ng.gain.setValueAtTime(0, at); ng.gain.linearRampToValueAtTime(vol * 1.1, at + .03); ng.gain.setTargetAtTime(vol * .4, at + .08, .1); ng.gain.setTargetAtTime(0, at + len * .95, .05);
+  o.connect(g); g.connect(out); n.connect(bp); bp.connect(ng); ng.connect(out); for (const x of [o, n]) { x.start(at); x.stop(at + len + .4); }
+}
 // A temple block (mokugyo): a hollow knock. And a shime, the small high drum.
 function block(at, vol, out) {
   const o = ac.createOscillator(), g = ac.createGain(); o.frequency.setValueAtTime(620, at); o.frequency.exponentialRampToValueAtTime(470, at + .05);
@@ -271,6 +279,7 @@ const PLAY = {
   bamboo: ([i, m], c) => bamboo(hz(m + c.shift), c.at + early(), i === 0 ? c.vol : c.vol * .7, c.out),
   shakuhachi: ([, m, n], c) => shakuhachi(hz(m + c.shift), c.at, n * c.len, c.out, c.vol),
   flute: ([, m, n], c) => note(hz(m + c.shift), c.at, n * c.len, c.out, c.vol),
+  nohkan: ([, m, n], c) => nohkan(hz(m + c.shift), c.at, n * c.len, c.out, c.vol),
   kokyu: ([, m, n], c) => kokyu(hz(m + c.shift), c.at, n * c.len, c.out, c.vol),
   taiko: ([, hard], c) => taiko(c.at, hard * c.vol, c.out),
   shime: ([, hard], c) => shime(c.at, hard * c.vol, c.out),
@@ -490,6 +499,17 @@ export function cicadas(near) {
   src.connect(f); f.connect(ap); ap.connect(g); g.connect(fx); src.start(at); am.start(at); src.stop(at + len); am.stop(at + len);
   nextCicada = at + len + 1 + Math.random() * 5;
 }
+// Level 5's: the wind, all the time (call every frame, 0..1); a gust; thunder, near (1) or far; a rope or a log snapping; the mast creaking.
+let windBus = null, windTone = null;
+export function windSound(vol) {
+  if (!ac) return;
+  if (!windBus) { if (vol <= .01) return; windBus = ac.createGain(); windBus.gain.value = 0; windBus.connect(sfxOut); windTone = ac.createBiquadFilter(); windTone.type = 'bandpass'; windTone.Q.value = 1.6; windTone.frequency.value = 420; const src = ac.createBufferSource(); src.buffer = noise; src.loop = true; src.connect(windTone); windTone.connect(windBus); src.start(); }
+  const t = ac.currentTime; windBus.gain.setTargetAtTime(vol * .16, t, .35); windTone.frequency.setTargetAtTime(300 + vol * 620 + Math.sin(t * 1.7) * 90 * vol + Math.sin(t * 4.1) * 50 * vol, t, .2);
+}
+export function playGust(v) { if (ac) { burst(ac.currentTime, 1.6, { from: 500, to: 1500, type: 'bandpass', q: 1.2, vol: .5 * v, attack: .35, buf: noise }); burst(ac.currentTime, 1.4, { from: 160, to: 320, vol: .5 * v, attack: .3 }); } }
+export function playThunder(v) { if (!ac) return; const at = ac.currentTime; if (v > .8) burst(at + .05, .25, { from: 5200, to: 900, type: 'highpass', vol: .3, buf: noise }); for (const [d, q] of [[.1, 1], [.42, .7], [.95, .55], [1.6, .3]]) burst(at + d, 1.3, { from: 240, to: 60, vol: .95 * v * q, attack: .05 }); }
+export function playSnap() { if (ac) { burst(ac.currentTime, .09, { from: 3800, to: 1500, type: 'bandpass', q: 1.5, vol: .5, buf: noise }); burst(ac.currentTime + .03, .35, { from: 420, to: 130, vol: .6 }); } }
+export function playCreak() { if (!ac) return; const at = ac.currentTime, o = ac.createOscillator(), f = ac.createBiquadFilter(), g = ac.createGain(); o.type = 'sawtooth'; o.frequency.setValueAtTime(92, at); o.frequency.linearRampToValueAtTime(128, at + .16); o.frequency.linearRampToValueAtTime(80, at + .36); f.type = 'bandpass'; f.frequency.value = 700; f.Q.value = 5; g.gain.setValueAtTime(0, at); g.gain.linearRampToValueAtTime(.12, at + .06); g.gain.linearRampToValueAtTime(0, at + .38); o.connect(f); f.connect(g); g.connect(fx); o.start(at); o.stop(at + .4); }
 export function playHiss() { if (ac) { burst(ac.currentTime, 1.1, { from: 6500, to: 2500, type: 'highpass', vol: .22, attack: .03, buf: noise }); burst(ac.currentTime, .5, { from: 600, to: 200, vol: .4 }); } }
 export function playClick(pitch = 1) {
   if (!ac) return;

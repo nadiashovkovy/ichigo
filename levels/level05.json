@@ -1,0 +1,12 @@
+{
+  "number": 5,
+  "name": "The Storm",
+  "age": 5,
+  "length": 9000,
+  "fuji": { "view": "day", "x": 250 },
+  "sail": { "goal": 4800, "pinwheel": 2000 },
+  "knots": [1, 2],
+  "rain": { "time": 34, "creatures": [[4, "crab"], [9, "bream"], [14, "puffer"], [19, "octopus"], [24, "turtle"], [29, "tuna"]] },
+  "waves": ["break", "swell", "break", "swell", "last"],
+  "swim": { "planks": [360, 740, 1120], "goal": 1500 }
+}

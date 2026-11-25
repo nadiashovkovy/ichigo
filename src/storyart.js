@@ -13,7 +13,8 @@ import { drawPerson } from './people.js';
 import { drawThought } from './bubbles.js';
 import { foliage, trunk, clothAt, ORANGE } from './plumart.js';
 import { drawWreckage } from './wreckage.js';
-import { raft, raftOn, HID, tower, paintTower, TW, LAMP } from './lighthouseart.js';
+import { raft, raftOn, HID, GULL, FLY, tower, paintTower, TW, LAMP } from './lighthouseart.js';
+import { bigRaft } from './stormart.js';
 import { drawZs } from './tideart.js';
 
 const T = () => S.T, Yp = y => Math.round(y / PIXEL + TOP_PX), r = (x, y, w, h, c) => { lg.fillStyle = c; lg.fillRect(Math.round(x), Math.round(y), Math.round(w), Math.round(h)); };
@@ -298,6 +299,32 @@ export const SHOTS = {
       ichigo(sit ? 'sit' : 'stand', 58, 59, t < 4.8 ? -1 : 1, t < 4.8 && t % 3 < 1.6 ? ['asleep'] : [], [!sit && Math.sin(t * 2) > 0 ? 1 : 0, 0], g);
     }, 110, y0); nearSea_low('night');
     if (t > .9 && t < 4.6) drawThought(lg, 'house', 226, y0 + 42);
+  } },
+
+  // --- before Level 5: away from the lighthouse; a bigger raft, and a bigger Ichigo; a bird
+  leaving: { phase: t => (t < 3.4 ? 0 : 1), age: () => 4, draw(t, n) {
+    const cam = t * 26; scenery(n ? 'dawn' : 'night', { cam, view: n ? 'day' : 'night', x: 560, behind: n ? sun(470, 214 - (t - 3.4) * 4, P.red) : moon(470, 96) });
+    if (!n) { if (!tower) paintTower(); lg.imageSmoothingEnabled = false; const x = 40 - t * 12, y = Yp(392) - 125; lg.drawImage(tower, 0, 0, TW, LH, Math.round(x), y, TW / 2, LH / 2); const ex = Math.round(x + LAMP[0] / 2), ey = y + LAMP[1] / 2; for (let j = -6; j <= 6; j++) for (let i = -6; i <= 6; i++) if (Math.hypot(i, j) < 6.4) r(ex + i, ey + j, 1, 1, Math.hypot(i, j) > 5.3 || j === 2 ? P.outline : P.rosewood); }
+    nearSea(n ? 'day' : 'night', SEA, cam); const x = 290, y = seaRow(x); raft(x, y + 2, Math.round(Math.sin(T() * 1.4) * 1.2)); ichigo('sit', x + 8, y - 4, !n && t < 2.4 ? -1 : 1, n && t < 5 ? ['asleep'] : []); if (n && t < 5) zs(x + 8, y - 38);
+  } },
+  logs: { phase: t => Math.min(3, Math.floor(t / 2.7)), age: t => (t < 8.1 ? 4 : 5), draw(t, n) {
+    const cam = t * 34, half = [34, 54, 80, 112][n], q = (t - n * 2.7) / 2.7, sky = ['day', 'late', 'dawn', 'day'][n];
+    scenery(sky, { cam, view: n === 2 ? 'snowy' : 'day', x: 2400, behind: n === 1 ? sun(480, 196, P.red) : sun(150 + n * 50, 96, P.white) }); nearSea('day', SEA, cam);
+    const x = 300, y = seaRow(x), ang = Math.sin(T() * 1.1) * .03; bigRaft(lg, x, y, half, ang, { sail: .5 });
+    const lx = x + half + 16 + (1 - smooth(q * 1.5)) * 130; if (n < 3) { const ly = seaRow(lx); for (let i = -20; i <= 20; i++) for (let j = 0; j < 8; j++) r(lx + i, ly - 3 + j, 1, 1, Math.abs(i) === 20 || j === 0 || j === 7 ? P.outline : j < 3 ? P.tan : P.wood); }
+    const at = n === 3 ? 0 : half - 14, tie = n < 3 && q > .62; if (n < 3) ichigo(tie ? (Math.sin(t * 12) > 0 ? 'dig1' : 'dig2') : q < .3 ? WALK[Math.floor(t * 7) % 4] : 'stand', x + (tie || q > .3 ? at : at * q / .3), y - 5, 1); else ichigo('stand', x + 34, y - 5, t % 2.6 < 1.3 ? 1 : -1, [], [Math.sin(t * 3) > 0 ? 1 : 0, 0]);
+    if (n === 2) falling([P.white, P.foam], 70, 30, 16, cam * .2);
+  } },
+  bird: { age: () => 5, draw(t) {
+    const cam = 400 + t * 24; scenery('day', { cam, view: 'day', x: 460, behind: sun(170, 92, P.white) }); nearSea('day', 404, cam);
+    const bob = Math.round(Math.sin(T() * 1.4) * 2), y0 = 160 + bob, away = t > 7, fed = (t > 2 && t < 3.2) || (t > 4.1 && t < 5.2);
+    closeUp(170, 74, g => {
+      g.clearRect(0, 0, 170, 74); bigRaft(g, 85, 65, 80, 0, { sail: null, mast: false });
+      ichigo('sit', 56, 60, 1, away ? [] : [], [0, 0], g);
+      if (!away) put(t % 1.6 < 1.3 ? GULL.up : GULL.asleep, 98 + (fed ? -8 : 0), 61, fed, g);
+      if (fed) { g.fillStyle = P.outline; g.fillRect(70, 43, 11, 6); g.fillStyle = P.aqua; g.fillRect(71, 44, 9, 4); g.fillStyle = P.white; g.fillRect(72, 46, 6, 1); g.fillStyle = P.deep; g.fillRect(79, 43, 2, 6); }
+    }, 130, y0); nearSea_low('day');
+    if (away) put(FLY[Math.floor(T() * 9) % 2], 330 + (t - 7) * 130, y0 + 90 - (t - 7) * 52);
   } },
 };
 // (a strip of sea across the foot of a close-up)

@@ -214,7 +214,13 @@ function older(frames) {
   return { ...frames, stand: legs(frames.stand), step1: legs(frames.step1), step2: legs(frames.step2), balance: legs(frames.balance), jump: legs(frames.jump.slice(0, -1)), sit };
 }
 const FRAMES4 = older(FRAMES);
-const framesNow = () => ((S.as ?? (S.level ? S.level.age : 3)) >= 4 ? FRAMES4 : FRAMES);   // (S.as: younger or older than the level has them, in a journey: story.js)
+// From five, a pixel more of back and of leg: the head is smaller for the rest of them.
+function older5(frames) {
+  const grow = (rows, at) => [...rows.slice(0, at), rows[at], ...rows.slice(at)], leg = rows => grow(rows, rows.length - 4), back = rows => grow(rows, HEAD.length + 4);
+  return { ...frames, stand: leg(back(frames.stand)), step1: leg(back(frames.step1)), step2: leg(back(frames.step2)), balance: leg(back(frames.balance)), jump: back(frames.jump), sit: back(frames.sit), dig1: back(frames.dig1), dig2: back(frames.dig2) };
+}
+const FRAMES5 = older5(FRAMES4);
+const framesNow = () => { const age = S.as ?? (S.level ? S.level.age : 3); return age >= 5 ? FRAMES5 : age >= 4 ? FRAMES4 : FRAMES; };   // (S.as: younger or older than the level has them, in a journey: story.js)
 const HOLDS_BUCKET = ['stand', 'step1', 'step2', 'balance', 'sit'];   // frames where the bucket hangs upright (it can show water, and the shovel)
 // The red shovel, standing in the bucket blade up (its handle down inside): drawn from the rim up.
 const SPADE = ['RR.', 'RRR', 'RRr', '.Rr', '.R.', '.R.'];
@@ -238,13 +244,15 @@ const MARKS = {
   'chin-cut':     [[-2, 18, P.red, 2, 1]],                               // just fallen on the shovel
   'chin-plaster': [[-2, 17, P.pink, 3, 1], [-1, 17, P.rose, 3, 1], [-2, 18, P.red, 1, 1]],   // Kaa-chan's strawberry plaster (its rose edge keeps it from vanishing into the skin)
   'chin-scar':    [[-2, 18, P.tan, 2, 1]],                               // what's left of it
+  'rope':         [[6, 8, P.red, 2, 1, true], [7, 8, P.rust, 2, 1, true], [6, 24, P.red, 2, 1, true], [2, 2, P.red, 1, 3, true]],   // the rope's burn round the wrist (on skin only)
   'asleep':       [[-7, 15, 'S', 2, 3], [-7, 21, 'S', 2, 3], [-5, 14, 'E', 3, 1], [-5, 21, 'E', 3, 1]],   // eyes shut: painted out with skin, and a short lid line put in low down
   'pout':         [[-3, 18, 'S', 2, 1], [-3, 17, 'm', 1, 1], [-4, 18, 'm', 2, 1], [-3, 20, 'm', 1, 1]],   // the lip wobbling (every other frame)
 };
 // Which permanent marks to draw, from S.marks (the chin shows its plaster in Level 1 and its scar
 // after), and the shovel Ichigo carries in the bucket.
 export function markIds() {
-  const ids = ['shovel'];
+  const n = S.level ? S.level.number : 1, ids = n > 5 || S.noShovel ? [] : ['shovel'];   // (it sinks in Level 5)
+  if (S.marks.has('rope') && n >= 5) ids.push('rope');
   if (S.marks.has('chin')) ids.push(S.level && S.level.number === 1 ? 'chin-plaster' : 'chin-scar');
   return ids;
 }
@@ -304,7 +312,7 @@ function windswept(rows, dx, dy) {
 const cache = new Map();
 // marks: ids from MARKS to paint on, plus 'water' for a full bucket.
 function picture(frame, scars, [hx, hy] = [0, 0], marks = []) {
-  const FR = framesNow(), key = [FR === FRAMES4, frame, scars, hx, hy, marks.join('+')].join();
+  const FR = framesNow(), key = [FR === FRAMES5 ? 5 : FR === FRAMES4 ? 4 : 3, frame, scars, hx, hy, marks.join('+')].join();
   if (cache.has(key)) return cache.get(key);
   const rows = windswept(FR[frame], hx, hy);
   const collar = rows.findIndex(r => r.includes('W'));
@@ -316,10 +324,10 @@ function picture(frame, scars, [hx, hy] = [0, 0], marks = []) {
       const y = collar + dr + dy, x = c + dx;
       if (grid[y] && grid[y][x]) grid[y][x] = col === null ? null : (SP[col] || col);
     }
-  for (const id of marks) for (const [dr, c, col, w, h] of MARKS[id] || [])
+  for (const id of marks) for (const [dr, c, col, w, h, skin] of MARKS[id] || [])
     for (let dy = 0; dy < h; dy++) for (let dx = 0; dx < w; dx++) {
       const y = collar + dr + dy, x = c + dx;
-      if (grid[y] && grid[y][x]) grid[y][x] = SP[col] || col;
+      if (grid[y] && grid[y][x] && (!skin || grid[y][x] === SP.S || grid[y][x] === SP.s)) grid[y][x] = SP[col] || col;
     }
   if (HOLDS_BUCKET.includes(frame)) {
     const y = rows.findIndex(r => r.includes('yyyyy')), x0 = rows[y].indexOf('yyyyy'), x1 = rows[y].lastIndexOf('y');   // the bucket's rim

@@ -22,13 +22,13 @@ const Y = z => Math.round(yOf(z) / PIXEL + TOP_PX);         // a height, in pixe
 // --- little pictures (letter grids, like sprite.js) ---
 const C = { R: P.red, r: P.rust, o: P.dawn, w: P.white, K: P.outline, T: P.tan, p: P.pink, b: P.wood, m: P.mist, a: P.aqua };
 const pic = rows => outline(rows.map(r => [...r].map(ch => (ch === '.' ? null : C[ch]))));
-const CRAB = [   // two walking frames
+export const CRAB = [   // two walking frames (Level 5's rain washes one aboard, too)
   ['RR..........RR', 'R.R..w..w..R.R', '.RR..K..K..RR.', '..R.oRRRRo.R..', '...RRRRRRRR...', '..rRRRRRRRRr..', '.r.rRRRRRRr.r.', 'r..r.rrrr.r..r'],
   ['.RR........RR.', 'R.R..w..w..R.R', 'RR...K..K...RR', '..R.oRRRRo.R..', '...RRRRRRRR...', '.rrRRRRRRRRrr.', 'r..rRRRRRRr..r', '..r..rrrr..r..'],
 ].map(pic);
 const SHELL = pic(['..Tbp..', '.TpbTp.', 'TpTbTbT', 'TbTKKpT', '.TpwwT.', '..TTT..']);
 // the crest of a wave rolling in: foam curling over to the left, claws reaching (after Hokusai's)
-const CREST = scale2x([
+export const CREST = scale2x([
   '.......wwwww......',
   '....wwwwmmmwww....',
   '..wwwmmaaammwww...',

@@ -225,3 +225,28 @@ export const LIGHT = {
   cuts: 3,            // cuts to part the rope
   paddle: 92, drift: 10,
 };
+
+// The Storm (Level 5, storm.js). The level's own counts are in levels/level05.json.
+export const STORM = {
+  half: 150, least: 88, section: 34,   // the raft: half its length; the shortest it gets; how much goes with each log lost
+  walk: 150, run: 240, accel: 1500, stop: 1300, slide: 520,   // Ichigo on it; how hard a tilted deck pulls them down it
+  jump: 520, gravity: 1900,
+  tip: .15, follow: .7,   // how far Ichigo's weight tips it; how much of a wave's slope it takes
+  reach: 34,              // how near the mast, or a knot, is near enough
+  grips: 3,               // how many times, in each part, Ichigo catches the edge of the raft instead of going overboard; and how long until they're back up
+  climb: 1.1,
+  lean: .3,               // how far toward a steep wave is far enough (of the raft's half)
+  // sailing: drifting; with the sail full; how often a puff of wind comes, how wide, how fast it passes
+  sail: { drift: 38, full: 205, every: 3.6, wide: 330, speed: 250 },
+  // gusts: seconds between; warning before; how long one blows; how hard; how many in the first part
+  gust: { gap: 4.4, warn: 2, blow: 1.4, push: 1750, count: 4 },
+  knot: { time: 10, tie: .6 },   // seconds until a loose log is lost; how long tying takes
+  // water on the deck: how fast the rain fills it (a full raft goes under), how much each scoop takes, how long one takes
+  water: { rain: .032, scoop: .18, time: .42, wave: .17 },
+  rainGap: 7.5,           // seconds between gusts in the rain
+  // what washes aboard in the rain: how hard the tilt slides it, how fast it comes; and each one's half-width and height
+  creature: { slide: 620, push: 250, size: { crab: [11, 13], bream: [12, 12], puffer: [11, 15], octopus: [12, 19], turtle: [19, 16], tuna: [24, 17] } },
+  // the big waves: how often; from the lightning until it's here
+  wave: { every: 7, warn: 2.4, speed: 330 },
+  swim: { speed: 92, drift: 17, kick: 150, kicks: .05, tired: .03, under: .13, rest: .42, every: 4.4, wave: 300, hit: .2 },
+};

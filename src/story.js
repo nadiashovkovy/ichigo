@@ -10,7 +10,7 @@ import { S } from './state.js';
 import { lg, lo, pixelSpace, dither } from './pixel.js';
 import { pixelText, LETTER, LINE } from './text.js';
 import { drawSkip, onSkip } from './cards.js';
-import { seaSound, playLullaby, playWash, playMunch, playCry, playCut, playSplash } from './audio.js';
+import { seaSound, playLullaby, playWash, playMunch, playCry, playCut, playSplash, playClick } from './audio.js';
 import { SHOTS } from './storyart.js';
 
 // For each level: its pictures, in order. [picture, caption, how long it stays up at least (seconds), sounds]. A sound: [when, what].
@@ -48,6 +48,12 @@ const STORIES = {
     ['song', 'IT HAS BEEN MORE THAN A YEAR. ICHIGO TRIES TO REMEMBER WHAT COLOR THE CURTAIN IN THE DOORWAY WAS, AT HOME.', 10.5, []],
     ['ashore', 'THE RAFT RUNS ONTO THE ROCKS ACROSS FROM A LIGHTHOUSE. ITS LIGHT HAS GONE OUT. THERE IS A SHED.', 8, [[.4, () => playWash(.5)]]],
     ['start4', 'ICHIGO SLEEPS ON A SHELF, OUT OF THE WET.', 5, []],
+  ],
+  5: [
+    ['leaving', 'BY MORNING THE LIGHTHOUSE IS OUT OF SIGHT.', 7, []],
+    ['logs', 'ICHIGO TIES ON EVERY LOG THAT FLOATS BY. THE RAFT GETS BIGGER, AND SO DOES ICHIGO. ICHIGO IS FIVE.', 11.5, [[2.2, () => playClick(.8)], [4.9, () => playClick(.8)], [7.6, () => playClick(.8)]]],
+    ['bird', 'A BIRD RIDES ON THE RAFT FOR FOUR DAYS. ICHIGO GIVES IT HALF OF EVERY FISH.', 9.5, [[2.4, () => playMunch()], [4.4, () => playMunch()]]],
+    ['start5', 'THEN IT FLIES EAST, AND THE WIND GOES THE SAME WAY.', 7, []],
   ],
 };
 

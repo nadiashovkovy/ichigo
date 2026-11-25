@@ -15,6 +15,7 @@ export const S = {
   learned: [],      // what Ichigo has learned about the world, in the order learned ('kaachan', 'sea', ...): see LEARNED in icons.js
   still: null,      // a level drawn as a picture in a journey (story.js): 'start', 'end', or 'asleep'. cut: the level begins straight from such a picture
   cut: false,
+  noShovel: false,  // the red shovel has gone down (Level 5)
   as: null,         // how old to draw Ichigo, if not the level's age (story.js)
   marks: new Set(), // permanent marks on Ichigo's body ('chin', ...): see MARKS in sprite.js
   things: new Set(),// what Ichigo has found and kept ('shell', ...): see things.js

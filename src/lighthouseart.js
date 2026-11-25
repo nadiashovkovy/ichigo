@@ -324,8 +324,8 @@ function ichigo(ix, feet, sitting) {
 }
 const TALL = grid(['..bb..', '..OO..', '..ee..', '.eeee.', '.eWee.', 'eeWeee', 'eeWeee', 'eeeeee', 'eeeeee', 'eeeeee', 'eeeeee', '.eeee.']);
 const CAT = { asleep: grid(['..........O...O..', '..OOOOOOO.OOOOO..', '.OOTOOTOOOOOOOOO.', 'OOTOOTOOOOOkOOkO.', 'OOOOOOOOOOOOpOOO.', 'OTTTOOOOOOOOOOO..', '.OOOTTTTTTTOOOO..', '..OOOOOOOOOOOO...']), up: grid(['...............O..O', '...............OOOO', 'O.............OkOOkO', 'O..OOOOOOOOOOOOOOpOO', 'OO.OTOOTOOTOOOOOOOO.', '.OOOTOOTOOTOOOOOOO..', '..OOOOOOOOOOOOOO....', '...OOTTTTTTTOOO.....', '...O.O......O.O.....', '...O.O......O.O.....', '...O.O......O.O.....']) };
-const GULL = { asleep: grid(['....hhhhh....', '..hhWWWWWhh..', '.hWWWWWWWWWh.', 'hWWWHHHHWWWWH', '.HHHHHHHHHHH.', '...o....o....']), up: grid(['.....WWW......', '....WWkWoo....', '....WWWW......', '.hhWWWWWW.....', 'HHHhWWWWW.....', '..HHhWWW......', '....o.o.......']) };
-const FLY = [grid(['H...........H', '.HW.......WH.', '..WWW.W.WWW..', '....WWWWW....', '......WkWoo..']), grid(['.....W.W.....', '....WWWWW....', '..WWWWWkWoo..', 'HWW......WWH.'])];
+export const GULL = { asleep: grid(['....hhhhh....', '..hhWWWWWhh..', '.hWWWWWWWWWh.', 'hWWWHHHHWWWWH', '.HHHHHHHHHHH.', '...o....o....']), up: grid(['.....WWW......', '....WWkWoo....', '....WWWW......', '.hhWWWWWW.....', 'HHHhWWWWW.....', '..HHhWWW......', '....o.o.......']) };
+export const FLY = [grid(['H...........H', '.HW.......WH.', '..WWW.W.WWW..', '....WWWWW....', '......WkWoo..']), grid(['.....W.W.....', '....WWWWW....', '..WWWWWkWoo..', 'HWW......WWH.'])];
 // The cords, and the bells they ring: a post with a cord to pull, and a line running back to a bell on its own post.
 function bells() {
   const post = (x, y) => { lg.fillStyle = P.outline; lg.fillRect(x - 3, y - 64, 7, 65); lg.fillStyle = P.wood; lg.fillRect(x - 2, y - 63, 5, 63); lg.fillStyle = P.ochre; lg.fillRect(x - 2, y - 63, 1, 63); };
