@@ -2,7 +2,6 @@
   "number": 2,
   "name": "The Tide Comes In",
   "age": 3,
-  "learns": ["kani"],
   "length": 4480,
   "sea": { "base": 3, "grow": 0, "growOver": 5200 },
   "fuji": { "view": "night", "x": 170 },

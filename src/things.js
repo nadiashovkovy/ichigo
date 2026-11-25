@@ -2,16 +2,16 @@
 // things.js — what Ichigo carries, and what it tells them about the way home. A panel, opened with Tab
 // (or I, or the bucket in the bottom-left corner); the game waits while it's up.
 //   • the things Ichigo has found, one by one, each with a plain line about it;
-//   • the words they've learned;
+//   • what they've learned about the world;
 //   • THE WAY HOME: Ichigo's own drawing. Each thing from home adds the piece of it that it reminds
 //     them of; pieces still missing are only dots. The row of islands along the bottom is the levels.
 // A new level's things only need adding to THINGS (and, if they say something about home, to PIECES).
 // ============================================================================
-import { P, LW, LH, ICHIGO_SPEAKS } from './config.js';
+import { P, LW, LH } from './config.js';
 import { S } from './state.js';
 import { lg, pixelSpace, scale2x } from './pixel.js';
 import { pixelText, LETTER, LINE } from './text.js';
-import { drawIcon, iconSize, wordIcon } from './icons.js';
+import { drawIcon, iconSize, LEARNED } from './icons.js';
 
 const C = { K: P.outline, Y: P.gold, y: P.ochre, R: P.red, r: P.rust, w: P.white, f: P.foam, b: P.wood, B: P.brown, a: P.aqua, o: P.ocean, n: P.navy, T: P.tan, t: P.tanD, p: P.pink, g: P.teal, s: P.sea, h: P.grey1, m: P.mist, d: P.deep };
 // Pictures: letter grids. Small ones lie on the sand; the panel shows them doubled.
@@ -80,10 +80,10 @@ export function drawThings(inLevel) {
   const th = THINGS[f[V.sel]], ty = PY + 40 + 3 * (CELL + 4) + 8;
   pixelText(th.name, PX + 16, ty, P.gold);
   wrap(th.text, Math.floor((PW - 32) / LETTER)).forEach((line, i) => pixelText(line, PX + 16, ty + LINE * (i + 1), P.mist));
-  // the words, along the bottom
+  // what Ichigo has learned, along the bottom
   let x = PX + 16; const wy = PY + PH - 36, s = iconSize(true);
-  if (ICHIGO_SPEAKS) pixelText('WORDS:', x, wy + 8, P.grey1); x += 7 * LETTER;
-  if (ICHIGO_SPEAKS) for (const w of S.words) { drawIcon(lg, wordIcon(w), x, wy); x += s + 6; }
+  pixelText('LEARNED:', x, wy + 8, P.grey1); x += 9 * LETTER;
+  for (const id of S.learned) { drawIcon(lg, LEARNED[id].icon, x, wy); x += s + 6; }
   pixelText('TAB: CLOSE', PX + PW - 44, wy + 8, P.grey1, 'right');
   drawWayHome(slot(COLS - 1).x + CELL + 20, PY + 14);
 }

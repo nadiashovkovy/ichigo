@@ -3,7 +3,7 @@
 // Each icon is a 12×12 letter grid, the same idea as Ichigo's sprite: one letter per colour. An ink
 // outline is added around it, and it's drawn at the screen's double detail with Scale2x (like the
 // HUD and the gulls), or at single size for something said small.
-// Greyed, every colour turns to one of two greys: a word remembered, or said to no one.
+// Greyed, every colour turns to one of two greys: something remembered, or said to no one.
 // ============================================================================
 import { P } from './config.js';
 import { scale2x } from './pixel.js';
@@ -134,9 +134,29 @@ ICONS.kani = [   // a crab, claws up
   '..r......r..',
 ];
 
-ICONS.uchi = ICONS.house;   // home
-// Which picture stands for a word Ichigo has learned.
-export const wordIcon = w => ({ 'kaa-chan': 'kaachan', ichigo: 'strawberry' }[w] || w);
+ICONS.lighthouse = [   // the lighthouse: its lamp an eye
+  '.....RR.....',
+  '....RRRR....',
+  '...RRRRRr...',
+  '...YYKKYY...',
+  '...YYKKYY...',
+  '..bbbbbbbb..',
+  '....wwwa....',
+  '....RRRr....',
+  '....wwwa....',
+  '...wwwwaa...',
+  '...RRRRrr...',
+  '..wwwwwaaa..',
+];
+
+// What Ichigo learns about the world: the level it's learned in, and the picture that stands for it.
+export const LEARNED = {
+  kaachan: { level: 1, icon: 'kaachan' },
+  sea: { level: 1, icon: 'umi' },
+  crab: { level: 2, icon: 'kani' },
+  home: { level: 3, icon: 'house' },
+  lighthouse: { level: 4, icon: 'lighthouse' },
+};
 
 ICONS.plum = [   // a plum, a leaf on its stalk
   '......b.....',
@@ -195,9 +215,6 @@ ICONS.paddle = [
   '.bbb........',
 ];
 
-// The musical note shown beside a word as it's spoken (where Ichigo's voice will go, later).
-export const NOTE = ['...KKK', '...KKK', '...K..', '...K..', '.KKK..', 'KKKK..', '.KK...'];
-
 // Add a one-letter outline (K) around a letter grid, padding it by one.
 function outlined(rows) {
   const w = rows[0].length + 2, g = ['.'.repeat(w), ...rows.map(r => '.' + r + '.'), '.'.repeat(w)];
@@ -220,7 +237,7 @@ export const iconSize = big => (12 + 2) * (big ? 2 : 1);
 export function drawIcon(g, name, x, y, { grey = false, big = true } = {}) {
   drawLetters(g, picture(name, big), x, y, grey);
 }
-export function drawLetters(g, rows, x, y, grey = false) {
+function drawLetters(g, rows, x, y, grey = false) {
   rows.forEach((row, r) => [...row].forEach((ch, c) => {
     if (ch === '.') return;
     const col = IC[ch];

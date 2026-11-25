@@ -206,9 +206,6 @@ export const PLUM = {
   crab: 30,           // how fast the crabs walk
 };
 
-// Ichigo is mute: they never say a word, in any level, and learn none. (true: one word a level, as first built.)
-export const ICHIGO_SPEAKS = false;
-
 // The Lighthouse (Level 4, lighthouse.js). Positions are in levels/level04.json.
 export const LIGHT = {
   sea: 470,

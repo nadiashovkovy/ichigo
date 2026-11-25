@@ -12,7 +12,7 @@ export const S = {
   checkpoint: null, // the last carp streamer reached
   levelT: 0,        // seconds since the level started (not reset by a new tomorrow)
   // What Ichigo carries from level to level (kept in the save, see save.js):
-  words: [],        // the words Ichigo has learned, in the order learned ('kaa-chan', ...)
+  learned: [],      // what Ichigo has learned about the world, in the order learned ('kaachan', 'sea', ...): see LEARNED in icons.js
   marks: new Set(), // permanent marks on Ichigo's body ('chin', ...): see MARKS in sprite.js
   things: new Set(),// what Ichigo has found and kept ('shell', ...): see things.js
   thingsOpen: false, newThing: false,   // the panel of Ichigo's things is up (the game waits); something in it hasn't been looked at yet

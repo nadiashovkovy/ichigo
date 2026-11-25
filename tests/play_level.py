@@ -147,7 +147,7 @@ async def play_tide(browser):
     async def open_level(mode):
         ctx = await browser.new_context(viewport={'width': 960, 'height': 540})
         await ctx.add_init_script(FAST_CLOCK)
-        await ctx.add_init_script("localStorage.setItem('ichigo.save', JSON.stringify({ words: [], marks: ['chin'], tomorrows: 0, done: [1], seenWave: true }))")
+        await ctx.add_init_script("localStorage.setItem('ichigo.save', JSON.stringify({ marks: ['chin'], tomorrows: 0, done: [1], seenWave: true }))")
         page = await ctx.new_page(); page.on('pageerror', lambda e: errors.append(str(e)))
         await page.goto(f'http://127.0.0.1:{PORT}/index.html'); await page.wait_for_timeout(2000)
         await page.evaluate(f"window._mode = '{mode}'"); await page.add_script_tag(content=TIDE_BOT)
@@ -167,8 +167,8 @@ async def play_tide(browser):
     await page.evaluate("Object.assign(ichigo.tide, { fuel: 1, set: 1, wave: 0, x: 427 + 340 })")
     if not await until(page, "N.phase === 'under'", 'tide_under', 40): notes.append('Level 2: a wave far out did not take Ichigo')
     await until(page, "S.scene === 'tide' && S.deaths === 1 && N.set === 0")
-    await page.evaluate("(N => { N.crabs = [{ side: 'right', x: N.x, dir: 1, t: 0, hide: 0 }]; })(ichigo.tide)")   # a crab pinches: Ichigo cries, and learns its name
-    if not await until(page, "N.cry > .5", 'tide_pinch', 10): notes.append('Level 2: a crab did not pinch Ichigo')
+    await page.evaluate("(N => { N.crabs = [{ side: 'right', x: N.x, dir: 1, t: 0, hide: 0 }]; })(ichigo.tide)")   # a crab pinches: Ichigo cries, and learns what they are
+    if not await until(page, "N.cry > .5 && S.learned.includes('crab')", 'tide_pinch', 10): notes.append('Level 2: a crab did not pinch Ichigo')
     await ctx.close()
 
     ctx, page = await open_level('walk')   # walking the sandbar is too slow
@@ -187,7 +187,7 @@ async def play_tide(browser):
     report['save'] = json.loads(await page.evaluate("localStorage.getItem('ichigo.save')"))
     if report['scene'] != 'end': notes.append('Level 2: the bot did not finish')
     s = report['save']
-    if s['words'] or 2 not in s['done'] or 'shell' not in s['things']: notes.append('Level 2: the save is missing the shell or the level')
+    if 'crab' not in s['learned'] or 2 not in s['done'] or 'shell' not in s['things']: notes.append('Level 2: the save is missing the crab, the shell or the level')
     await ctx.close()
     return notes, errors, report
 
@@ -248,7 +248,7 @@ async def play_plum(browser):
     async def open_level(mode):
         ctx = await browser.new_context(viewport={'width': 960, 'height': 540})
         await ctx.add_init_script(FAST_CLOCK)
-        await ctx.add_init_script("localStorage.setItem('ichigo.save', JSON.stringify({ words: [], marks: ['chin'], things: ['shell'], tomorrows: 0, done: [1, 2], seenWave: true }))")
+        await ctx.add_init_script("localStorage.setItem('ichigo.save', JSON.stringify({ marks: ['chin'], things: ['shell'], tomorrows: 0, done: [1, 2], seenWave: true }))")
         page = await ctx.new_page(); page.on('pageerror', lambda e: errors.append(str(e)))
         await page.goto(f'http://127.0.0.1:{PORT}/index.html'); await page.wait_for_timeout(2000)
         await page.evaluate(f"window._mode = '{mode}'"); await page.add_script_tag(content=PLUM_BOT)
@@ -280,7 +280,7 @@ async def play_plum(browser):
     report['save'] = json.loads(await page.evaluate("localStorage.getItem('ichigo.save')"))
     if report['scene'] != 'end': notes.append('Level 3: the bot did not finish')
     s = report['save']
-    if s['words'] or 3 not in s['done'] or 'rope' not in s['things'] or 'paddle' not in s['things'] or 'blanket' not in s['things']: notes.append('Level 3: the save is missing the rope, the paddle, the blanket or the level')
+    if 'home' not in s['learned'] or 3 not in s['done'] or 'rope' not in s['things'] or 'paddle' not in s['things'] or 'blanket' not in s['things']: notes.append('Level 3: the save is missing home, the rope, the paddle, the blanket or the level')
     await ctx.close()
     return notes, errors, report
 
@@ -324,7 +324,7 @@ async def play_light(browser):
     async def open_level(mode):
         ctx = await browser.new_context(viewport={'width': 960, 'height': 540})
         await ctx.add_init_script(FAST_CLOCK)
-        await ctx.add_init_script("localStorage.setItem('ichigo.save', JSON.stringify({ words: [], marks: ['chin'], things: ['rope', 'paddle', 'blanket'], tomorrows: 0, done: [1, 2, 3], seenWave: true }))")
+        await ctx.add_init_script("localStorage.setItem('ichigo.save', JSON.stringify({ marks: ['chin'], things: ['rope', 'paddle', 'blanket'], tomorrows: 0, done: [1, 2, 3], seenWave: true }))")
         page = await ctx.new_page(); page.on('pageerror', lambda e: errors.append(str(e)))
         await page.goto(f'http://127.0.0.1:{PORT}/index.html'); await page.wait_for_timeout(2000)
         await page.evaluate("import('/src/lighthouse.js').then(m => { window._lh = m; })")
@@ -349,7 +349,7 @@ async def play_light(browser):
     ctx, page = await open_level('play')
     for js, shot in [("H.check === -1 && H.x > 400 && H.eye.mode === 'sweep' && Math.abs(H.eye.x - H.x) < 200", 'light_room'), ("H.check < 2 && H.x > 775 && H.x < 820 && H.hide", 'light_tunnel'), ("H.check >= 0 && H.x > 1000", 'light_workshop'), ("H.check >= 1 && H.x > 1800", 'light_kitchen'), ("H.shut.size === 2", 'light_loft'),
                      ("H.check >= 3 && H.danger", 'light_beam'), ("H.check >= 5 && H.x > 5060 && !H.on", 'light_stones'), ("H.x > 6400 && window._lh.beam().on", 'light_hull'), ("H.x > 7400 && H.eye.mode === 'hold'", 'light_flats'), ("H.x > 8900 && H.danger", 'light_headland'),
-                     ("H.cuts >= 1 && H.danger", 'light_cut'), ("H.phase === 'away' && H.t > 2.5", 'light_away'), ("H.phase === 'paddle' && H.hide && H.danger", 'light_paddle'), ("H.phase === 'paddle' && H.sheltered", 'light_stack')]:
+                     ("H.cuts >= 1 && H.danger", 'light_cut'), ("H.phase === 'away' && H.t > 2.5", 'light_away'), ("H.phase === 'paddle' && H.hide && H.danger", 'light_paddle'), ("H.phase === 'paddle' && H.sheltered", 'light_stack'), ("H.phase === 'gone' && H.t > 1.2", 'light_learned')]:
         if not await until(page, js, shot, 200): break
     await until(page, "S.scene === 'end' && S.sceneT > 3", 'light_end', 150)
     report = await page.evaluate("({ scene: ichigo.S.scene, deaths: ichigo.S.deaths, seconds: Math.round(ichigo.S.levelT), check: ichigo.light.check, x: Math.round(ichigo.light.x), phase: ichigo.light.phase })")
@@ -357,7 +357,7 @@ async def play_light(browser):
     if report['scene'] != 'end': notes.append('Level 4: the bot did not finish')
     s = report['save']
     if 4 not in s['done']: notes.append('Level 4: the save is missing the level')
-    if s['words']: notes.append('Ichigo learned a word, and they are mute')
+    if 'lighthouse' not in s['learned']: notes.append('Level 4: the lighthouse was not learned')
     await ctx.close()
     return notes, errors, report
 
@@ -381,7 +381,7 @@ async def play(browser):
     shot = lambda name: page.screenshot(path=f'{SHOTS}/{name}.png')
     ctx = await browser.new_context(viewport={'width': 960, 'height': 540})   # (a fresh context: an empty save)
     if SKIP_BEACH:
-        await ctx.add_init_script("localStorage.setItem('ichigo.save', JSON.stringify({ words: [], marks: [], tomorrows: 0, seenWave: true }))")
+        await ctx.add_init_script("localStorage.setItem('ichigo.save', JSON.stringify({ marks: [], tomorrows: 0, seenWave: true }))")
     page = await ctx.new_page()
     errors, notes = [], []
     page.on('pageerror', lambda e: errors.append(str(e)))
@@ -482,7 +482,7 @@ async def main():
         print('Save:', r['save'])
         if not SKIP_BEACH:
             s = r['save'] or {}
-            if s.get('words') or s.get('marks') != ['chin']: print("Problem: expected no words (Ichigo is mute) and marks ['chin']"); ok = False
+            if s.get('learned') != ['kaachan', 'sea'] or s.get('marks') != ['chin']: print("Problem: expected learned ['kaachan', 'sea'] and marks ['chin']"); ok = False
         if r['errors'] or r['notes']: ok = False
     for name, got in (('Level 2', tide), ('Level 3', plum), ('Level 4', light)):
         if not got: continue

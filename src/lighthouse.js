@@ -15,10 +15,10 @@
 import { W, MOVE, BEACH, LIGHT, P } from './config.js';
 import { S, parts } from './state.js';
 import { input, inLeft, inRight, inRun, inUse, inJump } from './input.js';
-import { clearBubbles } from './bubbles.js';
+import { think, clearBubbles } from './bubbles.js';
 import { showCards } from './cards.js';
 import { updateParts } from './player.js';
-import { keepThing } from './save.js';
+import { learn, keepThing } from './save.js';
 import { seaSound, playWash, playClick, playFall, playBell, playSquawk, playStep, playSmash, playMeow, playSeen, playCut, playBolt, playThud } from './audio.js';
 
 const CARDS = ['THE RAFT WASHES UP BELOW A LIGHTHOUSE. ICHIGO SLEEPS IN A SHED, ON A SHELF, OUT OF THE WET.', 'IN THE NIGHT THE TIDE TAKES THE RAFT. ITS ROPE CATCHES IN THE BOATHOUSE, ACROSS THE ROCKS.', 'NO ONE LIVES HERE NOW. BUT THE LAMP IS LIT, AND IT LOOKS FOR WHATEVER MOVES.', "GET BACK TO THE RAFT. DON'T LET THE LIGHT SEE YOU."];
@@ -319,6 +319,6 @@ function updatePaddle(dt, win) {
     H.danger = lit(); H.sheltered = behind();
     if (H.danger && !H.hide && !H.sheltered) { if (H.seen === 0) playSeen(); H.seen = Math.min(1, H.seen + dt / LIGHT.water.seen); } else H.seen = Math.max(0, H.seen - dt * 1.2);
     if (H.seen >= 1) { caught(); return; }
-    if (H.raftX > L.lee) { H.phase = 'gone'; H.t = 0; H.hide = false; H.danger = false; H.hintT = 0; }
+    if (H.raftX > L.lee) { H.phase = 'gone'; H.t = 0; H.hide = false; H.danger = false; H.hintT = 0; think('lighthouse', 3.4); learn('lighthouse'); }   // (out of its reach: the eye shuts, and Ichigo knows what it was)
   } else if (H.raftX > L.length + 90 && !H.done) { H.done = true; parts.length = 0; clearBubbles(); win(); }
 }
