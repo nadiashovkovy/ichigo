@@ -12,7 +12,7 @@
 import { W, H, TOP, LW, TOP_PX, PIXEL, P, MOVE, BEACH } from './config.js';
 import { S, parts } from './state.js';
 import { lg, tg, topC, beginWorld, beginTop, pixelSpace, quantize } from './pixel.js';
-import { input, inLeft, inRight, inRun, inUse, keys } from './input.js';
+import { input, inLeft, inRight, inRun, inUse } from './input.js';
 import { paintWaveAlone, waveLoop } from './greatwave.js';
 import { drawScenery, drawChartSea, CELL } from './art.js';
 import { drawSand, drawBeachThings, drawBeachFront } from './beachart.js';
@@ -21,19 +21,16 @@ import { say, think, drawBubbles, clearBubbles } from './bubbles.js';
 import { humming, seaSound, waveRumble, waveCrash, silence } from './audio.js';
 import { save, learn, gainMark } from './save.js';
 import { updateParts } from './player.js';
-import { showCards } from './cards.js';
+import { showCards, cardsActive, drawSkip } from './cards.js';
 
-// The story cards (cards.js): at the start of the beach, over the scene, and on the white after the wave.
+// The story cards (cards.js): what to do, at the start of the beach (the story before it is a journey's: story.js); and on the white after the wave.
 const INTRO_CARDS = [
-  'ICHIGO LIVES BY THE SEA WITH KAA-CHAN, THEIR MOTHER, IN A HOUSE WITH A STRAW ROOF.',
-  'EVERY EVENING, WHILE KAA-CHAN MENDS THE NETS AND HUMS, ICHIGO PLAYS IN THE SAND WITH A BUCKET AND SHOVEL.',
   '<- -> WALK.  SPACE: HOP.  DOWN ARROW: DIG, FILL THE BUCKET, POUR IT OUT.  DIG A HOLE BY THE SANDCASTLE, THEN FILL IT WITH SEA WATER.',
 ];
 export const WAKE_CARDS = [
   'THE SEA CAME FOR THE VILLAGE, AND TOOK EVERYTHING WITH IT.',
-  'ICHIGO WAKES ON A PLANK IN THE OPEN SEA. FAR OFF, A STONE LANTERN SHINES ON AN ISLAND.',
-  'JUMP FROM WRECK TO WRECK TO REACH IT. DON\'T STAND STILL: WET DECKS TILT, AND ICHIGO SLIDES.',
 ];
+export const SEA_CARDS = ['A STONE LANTERN SHINES ON AN ISLAND. JUMP FROM WRECK TO WRECK TO REACH IT. DON\'T STAND STILL: WET DECKS TILT, AND ICHIGO SLIDES.'];   // (after the journey: story.js)
 
 // Everything about the beach as it plays out. (Exposed on window.ichigo.beach for the test bot.)
 export const B = {};
@@ -68,7 +65,12 @@ function action() {
   return null;
 }
 
-export function updateBeach(dt, endBeach) {
+// skip: SKIP was pressed. Once, it goes straight to the wave; and then, once the wave has been seen before, on past it.
+export function updateBeach(dt, endBeach, skip) {
+  if (skip && B.phase !== 'recede') {
+    Object.assign(B, { phase: 'recede', t: 0, seated: false, tripped: true, cut: true, plaster: true, pout: false, hole: true, holeWater: 1, full: false, pours: 3, v: 0, moving: false, y: 0, vy: 0, air: false });
+    gainMark('chin'); learn('kaachan'); clearBubbles(); skip = false;
+  }
   B.t += dt;
   const control = B.phase !== 'trip';
   const dir = control ? (inRight() ? 1 : 0) - (inLeft() ? 1 : 0) : 0;
@@ -142,8 +144,8 @@ export function updateBeach(dt, endBeach) {
     if (B.waveT > 1.4 && !B.rumbled) { B.rumbled = true; waveRumble(); }   // the wave rising: a rumble building
     if (B.waveT > 4.4 && !B.crashed) { B.crashed = true; waveCrash(); }     // and the crash
     if (B.waveT > 1.4 && !dir) B.face = 1;                                       // Ichigo faces the wave
-    const skip = B.canSkip && t > 2.5 && keys.Enter;   // (later playthroughs only; not Space, which hops)
-    if (B.waveT >= 5 || skip) { S.seenWave = true; save(); silence(); clearBubbles(); endBeach(skip); return; }   // cut to silence
+    const past = B.canSkip && skip;   // (later playthroughs only)
+    if (B.waveT >= 5 || past) { S.seenWave = true; save(); silence(); clearBubbles(); endBeach(past); return; }   // cut to silence
   }
 
   // Kaa-chan hums inside as she mends (louder the nearer Ichigo is to the house), until the sea pulls back
@@ -264,6 +266,7 @@ export function drawBeachScene() {
     kaachan: [X(BEACH.kaachan), Math.round(356 / PIXEL + TOP_PX)],   // (the top of the doorway)
   });
 
+  if (S.scene === 'beach' && !cardsActive() && (B.phase !== 'recede' || B.canSkip)) drawSkip('ESC: SKIP');
   if (t > 4.4) {   // the wave crashes, and the sea climbs over everything, all the way to the top of the screen
     beginTop(); const f = Math.min(1, (t - 4.4) / 0.6), wy = H + 30 - f * (H + TOP + 90);
     drawGreatWave(tg, t);   // the wave pitching forward,

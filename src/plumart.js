@@ -32,7 +32,7 @@ function put(g, gr, cx, bottom, flip = false) {
   gr.forEach((row, r) => row.forEach((c, i) => { if (c) { g.fillStyle = c; g.fillRect(x0 + (flip ? w - 1 - i : i), y0 + r, 1, 1); } }));
 }
 const FRUIT = grid(['..bG.', '.VVb.', 'VlpVv', 'VpVVv', 'VVVVv', '.VVv.']);
-const ORANGE = grid(['..Gg.', '.dGd.', 'dooddr', 'dodddr', 'ddddrr', '.dddr.']);
+export const ORANGE = grid(['..Gg.', '.dGd.', 'dooddr', 'dodddr', 'ddddrr', '.dddr.']);
 const CRAB = [['RR..........RR', 'R.R..w..w..R.R', '.RR..K..K..RR.', '..R.dRRRRd.R..', '...RRRRRRRR...', '..rRRRRRRRRr..', '.r.rRRRRRRr.r.', 'r..r.rrrr.r..r'],
   ['.RR........RR.', 'R.R..w..w..R.R', 'RR...K..K...RR', '..R.dRRRRd.R..', '...RRRRRRRR...', '.rrRRRRRRRRrr.', 'r..rRRRRRRr..r', '..r..rrrr..r..']].map(r => grid(r));
 const CLAWS = grid(['RR..RR', 'R.RR.R', '.R..R.', '.RRRR.']);
@@ -68,7 +68,7 @@ const CLOTH = {
 // ============================================================================
 let island = null, hills = null;
 // Foliage: a heap of round puffs as one shape, inked, lit from the upper left, flecked.
-function foliage(g, cx, cy, rx, ry, seed, [light, mid, dark]) {
+export function foliage(g, cx, cy, rx, ry, seed, [light, mid, dark]) {
   const at = new Map(), puffs = [];
   for (let j = 0; j < 11; j++) { const a = j * 2.4 + hsh(seed + j) * .8, d = j ? .35 + hsh(seed + j * 3.3) * .4 : 0, r = .34 + hsh(seed + j * 5.1) * .2; puffs.push([cx + Math.cos(a) * d * rx, cy + Math.sin(a) * d * ry, r * rx, r * ry * 1.15]); }
   const on = (x, y) => puffs.some(([px, py, a, b]) => ((x - px) / a) ** 2 + ((y - py) / b) ** 2 <= 1);
@@ -82,7 +82,7 @@ function foliage(g, cx, cy, rx, ry, seed, [light, mid, dark]) {
     g.fillRect(x, y, 1, 1);
   }
 }
-function trunk(g, pts, w0, w1, seed) {   // a trunk or branch through these points, tapering, its bark lit on the left
+export function trunk(g, pts, w0, w1, seed) {   // a trunk or branch through these points, tapering, its bark lit on the left
   const n = pts.length - 1;
   for (let i = 0; i < n; i++) {
     const [x0, y0] = pts[i], [x1, y1] = pts[i + 1], len = Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0), 1);
@@ -330,7 +330,7 @@ export function drawPlum() {
   }
   if (S.scene === 'dawn') drawDawn(lg, S.sceneT, S.deaths - 1);
   if (S.scene === 'dawn' && S.sceneT >= 1.45) ichigo(ix, feet, false);
-  if (!ended && !(S.scene === 'dawn' && S.sceneT > .3 && S.sceneT < 1.5)) { drawHUD(progress()); meters(); needs(); }
+  if (!ended && S.scene !== 'story' && !(S.scene === 'dawn' && S.sceneT > .3 && S.sceneT < 1.5)) { drawHUD(progress()); meters(); needs(); }
   if (M.hint && M.hintT > 0 && S.scene === 'plum') {
     const lines = ['']; for (const word of M.hint.split(' ')) { const c = lines[lines.length - 1]; if (c && (c + ' ' + word).length > 34) lines.push(word); else lines[lines.length - 1] = c ? c + ' ' + word : word; }
     const w = Math.max(...lines.map(l => l.length)) * LETTER + 16, h = lines.length * LINE + 12, x = Math.round((LW - w) / 2);

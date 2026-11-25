@@ -9,6 +9,7 @@
 //   level 1   sea       miyako-bushi   4 beats, driving      shamisen and small drum: the big sea
 //   level 2   night     hirajōshi      3 beats, slow         glass bells: sea-fireflies, and waves in the dark
 //             morning   yo             4 beats, walking      the Lullaby itself, at last, on koto and flute
+//   between   journey   yo             4 beats, very slow    bits of the Lullaby, coming back to Ichigo
 //   level 3   isle      Ryūkyū         3 beats, swaying      sanshin and bamboo: a hammock
 //   level 4   prowl     iwato          5 beats, on tiptoe    temple block and bowed kokyū: the eye
 //
@@ -46,6 +47,16 @@ export const SONGS = {
         [[0, .5], [2, .3], [3, .25], [4, .5], [6, .35], [7, .25]], [[0, .5], [2, .3], [4, .5], [6, .35]], [[0, .5], [2, .3], [3, .25], [4, .5], [6, .35], [7, .25]], [[0, .5], [4, .5], [5, .3], [6, .4], [7, .5]],
         R, R, R, [[4, .3], [5, .35], [6, .45], [7, .55]],
         [[0, .5], [2, .3], [3, .25], [4, .5], [6, .35], [7, .25]], [[0, .5], [2, .3], [4, .5], [6, .35]], [[0, .5], [2, .3], [3, .25], [4, .5], [6, .35], [7, .25]], [[0, .6], [4, .4]]]],
+    ],
+  },
+
+  // The journeys between levels, all of them: hardly a song, only bits of the Lullaby, in its own scale, coming back to Ichigo.
+  journey: {
+    tempo: 48, steps: 8, bars: 8, strings: [50, 52, 55, 57, 59, 62, 64, 67, 69, 71, 74, 76, 79, 81], bass: [38, 43, 40, 38], bell: 50, reeds: [[62, 67, 69, 74], 4, 3],
+    parts: [
+      ['koto', .18, [[[0, 50, 'o'], [4, 57]], [[0, 55], [3, 62]], [[0, 52], [4, 59], [6, 64]], [[0, 50]], [[0, 50, 'o'], [4, 57], [6, 62]], [[0, 55], [4, 64, 'p']], [[0, 52], [4, 59]], [[0, 50, 'o']]]],
+      ['koto', .12, [R, [[4, 74], [6, 76]], R, [[2, 79], [4, 76]], R, R, [[4, 71], [6, 69]], R]],
+      ['glass', .04, [R, R, R, [[6, 86]], R, [[2, 83]], R, R]],
     ],
   },
 

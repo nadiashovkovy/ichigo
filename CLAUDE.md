@@ -38,6 +38,7 @@ If the spec and the script disagree, the spec wins for code and the script wins 
 | `src/input.js`, `src/pc.js` | Keyboard and touch; the 1996 PC monitor around the game |
 | `src/beach.js`, `src/beachart.js`, `src/cards.js` | Level 1's playable beach and the wave; how the beach looks; story cards |
 | `src/prologue.js`, `src/menu.js` | Level 0 (the premise and the novel, over the last day on Ichigo's beach); the list of all levels (locked / unlocked) |
+| `src/story.js`, `src/storyart.js` | The journeys before each level: how they play, and their pictures |
 | `src/things.js` | What Ichigo carries and has learned, and their drawing of the way home (Tab) |
 | `src/tide.js`, `src/tideart.js`, `src/water.js` | Level 2: how it plays, how it looks, and its water (no drawing in `water.js`: it runs in Node for tuning) |
 | `src/plum.js`, `src/plumart.js` | Level 3: how it plays, and how it looks |
@@ -56,6 +57,7 @@ Run locally: `python3 -m http.server 8000`, then open http://localhost:8000.
   - *Hints:* a short line naming a new control the first time it's needed.
 - **Voice:** story cards and speech are plain and matter-of-fact, like Level 1's cards. Short sentences, no metaphors, no telling the player how to feel. See "Voice" at the top of `docs/levels-and-script.md`.
 - **Ichigo is mute** (Nadia's decision, Nov 2026): they never say a word, in any level. What they learn is about the world, not words: each level teaches something (`LEARNED` in `src/icons.js`), shown as a picture in a thought bubble at the moment it's learned, on the end panel, and on the Tab screen. Level 1 Kaa-chan and the sea, 2 crabs, 3 home, 4 the lighthouse. The script's *Learns* words and Ichigo's lines are from before this.
+- **A journey before every level** (`src/story.js`; Level 1's comes after the wave, and its beach has a short one): three or four small moving pictures with a caption under each, about how Ichigo is: what they eat, where they sleep, what scares them, what they miss, how long it has been, how they've grown. Plain words and particular things (*nine oranges, one a day*). The first picture is the level before just as it ended and the last is the next level just as it begins, drawn by the levels' own code (`setPlaces` in `main.js`), so nothing jumps; the pictures between match them in sky, ground and Fuji. Kaa-chan isn't in every journey (so far Levels 1 and 3). Asleep is always sitting up with the Zs, as in Level 2. They play by themselves, any key goes on, Esc skips it all (the beach before the wave too). Close-ups are the sprites at twice the size. All of them have the one `journey` song.
 - **Every level has its own music, and it's all one game's** (`src/songs.js`). Its own scale, metre, tempo, and one instrument no other level has. The same everywhere: a temple bell opens each round, koto and shakuhachi or flute, a shō in the middle, the same echo, and the Lullaby's seven notes hidden in it, in that song's scale.
 - **Failure is never final.** Every failure is "a new tomorrow": the dawn print, then a retry from the last checkpoint. Never a game-over screen.
 - **Every level needs stakes:** a clock, a hazard, a scarce resource.

@@ -28,8 +28,8 @@ function put(g, gr, cx, bottom, flip = false) {
 // ============================================================================
 // What never changes, painted once
 // ============================================================================
-let strip = null, front = null, far = null, tower = null, stack = null;
-const TW = 300, LAMP = [150, 62];   // the tower's picture: how wide, and where the lamp is on it
+export let tower = null; let strip = null, front = null, far = null, stack = null;
+export const TW = 300, LAMP = [150, 62];   // the tower's picture: how wide, and where the lamp is on it
 // Paint many pixels at once: col(x, y) is each one's colour, or null.
 function fill(g, x0, y0, w, h, col) {
   if (w <= 0 || h <= 0) return;
@@ -70,7 +70,7 @@ function planks(g, x0, y0, w, h, cols, vertical = true, seed = 0) {   // boards:
   }
 }
 // The lighthouse, and the headland it stands on.
-function paintTower() {
+export function paintTower() {
   tower = document.createElement('canvas'); tower.width = TW; tower.height = LH;
   const g = tower.getContext('2d'), r = (x, y, ww, h, c) => { g.fillStyle = c; g.fillRect(Math.round(x), Math.round(y), Math.round(ww), Math.round(h)); };
   // the lighthouse, on its own headland across the water: white plaster, round, the moon on its left
@@ -312,7 +312,7 @@ function eye() {
 // Ichigo, the bucket, and the rest
 // ============================================================================
 // Hiding: crouched down, the bucket over their head, eyes looking out from under its rim.
-const HID = grid(['........hhhh........', '.......YYYYYY.......', '.....YYYYYYYYYY.....', '....YYwYYYYYYYYy....', '....YYwYYYYYYYYy....', '...YYwYYYYYYYYYYy...', '...YYwYYYYYYYYYYy...', '...YYwYYYYYYYYYYy...', '..YYwYYYYYYYYYYYYy..', '..YYwYYYYYYYYYYYYy..', '..YYYYYYYYYYYYYYYy..', '.yyyyyyyyyyyyyyyyyy.', '.yyyyyyyyyyyyyyyyyy.', '...kkkkkkkkkkkkkk...', '...kSSwkSSSSwkSSk...', '....jJJJJJJJJJJj....', '...jJJJJJJJJJJJJj...', '...jJJJJJJJJJJJJj...', '....jjjjjjjjjjjj....']);
+export const HID = grid(['........hhhh........', '.......YYYYYY.......', '.....YYYYYYYYYY.....', '....YYwYYYYYYYYy....', '....YYwYYYYYYYYy....', '...YYwYYYYYYYYYYy...', '...YYwYYYYYYYYYYy...', '...YYwYYYYYYYYYYy...', '..YYwYYYYYYYYYYYYy..', '..YYwYYYYYYYYYYYYy..', '..YYYYYYYYYYYYYYYy..', '.yyyyyyyyyyyyyyyyyy.', '.yyyyyyyyyyyyyyyyyy.', '...kkkkkkkkkkkkkk...', '...kSSwkSSSSwkSSk...', '....jJJJJJJJJJJj....', '...jJJJJJJJJJJJJj...', '...jJJJJJJJJJJJJj...', '....jjjjjjjjjjjj....']);
 const FEET = grid(['SS....SS', 'bb....bb'], true);
 function ichigo(ix, feet, sitting) {
   const step = Math.floor(H.anim / 1.6) % 2, running = Math.abs(H.v) > 220;
@@ -320,7 +320,7 @@ function ichigo(ix, feet, sitting) {
     if (H.shuffling) put(lg, FEET, ix + (step ? 1 : -1), feet); put(lg, HID, ix, feet - (H.shuffling && !low ? 2 : 0) - b + 1, H.face < 0); return; }
   const frame = sitting ? 'sit' : !H.on ? 'balance' : H.digging > 0 ? 'dig1' : H.moving ? ['stand', 'step1', 'stand', 'step2'][Math.floor(H.anim / 1.6) % 4] : 'stand';
   const hair = !H.on ? [1, H.vy > 120 ? 2 : 0] : H.moving ? [(running ? 1 : 0) + step, step] : [0, 0];
-  drawSprite(lg, frame, ix, feet, H.face, Math.min(5, S.deaths), hair, [...markIds(), H.sulk > 0 || H.phase === 'caught' ? 'pout' : null].filter(Boolean));
+  drawSprite(lg, frame, ix, feet, H.face, Math.min(5, S.deaths), hair, [...markIds(), H.sulk > 0 || H.phase === 'caught' ? 'pout' : null, S.still === 'asleep' ? 'asleep' : null].filter(Boolean));
 }
 const TALL = grid(['..bb..', '..OO..', '..ee..', '.eeee.', '.eWee.', 'eeWeee', 'eeWeee', 'eeeeee', 'eeeeee', 'eeeeee', 'eeeeee', '.eeee.']);
 const CAT = { asleep: grid(['..........O...O..', '..OOOOOOO.OOOOO..', '.OOTOOTOOOOOOOOO.', 'OOTOOTOOOOOkOOkO.', 'OOOOOOOOOOOOpOOO.', 'OTTTOOOOOOOOOOO..', '.OOOTTTTTTTOOOO..', '..OOOOOOOOOOOO...']), up: grid(['...............O..O', '...............OOOO', 'O.............OkOOkO', 'O..OOOOOOOOOOOOOOpOO', 'OO.OTOOTOOTOOOOOOOO.', '.OOOTOOTOOTOOOOOOO..', '..OOOOOOOOOOOOOO....', '...OOTTTTTTTOOO.....', '...O.O......O.O.....', '...O.O......O.O.....', '...O.O......O.O.....']) };
@@ -350,12 +350,14 @@ function shutters() {
   }
 }
 const BELLG = grid(['....oo....', '...oooo...', '..oWoooO..', '..oWoooO..', '.ooWooooO.', '.oooooooO.', 'OOOOOOOOOO', '....BB....']);
-function raft(x, y, bob) {
-  for (let i = -34; i <= 34; i++) for (let j = 0; j < 9; j++) { const e = j === 0 || j === 8 || Math.abs(i) === 34, n = hsh(Math.floor(i / 5) * 2.7 + Math.floor(j / 3) * 7.1); lg.fillStyle = e || j === 4 ? P.outline : j < 4 ? (n < .25 ? P.wood : P.tan) : n < .3 ? P.brown : P.wood; lg.fillRect(x + i, y + bob - 4 + j, 1, 1); }
-  for (const i of [-22, 22]) { lg.fillStyle = P.outline; lg.fillRect(x + i - 2, y + bob - 5, 6, 11); lg.fillStyle = P.gold; lg.fillRect(x + i - 1, y + bob - 4, 4, 9); }
-  for (let j = 0; j < 46; j++) { lg.fillStyle = P.outline; lg.fillRect(x - 29, y + bob - 4 - j, 3, 1); lg.fillStyle = P.wood; lg.fillRect(x - 28, y + bob - 4 - j, 1, 1); if (j > 14 && j < 44) { const w = 16 + Math.round(5 * Math.sin((j - 14) / 30 * Math.PI)); for (let i = 0; i < w; i++) { lg.fillStyle = clothAt(i, 44 - j, j === 15 || j === 43 || i === w - 1); lg.fillRect(x - 26 + i, y + bob - 4 - j, 1, 1); } } }
-  const row = H.paddling ? Math.sin(S.T * 8) * 5 : 0;
-  for (let i = 0; i < 30; i++) { const px = x + 22 + Math.round(i * .4 + row * (i / 30 - .6)); lg.fillStyle = P.outline; lg.fillRect(px - 1, y + bob + 6 - i, 4, 1); lg.fillStyle = P.ochre; lg.fillRect(px, y + bob + 6 - i, 2, 1); }
+export const raft = (x, y, bob) => raftOn(lg, x, y + bob, true);
+// (g: where to draw it; oar: rowing, or not)
+export function raftOn(g, x, y, oar = false) {
+  for (let i = -34; i <= 34; i++) for (let j = 0; j < 9; j++) { const e = j === 0 || j === 8 || Math.abs(i) === 34, n = hsh(Math.floor(i / 5) * 2.7 + Math.floor(j / 3) * 7.1); g.fillStyle = e || j === 4 ? P.outline : j < 4 ? (n < .25 ? P.wood : P.tan) : n < .3 ? P.brown : P.wood; g.fillRect(x + i, y - 4 + j, 1, 1); }
+  for (const i of [-22, 22]) { g.fillStyle = P.outline; g.fillRect(x + i - 2, y - 5, 6, 11); g.fillStyle = P.gold; g.fillRect(x + i - 1, y - 4, 4, 9); }
+  for (let j = 0; j < 46; j++) { g.fillStyle = P.outline; g.fillRect(x - 29, y - 4 - j, 3, 1); g.fillStyle = P.wood; g.fillRect(x - 28, y - 4 - j, 1, 1); if (j > 14 && j < 44) { const w = 16 + Math.round(5 * Math.sin((j - 14) / 30 * Math.PI)); for (let i = 0; i < w; i++) { g.fillStyle = clothAt(i, 44 - j, j === 15 || j === 43 || i === w - 1); g.fillRect(x - 26 + i, y - 4 - j, 1, 1); } } }
+  const row = oar && H.paddling ? Math.sin(S.T * 8) * 5 : 0;
+  for (let i = 0; i < 30; i++) { const px = x + 22 + Math.round(i * .4 + row * (i / 30 - .6)); g.fillStyle = P.outline; g.fillRect(px - 1, y + 6 - i, 4, 1); g.fillStyle = P.ochre; g.fillRect(px, y + 6 - i, 2, 1); }
 }
 // How hidden Ichigo is: an eye over their head. Shut: not seen. Open, and filling with red: being seen.
 const EYE = ['...KKKKK...', '.KKwwwwwKK.', 'KwwwwKwwwwK', 'KwwwKKKwwwK', 'KwwwwKwwwwK', '.KKwwwwwKK.', '...KKKKK...'], SHUT = ['...........', '...........', 'K.........K', '.KK.....KK.', '..KKKKKKK..', '.K..K.K..K.', '...........'];
@@ -419,7 +421,7 @@ export function drawLight() {
   if (H.phase === 'caught') dots(P.white, H.t < .2 ? .5 - H.t * 2.5 : Math.max(0, (H.t - .7) / .8));   // (a flash; then the light fills everything)
   if (S.scene === 'dawn') drawDawn(lg, S.sceneT, S.deaths - 1);
   if (S.scene === 'dawn' && S.sceneT >= 1.45 && !water) ichigo(ix, feet, false);
-  if (!ended && !(S.scene === 'dawn' && S.sceneT > .3 && S.sceneT < 1.5)) drawHUD(Math.min(1, (water ? H.raftX : H.x) / L.length));
+  if (!ended && S.scene !== 'story' && !(S.scene === 'dawn' && S.sceneT > .3 && S.sceneT < 1.5)) drawHUD(Math.min(1, (water ? H.raftX : H.x) / L.length));
   if (H.hint && H.hintT > 0 && S.scene === 'light') {
     const lines = ['']; for (const word of H.hint.split(' ')) { const c = lines[lines.length - 1]; if (c && (c + ' ' + word).length > 34) lines.push(word); else lines[lines.length - 1] = c ? c + ' ' + word : word; }
     const w = Math.max(...lines.map(l => l.length)) * LETTER + 16, h = lines.length * LINE + 12, x = Math.round((LW - w) / 2), y = water ? 64 : 350 - h;   // (low down, out of the way; high up, out on the water)

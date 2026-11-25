@@ -2,11 +2,13 @@
   "number": 1,
   "name": "The Great Wave",
   "age": 3,
-  "length": 6500,
+  "length": 6646,
   "sea": { "base": 5, "grow": 12, "growOver": 5200 },
-  "islandTop": 395,
-  "fuji": { "view": "dusk" },
-  "goalOffset": 380,
+  "islandTop": 390,
+  "fuji": { "view": "dusk", "x": 460 },
+  "goalOffset": 303,
+  "lantern": 6220,
+  "island": [[5780, -46], [5860, -14], [5930, 0], [6030, 14], [6110, 29], [6154, 43], [6172, 50], [6268, 50], [6286, 43], [6330, 29], [6410, 14], [6510, 0], [6580, -14], [6660, -46]],
   "wreckage": [
     { "type": "plank", "x": 40,   "w": 220, "checkpoint": true },
     { "type": "plank", "x": 330,  "w": 120 },
@@ -34,6 +36,6 @@
     { "type": "plank", "x": 5320, "w": 90 },
     { "type": "plank", "x": 5490, "w": 90 },
     { "type": "plank", "x": 5700, "w": 120, "drift": 60 },
-    { "type": "rock",  "x": 5940, "w": 560, "goal": true }
+    { "type": "rock",  "x": 5945, "w": 570, "goal": true }
   ]
 }

@@ -21,7 +21,7 @@ import { updateParts } from './player.js';
 import { learn, keepThing } from './save.js';
 import { seaSound, playWash, playClick, playFall, playBell, playSquawk, playStep, playSmash, playMeow, playSeen, playCut, playBolt, playThud } from './audio.js';
 
-const CARDS = ['THE RAFT WASHES UP BELOW A LIGHTHOUSE. ICHIGO SLEEPS IN A SHED, ON A SHELF, OUT OF THE WET.', 'IN THE NIGHT THE TIDE TAKES THE RAFT. ITS ROPE CATCHES IN THE BOATHOUSE, ACROSS THE ROCKS.', 'NO ONE LIVES HERE NOW. BUT THE LAMP IS LIT, AND IT LOOKS FOR WHATEVER MOVES.', "GET BACK TO THE RAFT. DON'T LET THE LIGHT SEE YOU."];
+const CARDS = ['IN THE NIGHT THE TIDE TAKES THE RAFT. ITS ROPE CATCHES IN THE BOATHOUSE, ACROSS THE ROCKS.', 'NO ONE LIVES HERE NOW. BUT THE LAMP IS LIT, AND IT LOOKS FOR WHATEVER MOVES.', "GET BACK TO THE RAFT. DON'T LET THE LIGHT SEE YOU."];
 
 // Everything about the level as it plays out. (Exposed on window.ichigo.light for the test bot.)
 // phase: 'play' → 'away' (the rope parts) → 'paddle' → 'gone'; 'caught' (a new tomorrow), 'fell' (into the sea: one too).
@@ -127,7 +127,7 @@ export function startLight() {
     phase: 'play', t: 0, x: S.level.shelf, y: S.level.shelves[0][2], v: 0, vy: 0, on: 'ground', face: 1, anim: 0, moving: false, seated: true, idle: 0, boredAt: 0, sulk: 0, rising: false,
     hide: false, shuffling: false, seen: 0, stares: 0, eye: freshEye(), ear: null, digging: 0, rings: [], check: -1, shut: new Set(), danger: false,
     sleepers: S.level.sleepers.map(([kind, x]) => ({ kind, x, away: 0, t: 0 })), cords: S.level.cords.map(c => ({ ...c, swing: 0 })),
-    chime: S.things.has('chime'), cuts: 0, raftX: S.level.raft, hint: null, hintT: 0, hinted: new Set(), splashT: 0, fade: 1, done: false,
+    chime: S.things.has('chime'), cuts: 0, raftX: S.level.raft, hint: null, hintT: 0, hinted: new Set(), splashT: 0, fade: S.cut ? 0 : 1, done: false,
   });
   parts.length = 0; clearBubbles(); input.jumpBuffer = 0; input.usePressed = false;
   S.deaths = 0; S.levelT = 0; S.camX = 0; S.scene = 'light'; S.sceneT = 0;

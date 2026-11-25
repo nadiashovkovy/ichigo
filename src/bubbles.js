@@ -35,6 +35,9 @@ export function drawBubbles(g, heads) {
   for (const [who, b] of bubbles) if (heads[who]) drawBubble(g, b, ...heads[who]);
 }
 
+// A thought, drawn straight away (the journeys between levels: story.js).
+export function drawThought(g, icon, x, y) { drawBubble(g, { icons: [icon], kind: 'thought', t: 0, grey: false, big: true, lines: [] }, x, y); }
+
 function drawBubble(g, b, hx, hy) {
   const s = iconSize(b.big), gap = 2, pad = 3;
   const iconsW = b.icons.length ? b.icons.length * s + (b.icons.length - 1) * gap : 0, textW = b.lines.length ? Math.max(...b.lines.map(l => l.length)) * LETTER + 8 : 0;

@@ -8,7 +8,6 @@
 import { P, LW, LH } from './config.js';
 import { lg, pixelSpace } from './pixel.js';
 import { pixelText, LETTER, LINE } from './text.js';
-import { keys } from './input.js';
 import { S } from './state.js';
 
 const SPEED = 45;   // letters a second
@@ -18,8 +17,12 @@ const C = { list: [], i: 0, t: 0, done: null, paper: false };
 // screen (after the wave) instead of in a panel over the scene.
 export function showCards(list, done, { paper = false } = {}) {
   if (!S.cardsOn) { if (done) done(); return; }   // (story cards turned off in settings)
-  Object.assign(C, { list, i: 0, t: 0, done, paper });
+  Object.assign(C, { list, i: 0, t: 0, done, paper, skip: null });
 }
+// SKIP, at the top right, for anything that can be skipped: drawn, and whether a click is on it.
+let skipBox = null;
+export function drawSkip(text) { const w = text.length * LETTER, x = LW - 26 - w; skipBox = { x: x - 8, y: 0, w: w + 24, h: 32, t: S.T }; for (const [dx, dy] of [[-1, 0], [1, 0], [0, -1], [0, 1], [-1, -1], [1, 1], [1, -1], [-1, 1]]) pixelText(text, x + dx, 8 + dy, P.night); pixelText(text, x, 8, P.grey0); }
+export const onSkip = c => !!c && !!skipBox && S.T - skipBox.t < .2 && c.x >= skipBox.x && c.x < skipBox.x + skipBox.w && c.y >= skipBox.y && c.y < skipBox.y + skipBox.h;
 export const cardsActive = () => C.list.length > 0;
 export const cardIndex = () => C.i;   // which card is showing
 
@@ -31,10 +34,10 @@ export function nextCard() {
   if (C.t * SPEED < C.list[C.i].length) { C.t = 99; return; }
   if (++C.i >= C.list.length) finish(); else C.t = 0;
 }
-// Called every frame while cards are up. pressed: a key or click this frame.
-export function updateCards(dt, pressed) {
+// Called every frame while cards are up. pressed: a key or click this frame; click: where; key: which.
+export function updateCards(dt, pressed, click, key) {
   C.t += dt;
-  if (keys.Escape) { finish(); return; }
+  const b = C.skip; if (key === 'Escape' || (C.i === 0 && b && click && click.x > b[0] - 6 && click.x < b[0] + 9 * LETTER + 6 && click.y > b[1] - 6 && click.y < b[1] + LINE + 4)) { finish(); return; }
   if (pressed && C.t > .25) nextCard();   // (a moment's grace, so the press that opened the card doesn't skip it)
 }
 
@@ -69,5 +72,5 @@ export function drawCards() {
   });
   const typed = C.t * SPEED >= text.length, foot = y + h - pad - 6;
   if (typed && Math.sin(C.t * 6) > -.2) pixelText(C.i < C.list.length - 1 ? '>' : '>>', x + w - pad, foot, ink, 'right');   // press to go on
-  if (C.i === 0) pixelText('ESC: SKIP', x + pad, foot, P.grey2);
+  if (C.i === 0) { pixelText('ESC: SKIP', x + pad, foot, P.grey2); C.skip = [x + pad, foot]; }
 }

@@ -214,7 +214,7 @@ function older(frames) {
   return { ...frames, stand: legs(frames.stand), step1: legs(frames.step1), step2: legs(frames.step2), balance: legs(frames.balance), jump: legs(frames.jump.slice(0, -1)), sit };
 }
 const FRAMES4 = older(FRAMES);
-const framesNow = () => (S.level && S.level.age >= 4 ? FRAMES4 : FRAMES);
+const framesNow = () => ((S.as ?? (S.level ? S.level.age : 3)) >= 4 ? FRAMES4 : FRAMES);   // (S.as: younger or older than the level has them, in a journey: story.js)
 const HOLDS_BUCKET = ['stand', 'step1', 'step2', 'balance', 'sit'];   // frames where the bucket hangs upright (it can show water, and the shovel)
 // The red shovel, standing in the bucket blade up (its handle down inside): drawn from the rim up.
 const SPADE = ['RR.', 'RRR', 'RRr', '.Rr', '.R.', '.R.'];

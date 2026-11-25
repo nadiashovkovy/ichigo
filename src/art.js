@@ -217,7 +217,7 @@ export function drawPix(g, rows, x, y, flip = false) {
   }));
 }
 // A fishing boat far off on the horizon, like the print's, three rowers bent over their oars.
-const FAR_BOAT = scale2x([
+export const FAR_BOAT = scale2x([
   '.....n...n...n.....',
   'K....n...n...n...K.',
   'KYYYYYYYYYYYYYYYYYK',

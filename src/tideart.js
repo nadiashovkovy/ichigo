@@ -198,12 +198,12 @@ export function drawTide() {
   shownReach += (reachOfLight() - shownReach) * .08;
   const lx = onPixel(S.level.lantern - S.camX); if (lx > -60) drawLantern(tg, lx, onPixel(yOf(groundZ(S.level.lantern))), S.T, N.phase !== 'out' && N.lit && N.light < .9 && (N.fuel > .18 || onBar() || Math.sin(S.T * 23) + Math.sin(S.T * 9) > -.6));   // (nearly out, it flickers)
   pixelSpace(tg);
-  if (S.scene === 'tide' && S.sceneT < .5 && S.levelT < 1) { tg.globalAlpha = 1 - S.sceneT / .5; tg.fillStyle = P.night; tg.fillRect(0, 0, LW, LH); tg.globalAlpha = 1; }
+  if (S.scene === 'tide' && S.sceneT < .5 && S.levelT < 1 && !S.cut) { tg.globalAlpha = 1 - S.sceneT / .5; tg.fillStyle = P.night; tg.fillRect(0, 0, LW, LH); tg.globalAlpha = 1; }
   quantize(tg); lg.drawImage(topC, 0, 0);
 
   drawBlueLight(); drawLying(); drawGlows();
   const ended = S.scene === 'end', cover = S.scene === 'dawn' && S.sceneT < 1.45;
-  const ix = X(N.x), sitting = N.seated || N.stumble > 0 || ended || N.shellT > 0;
+  const ix = X(N.x), sitting = N.seated || N.stumble > 0 || ended || S.still === 'end' || N.shellT > 0;
   // sitting on a slope, Ichigo sinks in as far as its lower side (or there'd be a gap under them)
   const feet = (sitting ? Math.max(Y(N.z), Y(groundZ(N.x - 15)), Y(groundZ(N.x + 15))) : Y(N.z)) - Math.round(N.hop / PIXEL);
   if (!cover && !N.gone) drawIchigo(ix, feet, sitting);
@@ -221,7 +221,8 @@ export function drawTide() {
   }
   if (S.scene === 'dawn') drawDawn(lg, S.sceneT, S.deaths - 1);
   if (S.scene === 'dawn' && S.sceneT >= 1.45 && !N.gone) drawIchigo(ix, feet, false);
-  if (!ended && !(S.scene === 'dawn' && S.sceneT > .3 && S.sceneT < 1.5)) drawHUD(onBar() ? .75 + .25 * Math.min(1, N.x / S.level.bar.goal) : .75 * shownGone);
+  if (N.asleep && S.scene === 'story') drawZs(ix + 14, head + 6);
+  if (!ended && S.scene !== 'story' && !(S.scene === 'dawn' && S.sceneT > .3 && S.sceneT < 1.5)) drawHUD(onBar() ? .75 + .25 * Math.min(1, N.x / S.level.bar.goal) : .75 * shownGone);
   if (N.hint && N.hintT > 0 && S.scene === 'tide') {   // (on a small dark panel, like the story cards')
     const w = N.hint.length * LETTER + 16, x = Math.round((LW - w) / 2);
     lg.fillStyle = P.mist; lg.fillRect(x - 1, 55, w + 2, 30); lg.fillStyle = P.night; lg.fillRect(x, 56, w, 28);
@@ -253,7 +254,7 @@ function drawIchigo(ix, feet, sitting) {
 }
 // Asleep: Zs drift up from Ichigo's head, growing and swaying, one after another.
 const ZS = [['mmmm', '..m.', '.m..', 'mmmm'], ['mmmmm', '...m.', '..m..', '.m...', 'mmmmm'], ['mmmmmmm', 'mmmmmmm', '....mm.', '...mm..', '..mm...', '.mm....', 'mmmmmmm', 'mmmmmmm']].map(pic);
-function drawZs(x, y) {
+export function drawZs(x, y) {
   for (let i = 0; i < 3; i++) {
     const k = (S.T * .38 + i / 3) % 1;
     if (k > .94) continue;

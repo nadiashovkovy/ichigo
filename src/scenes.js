@@ -53,18 +53,18 @@ export function drawPlay() {
   // Level 1: a carp streamer torn loose from the village floats past in the first seconds, still bright
   if (S.level.number === 1 && S.levelT < 8) { const x = W + 60 - (S.levelT - .5) / 6 * (W + 160); drawFloatingKoinobori(tg, x - camX, seaY(x, T), T); }
   tg.restore();
-  if (S.scene === 'play' && S.sceneT < 0.5) { tg.globalAlpha = 1 - S.sceneT / 0.5; tg.fillStyle = P.night; tg.fillRect(0, -TOP, W, H + TOP); tg.globalAlpha = 1; }
+  if (S.scene === 'play' && S.sceneT < 0.5 && !S.cut) { tg.globalAlpha = 1 - S.sceneT / 0.5; tg.fillStyle = P.night; tg.fillRect(0, -TOP, W, H + TOP); tg.globalAlpha = 1; }
   pixelSpace(tg); quantize(tg); lg.drawImage(topC, 0, 0);
   if (S.scene === 'dawn') drawDawn(lg, S.sceneT, S.deaths - 1);   // a new tomorrow: a different Hokusai print each fall (dawn.js)
-  const showIchigo = !(S.scene === 'dawn' && S.sceneT < 1.45) && !(S.scene === 'play' && S.sceneT < 0.25);
+  const showIchigo = !(S.scene === 'dawn' && S.sceneT < 1.45) && !(S.scene === 'play' && S.sceneT < 0.25 && !S.cut);
   if (showIchigo) {
     const moving = PL.ground && Math.abs(PL.vu) > 20 && (inLeft() || inRight());
     const wobbly = PL.ground && floating(PL.ground) && Math.abs(PL.ground.ang) > .14;   // arms out to balance
-    const frame = PL.sitting || S.scene === 'end' ? 'sit' : !PL.ground ? 'jump' : moving ? ['stand', 'step1', 'stand', 'step2'][Math.floor(PL.anim / 1.6) % 4] : wobbly ? 'balance' : 'stand';
+    const frame = PL.sitting || S.scene === 'end' || S.still === 'end' ? 'sit' : !PL.ground ? 'jump' : moving ? ['stand', 'step1', 'stand', 'step2'][Math.floor(PL.anim / 1.6) % 4] : wobbly ? 'balance' : 'stand';
     // the hair moves with Ichigo: streaming back in the air and lifting as they fall; flicking back and
     // bouncing a little with each step (more when running); swaying as they balance
     const step = Math.floor(PL.anim / 1.6) % 2, running = Math.abs(PL.vu) > 220;
-    const hair = PL.sitting || S.scene === 'end' ? [0, 0] : !PL.ground ? [1, PL.vy > 150 ? 2 : 0] : moving ? [(running ? 1 : 0) + step, step] : wobbly ? [Math.sin(S.T * 4) > 0 ? 1 : 0, 0] : [0, 0];
+    const hair = PL.sitting || S.scene === 'end' || S.still === 'end' ? [0, 0] : !PL.ground ? [1, PL.vy > 150 ? 2 : 0] : moving ? [(running ? 1 : 0) + step, step] : wobbly ? [Math.sin(S.T * 4) > 0 ? 1 : 0, 0] : [0, 0];
     // (sitting on the boat a while, Ichigo looks back the way they came)
     const face = PL.sitting && PL.ground && PL.ground.type === 'boat' && PL.idle > 5 ? -1 : PL.face;
     drawSprite(lg, frame, (PL.x - camX) / PIXEL, PL.y / PIXEL + TOP_PX, face, Math.min(5, S.deaths), hair, PL.sulk > 0 ? [...markIds(), 'pout'] : markIds());   // (lip out: made to get up)
@@ -75,7 +75,7 @@ export function drawPlay() {
     const n = toPx(2 * (q.s || 1));
     lg.fillStyle = q.c; lg.fillRect(Math.round((q.x - camX) / PIXEL), Math.round(q.y / PIXEL + TOP_PX), n, n);
   }
-  if (S.scene !== 'end' && !(S.scene === 'dawn' && S.sceneT > .3 && S.sceneT < 1.5)) {
+  if (S.scene !== 'end' && S.scene !== 'story' && !(S.scene === 'dawn' && S.sceneT > .3 && S.sceneT < 1.5)) {
     const goal = S.plats.find(p => p.goal), goalX = goal ? goal.x0 + S.level.goalOffset : S.level.length;
     drawHUD(Math.min(1, PL.x / goalX));
   }   // (hidden while the dawn covers the screen)

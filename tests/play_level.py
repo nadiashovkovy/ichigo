@@ -347,7 +347,7 @@ async def play_light(browser):
     await page.evaluate("window._mode = 'idle'; Object.assign(ichigo.light, { x: 4868, y: 440, vy: 0, on: null, phase: 'play' })"); await until(page, "H.phase === 'fell'", 'light_fell', 10); await ctx.close()
 
     ctx, page = await open_level('play')
-    for js, shot in [("H.check === -1 && H.x > 400 && H.eye.mode === 'sweep' && Math.abs(H.eye.x - H.x) < 200", 'light_room'), ("H.check < 2 && H.x > 775 && H.x < 820 && H.hide", 'light_tunnel'), ("H.check >= 0 && H.x > 1000", 'light_workshop'), ("H.check >= 1 && H.x > 1800", 'light_kitchen'), ("H.shut.size === 2", 'light_loft'),
+    for js, shot in [("S.scene === 'story' && ichigo.story.i === 2", 'light_story'), ("H.check === -1 && H.x > 400 && H.eye.mode === 'sweep' && Math.abs(H.eye.x - H.x) < 200", 'light_room'), ("H.check < 2 && H.x > 775 && H.x < 820 && H.hide", 'light_tunnel'), ("H.check >= 0 && H.x > 1000", 'light_workshop'), ("H.check >= 1 && H.x > 1800", 'light_kitchen'), ("H.shut.size === 2", 'light_loft'),
                      ("H.check >= 3 && H.danger", 'light_beam'), ("H.check >= 5 && H.x > 5060 && !H.on", 'light_stones'), ("H.x > 6400 && window._lh.beam().on", 'light_hull'), ("H.x > 7400 && H.eye.mode === 'hold'", 'light_flats'), ("H.x > 8900 && H.danger", 'light_headland'),
                      ("H.cuts >= 1 && H.danger", 'light_cut'), ("H.phase === 'away' && H.t > 2.5", 'light_away'), ("H.phase === 'paddle' && H.hide && H.danger", 'light_paddle'), ("H.phase === 'paddle' && H.sheltered", 'light_stack'), ("H.phase === 'gone' && H.t > 1.2", 'light_learned')]:
         if not await until(page, js, shot, 200): break
@@ -450,9 +450,9 @@ async def play(browser):
     await shot('5-end')
     fallen = await page.evaluate('window._fallen')
     saved = await page.evaluate("localStorage.getItem('ichigo.save')")
-    if result:   # a key goes on to Level 2, and finishing Level 1 unlocks it in the list
+    if result:   # a key goes on to the journey to Level 2 (story.js), and finishing Level 1 unlocks it in the list
         await page.keyboard.press('Enter'); await page.wait_for_timeout(800)
-        if await page.evaluate("ichigo.S.scene + ichigo.S.level.number") != 'tide2': notes.append('Level 1 did not lead on to Level 2')
+        if await page.evaluate("ichigo.S.scene + ichigo.S.level.number") != 'story2': notes.append('Level 1 did not lead on to the journey to Level 2')
         await page.keyboard.press('KeyP'); await page.wait_for_timeout(300)
         for k in ['ArrowDown', 'ArrowDown', 'Enter']: await page.keyboard.press(k); await page.wait_for_timeout(120)
         await page.wait_for_timeout(800); await shot('levels_after')

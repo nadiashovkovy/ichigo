@@ -20,8 +20,8 @@ import { THINGS } from './things.js';
 import { seaSound, playWash, playScoop, playPour, playHiss, playClick, playFall, playSnore, playCry } from './audio.js';
 
 const INTRO_CARDS = [
-  'ICHIGO SLEEPS NEXT TO THE STONE LANTERN. IN THE NIGHT, THE TIDE COMES IN.',
-  'THE LANTERN IS GOING OUT. THE WAVES ARE FULL OF SEA-FIREFLIES. THEY SHINE ON THE SAND WHEN THE WATER GOES BACK.',
+  'THE TIDE IS COMING IN, AND THE LANTERN IS GOING OUT.',
+  'THE WAVES ARE FULL OF SEA-FIREFLIES. THEY SHINE ON THE SAND WHEN THE WATER GOES BACK.',
   'DOWN ARROW: SCOOP THEM UP. TAKE THEM TO THE LANTERN. KEEP IT LIT UNTIL MORNING.',
 ];
 const DAWN_CARDS = [
@@ -144,6 +144,8 @@ export function retryTide() {
 }
 function tomorrow() { S.deaths++; S.tomorrows++; S.scene = 'dawn'; S.sceneT = 0; }
 
+// As it is at the very end: morning, Ichigo sitting on the green island. (A picture in the next level's journey: story.js.)
+export function endTide() { startTide(); startBar(); N.light = 1; N.asleep = false; N.x = S.level.bar.goal + 2; N.z = groundZ(N.x); N.seated = true; N.shell = 'kept'; S.camX = Math.max(0, Math.min(S.level.length - W, N.x - W * .38)); }
 function startBar() {
   N.phase = 'bar'; N.t = 0; N.barT = 0; N.barGo = false; N.tide = TIDE.low; N.x = centre() + 90; N.face = 1; N.z = groundZ(N.x);
   N.w.d.fill(0); N.w.v.fill(0);

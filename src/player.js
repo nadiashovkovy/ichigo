@@ -80,7 +80,7 @@ export function updatePlayer(dt) {
       PL.vx = PL.vu * Math.cos(p.ang) + pvx; PL.vy = PL.vu * Math.sin(p.ang);
       PL.ground = null; PL.coyote = 0.1;
     } else {
-      PL.x = p.cx + PL.u * Math.cos(p.ang); PL.y = p.cy + PL.u * Math.sin(p.ang); PL.vx = PL.vu;
+      PL.x = p.cx + PL.u * Math.cos(p.ang); PL.y = floating(p) ? p.cy + PL.u * Math.sin(p.ang) : deckY(p, PL.x); PL.vx = PL.vu;
       if (p.sinkRate && p.sink + p.dy - p.fb > 12) die();     // a straw mat sank right under Ichigo
     }
   } else if (input.jumpBuffer > 0 && PL.coyote > 0) { // "coyote time": a jump just after leaving an edge still works
@@ -96,7 +96,7 @@ export function updatePlayer(dt) {
     if (PL.vy >= 0) for (const p of S.plats) {   // land on a (tilted) deck from above
       const half = p.w / 2 * Math.cos(p.ang);
       if (Math.abs(PL.x - p.cx) > half + PL.hw * .8) continue;   // (a little grace at the edges)
-      const before = p.pcy + (prevX - p.pcx) * Math.tan(p.pang), now = deckY(p, PL.x);
+      const before = floating(p) ? p.pcy + (prevX - p.pcx) * Math.tan(p.pang) : deckY(p, prevX), now = deckY(p, PL.x);
       if (prevY <= before + 8 && PL.y >= now) {
         PL.ground = p;
         PL.u = Math.max(-p.w / 2 + 2, Math.min(p.w / 2 - 2, (PL.x - p.cx) / Math.cos(p.ang)));   // clipping the edge still counts
@@ -112,7 +112,8 @@ export function updatePlayer(dt) {
         break;
       }
     }
-    if (!PL.ground && PL.y > seaY(PL.x, S.T) + 14) die();
+    const ashore = S.plats.some(p => !floating(p) && Math.abs(PL.x - p.cx) < p.w / 2);      // (over the island's sand, a wave is only wet feet)
+    if (!PL.ground && !ashore && PL.y > seaY(PL.x, S.T) + 14) die();
   }
   // running looks like water: foam kicked up behind
   if (PL.ground && Math.abs(PL.vu) > 220 && Math.random() < 0.6)

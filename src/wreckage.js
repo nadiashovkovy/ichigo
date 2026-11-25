@@ -2,10 +2,10 @@
 // wreckage.js — the floating pieces of Ichigo's village: building them from level data,
 // making them bob and rock on the sea, and drawing them.
 // ============================================================================
-import { W, H, SEA, P, RAMP, WRECKAGE, px, onPixel } from './config.js';
+import { W, H, SEA, TIDE, P, RAMP, WRECKAGE, px, onPixel } from './config.js';
 import { S, parts } from './state.js';
 import { seaY } from './sea.js';
-import { drawKoinobori, drawLantern, drawNeedles, hsh } from './art.js';
+import { drawKoinobori, drawLantern, hsh } from './art.js';
 import { dither } from './pixel.js';
 
 // Turn a level's "wreckage" list into live objects.
@@ -18,7 +18,9 @@ export function buildWreckage(level) {
   }));
 }
 export const floating = p => p.type !== 'rock';
-export const deckY = (p, x) => p.cy + (x - p.cx) * Math.tan(p.ang);   // height of the (tilted) deck at x
+// The island at the end is Level 2's island (tide.js), the same shape and the same height (levels/level01.json has it, further along).
+function islandY(x) { const G = S.level.island; let i = 1; while (i < G.length - 1 && G[i][0] < x) i++; const k = Math.max(0, Math.min(1, (x - G[i - 1][0]) / (G[i][0] - G[i - 1][0]))); return TIDE.base - (G[i - 1][1] + (G[i][1] - G[i - 1][1]) * k); }
+export const deckY = (p, x) => (floating(p) ? p.cy + (x - p.cx) * Math.tan(p.ang) : islandY(x));   // height of the (tilted) deck at x, or of the island
 
 // rider = Ichigo: { ground, u } — which piece they stand on, and how far from its centre.
 export function updateWreckage(t, dt, rider) {
@@ -115,21 +117,15 @@ export function drawWreckage(g, p, camX, t) {
   g.restore();
 }
 
-// The island at the end: sand on rock (the same island as Level 2's), a pine, and the stone lantern (the goal).
+// The island at the end: sand on rock, and the stone lantern (the goal), as in Level 2 (tideart.js).
 function drawIsland(g, p, camX, t) {
-  const x = onPixel(p.x0 - camX), y = onPixel(p.cy), w = onPixel(p.w), u = px(1);
-  if (x > W + 60 || x + w < -60) return;
-  const [s0, s1, s2, s3] = RAMP.sand, x0 = Math.max(-px(2), x - px(32)), x1 = Math.min(W + px(2), x + w + px(34));
+  const G = S.level.island, u = px(1), [, s1, s2, s3] = RAMP.sand, x0 = Math.max(-px(2), onPixel(G[0][0] - camX)), x1 = Math.min(W + px(2), G[G.length - 1][0] - camX);
   for (let sx = onPixel(x0); sx < x1; sx += u) {
-    const i = Math.round((sx - x) / u), end = Math.max(0, -i, i - Math.round(w / u)), top = y + Math.round(end * end * .05 + end * .5 + Math.max(0, 14 - Math.max(i, 0)) ** 2 * .03) * u;   // (rounded at its ends)
-    const deep = 8 + Math.round(2 * Math.sin(i * .05) + hsh(Math.floor(i / 3)) * 2);
+    const i = Math.round((sx + camX - G[0][0]) / u), top = onPixel(islandY(sx + camX)), deep = 9 + Math.round(2 * Math.sin(i * .05) + hsh(Math.floor(i / 3)) * 2);
     const R = (a, h, c) => { g.fillStyle = c; g.fillRect(sx, top + a * u, u, h * u); };
     R(-1, 1, P.outline); R(0, 2, s1); R(2, deep - 2, s2); R(deep, 3, s3); R(deep + 3, 140, P.grey3);
     for (let k = 0; k < 8; k++) { const h = hsh(Math.floor(i / 4) * 7.7 + k * 3.1); if (h > .55) R(deep + 5 + k * 6 + Math.floor(h * 5), h > .7 ? 2 : 1, h > .8 ? P.grey2 : P.slate); }   // cracks and ledges in the rock
-    if (hsh(Math.floor(i / 3) * 5.3) > .78) R(3 + Math.floor(hsh(i) * 4), 1, s3);
+    if (hsh(Math.floor(i / 3) * 5.3) > .72) R(3 + Math.floor(hsh(i) * 4), 1, s3);
   }
-  const tx = x + 141, [, , w2, w3] = RAMP.wood;   // the pine, bent by the wind
-  for (let k = 0; k < 84; k++) { const q = k / 84, cx = onPixel(tx - Math.sin(q * 2.6) * 18 + q * 22), hw = Math.round(5 - q * 3); g.fillStyle = P.outline; g.fillRect(cx - (hw + 1) * u, y - k * u, (hw * 2 + 2) * u, u); g.fillStyle = w3; g.fillRect(cx - hw * u, y - k * u, hw * 2 * u, u); g.fillStyle = w2; g.fillRect(cx + u, y - k * u, Math.max(1, hw - 1) * u, u); }
-  for (const [dx, dy, rx, ry, sd] of [[-34, -88, 26, 12, 4.1], [40, -84, 24, 11, 2.2], [8, -116, 34, 15, 9.7]]) drawNeedles(g, onPixel(tx + dx), onPixel(y + dy), rx, ry, sd, u);
-  drawLantern(g, onPixel(x + S.level.goalOffset + 20), y, t);
+  drawLantern(g, onPixel(S.level.lantern - camX), onPixel(islandY(S.level.lantern)), t);
 }

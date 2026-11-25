@@ -13,6 +13,9 @@ export const S = {
   levelT: 0,        // seconds since the level started (not reset by a new tomorrow)
   // What Ichigo carries from level to level (kept in the save, see save.js):
   learned: [],      // what Ichigo has learned about the world, in the order learned ('kaachan', 'sea', ...): see LEARNED in icons.js
+  still: null,      // a level drawn as a picture in a journey (story.js): 'start', 'end', or 'asleep'. cut: the level begins straight from such a picture
+  cut: false,
+  as: null,         // how old to draw Ichigo, if not the level's age (story.js)
   marks: new Set(), // permanent marks on Ichigo's body ('chin', ...): see MARKS in sprite.js
   things: new Set(),// what Ichigo has found and kept ('shell', ...): see things.js
   thingsOpen: false, newThing: false,   // the panel of Ichigo's things is up (the game waits); something in it hasn't been looked at yet
