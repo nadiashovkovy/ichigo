@@ -220,11 +220,16 @@ function older5(frames) {
   return { ...frames, stand: leg(back(frames.stand)), step1: leg(back(frames.step1)), step2: leg(back(frames.step2)), balance: leg(back(frames.balance)), jump: back(frames.jump), sit: back(frames.sit), dig1: back(frames.dig1), dig2: back(frames.dig2) };
 }
 const FRAMES5 = older5(FRAMES4);
+// Swimming (Level 6): the jump, turned on its side by drawTurned, legs kicking: in the second frame they're a pixel over.
+for (const F of [FRAMES, FRAMES4, FRAMES5]) { const n = F.jump.length; F.kick = F.jump.map((r, i) => (i >= n - 6 ? '.' + r.slice(0, -1) : r)); }
 const framesNow = () => { const age = S.as ?? (S.level ? S.level.age : 3); return age >= 5 ? FRAMES5 : age >= 4 ? FRAMES4 : FRAMES; };   // (S.as: younger or older than the level has them, in a journey: story.js)
 const HOLDS_BUCKET = ['stand', 'step1', 'step2', 'balance', 'sit'];   // frames where the bucket hangs upright (it can show water, and the shovel)
 // The red shovel, standing in the bucket blade up (its handle down inside): drawn from the rim up.
 const SPADE = ['RR.', 'RRR', 'RRr', '.Rr', '.R.', '.R.'];
 const SPADE_C = { R: P.red, r: P.rust };
+// The whale's shoulder blade, from Level 6 on, standing in the bucket in its place: a broad white blade, its knob down inside.
+const BLADE = ['wwww', 'wwwm', 'wwmm', '.wm.', '.wm.', '.m..'];
+const BLADE_C = { w: P.foam, m: P.grey1 };
 // Damage that stays with Ichigo, added one by one with each fall: [rows below the collar, column,
 // colour (or null to tear a hole), width, height], in pixels. Measured from the collar so it lands in
 // the same place in every frame.
@@ -251,7 +256,7 @@ const MARKS = {
 // Which permanent marks to draw, from S.marks (the chin shows its plaster in Level 1 and its scar
 // after), and the shovel Ichigo carries in the bucket.
 export function markIds() {
-  const n = S.level ? S.level.number : 1, ids = n > 5 || S.noShovel ? [] : ['shovel'];   // (it sinks in Level 5)
+  const n = S.level ? S.level.number : 1, ids = S.noShovel ? [] : n <= 5 ? ['shovel'] : S.things.has('bone') ? ['bone'] : [];   // (the red one sinks in Level 5; the whale bone is found in Level 6)
   if (S.marks.has('rope') && n >= 5) ids.push('rope');
   if (S.marks.has('chin')) ids.push(S.level && S.level.number === 1 ? 'chin-plaster' : 'chin-scar');
   return ids;
@@ -336,6 +341,10 @@ function picture(frame, scars, [hx, hy] = [0, 0], marks = []) {
       const yy = y - SPADE.length + j, xx = x1 - 3 + i;
       if (ch !== '.' && grid[yy] && xx < grid[yy].length) grid[yy][xx] = SPADE_C[ch];
     }));
+    if (marks.includes('bone')) BLADE.forEach((r, j) => [...r].forEach((ch, i) => {   // or the whale bone
+      const yy = y - BLADE.length + j, xx = x1 - 4 + i;
+      if (ch !== '.' && grid[yy] && xx < grid[yy].length) grid[yy][xx] = BLADE_C[ch];
+    }));
   }
   const pic = { grid: outline(grid), anchor: ANCHOR, number: number && { x: number.x, y: number.y + 2 } };   // (the outline adds a row on top)
   cache.set(key, pic); return pic;
@@ -364,4 +373,23 @@ export function drawSprite(g, frame, x, y, face, scars, hair, marks) {
     g.fillStyle = SP.W;
     digits.forEach((row, r) => [...row].forEach((ch, c) => { if (ch === '#') g.fillRect(nx + c, ny + r, 1, 1); }));
   }
+}
+
+// Ichigo turned: turn 1 is on their side, head first the way they face (swimming along); 2 is upside down (diving);
+// 0 is as they are. x, y: the middle of them, in pixels. (The 15 isn't drawn: it's on their back now.)
+const turned = new Map();
+export function drawTurned(g, frame, x, y, turn, face, scars, hair, marks) {
+  const { grid } = picture(frame, scars, hair, marks);
+  let pic = turned.get(grid) && turned.get(grid)[turn];
+  if (!pic) {
+    const h = grid.length, w = grid[0].length;
+    pic = turn === 1 ? Array.from({ length: w }, (_, r) => Array.from({ length: h }, (_, c) => grid[h - 1 - c][r]))   // a quarter turn, head to the right
+      : turn === 2 ? grid.map(r => [...r].reverse()).reverse() : grid;
+    // (trimmed to what's drawn, so it turns about its middle)
+    const rows = pic.map((r, i) => (r.some(Boolean) ? i : -1)).filter(i => i >= 0), cols = pic[0].map((_, c) => (pic.some(r => r[c]) ? c : -1)).filter(c => c >= 0);
+    pic = pic.slice(rows[0], rows[rows.length - 1] + 1).map(r => r.slice(cols[0], cols[cols.length - 1] + 1));
+    if (!turned.has(grid)) turned.set(grid, []); turned.get(grid)[turn] = pic;
+  }
+  const h = pic.length, w = pic[0].length, ox = Math.round(x - w / 2), oy = Math.round(y - h / 2);
+  for (let r = 0; r < h; r++) for (let c = 0; c < w; c++) { const v = pic[r][c]; if (v) { g.fillStyle = v; g.fillRect(face > 0 ? ox + c : ox + w - 1 - c, oy + r, 1, 1); } }
 }

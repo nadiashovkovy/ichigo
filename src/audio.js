@@ -258,6 +258,16 @@ function nohkan(freq, at, len, out, vol) {
   n.buffer = noise; n.loop = true; bp.type = 'bandpass'; bp.frequency.value = freq * 1.5; bp.Q.value = 2.2; ng.gain.setValueAtTime(0, at); ng.gain.linearRampToValueAtTime(vol * 1.1, at + .03); ng.gain.setTargetAtTime(vol * .4, at + .08, .1); ng.gain.setTargetAtTime(0, at + len * .95, .05);
   o.connect(g); g.connect(out); n.connect(bp); bp.connect(ng); ng.connect(out); for (const x of [o, n]) { x.start(at); x.stop(at + len + .4); }
 }
+// A suikinkutsu, the water harp buried in a temple garden: a drop falls into a jar under the ground, and the jar rings,
+// low and long, a little out of tune with itself. (Level 6's: under the water.)
+function suikin(freq, at, vol, out) {
+  for (const [k, v, d] of [[1, 1, 3.2], [1.004, .6, 3], [2.03, .28, 1.4], [3.1, .1, .5]]) {
+    const o = ac.createOscillator(), g = ac.createGain(); o.frequency.setValueAtTime(freq * k * 1.07, at); o.frequency.exponentialRampToValueAtTime(freq * k, at + .035);
+    g.gain.setValueAtTime(0, at); g.gain.linearRampToValueAtTime(vol * v, at + .006); g.gain.exponentialRampToValueAtTime(.0001, at + d); o.connect(g); g.connect(out); o.start(at); o.stop(at + d + .05);
+  }
+  const p = ac.createOscillator(), pg = ac.createGain(); p.frequency.setValueAtTime(freq * 3, at); p.frequency.exponentialRampToValueAtTime(freq * 5, at + .03);   // (the drop itself)
+  pg.gain.setValueAtTime(vol * .25, at); pg.gain.exponentialRampToValueAtTime(.0001, at + .05); p.connect(pg); pg.connect(out); p.start(at); p.stop(at + .07);
+}
 // A temple block (mokugyo): a hollow knock. And a shime, the small high drum.
 function block(at, vol, out) {
   const o = ac.createOscillator(), g = ac.createGain(); o.frequency.setValueAtTime(620, at); o.frequency.exponentialRampToValueAtTime(470, at + .05);
@@ -276,6 +286,7 @@ const PLAY = {
   sanshin: ([i, m, how], c) => shamisen(m, c.at + early(), i === 0 ? c.vol : c.vol * .85, c.out, how, c.shift, c.strings, true),
   pizz: ([i, m], c) => pizz(hz(m + c.shift), c.at + early(), i === 0 ? c.vol : c.vol * .75, c.out),
   glass: ([, m], c) => glass(hz(m + c.shift), c.at + early(), c.vol, c.out),
+  suikin: ([, m], c) => suikin(hz(m + c.shift), c.at + early() * 4, c.vol, c.out),
   bamboo: ([i, m], c) => bamboo(hz(m + c.shift), c.at + early(), i === 0 ? c.vol : c.vol * .7, c.out),
   shakuhachi: ([, m, n], c) => shakuhachi(hz(m + c.shift), c.at, n * c.len, c.out, c.vol),
   flute: ([, m, n], c) => note(hz(m + c.shift), c.at, n * c.len, c.out, c.vol),
@@ -510,6 +521,12 @@ export function playGust(v) { if (ac) { burst(ac.currentTime, 1.6, { from: 500, 
 export function playThunder(v) { if (!ac) return; const at = ac.currentTime; if (v > .8) burst(at + .05, .25, { from: 5200, to: 900, type: 'highpass', vol: .3, buf: noise }); for (const [d, q] of [[.1, 1], [.42, .7], [.95, .55], [1.6, .3]]) burst(at + d, 1.3, { from: 240, to: 60, vol: .95 * v * q, attack: .05 }); }
 export function playSnap() { if (ac) { burst(ac.currentTime, .09, { from: 3800, to: 1500, type: 'bandpass', q: 1.5, vol: .5, buf: noise }); burst(ac.currentTime + .03, .35, { from: 420, to: 130, vol: .6 }); } }
 export function playCreak() { if (!ac) return; const at = ac.currentTime, o = ac.createOscillator(), f = ac.createBiquadFilter(), g = ac.createGain(); o.type = 'sawtooth'; o.frequency.setValueAtTime(92, at); o.frequency.linearRampToValueAtTime(128, at + .16); o.frequency.linearRampToValueAtTime(80, at + .36); f.type = 'bandpass'; f.frequency.value = 700; f.Q.value = 5; g.gain.setValueAtTime(0, at); g.gain.linearRampToValueAtTime(.12, at + .06); g.gain.linearRampToValueAtTime(0, at + .38); o.connect(f); f.connect(g); g.connect(fx); o.start(at); o.stop(at + .4); }
+// Level 6's: bubbles going up (v: how many, 0..1); a breath in, coming up for air.
+export function playBubbles(v) {
+  if (!ac) return; const at = ac.currentTime;
+  for (let i = 0; i < 2 + Math.round(v * 4); i++) { const t = at + i * .07 + Math.random() * .05, b = ac.createOscillator(), bg = ac.createGain(); b.type = 'sine'; b.frequency.setValueAtTime(380 + Math.random() * 300, t); b.frequency.exponentialRampToValueAtTime(800 + Math.random() * 500, t + .05); bg.gain.setValueAtTime(.05, t); bg.gain.exponentialRampToValueAtTime(.001, t + .06); b.connect(bg); bg.connect(fx); b.start(t); b.stop(t + .08); }
+}
+export function playGasp() { if (ac) { burst(ac.currentTime, .35, { from: 900, to: 2600, type: 'bandpass', q: 1.4, vol: .22, attack: .04, buf: noise }); burst(ac.currentTime + .05, .4, { from: 1400, to: 900, type: 'bandpass', q: 3, vol: .08, attack: .1, buf: noise }); } }
 export function playHiss() { if (ac) { burst(ac.currentTime, 1.1, { from: 6500, to: 2500, type: 'highpass', vol: .22, attack: .03, buf: noise }); burst(ac.currentTime, .5, { from: 600, to: 200, vol: .4 }); } }
 export function playClick(pitch = 1) {
   if (!ac) return;

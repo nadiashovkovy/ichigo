@@ -21,6 +21,9 @@ What it does:
      properly, to the raft.
   8. Plays Level 4 the same way: once never hiding (caught: a new tomorrow), ringing a bell (the keeper must
      come to it), and once properly, hiding from the light, to the open sea.
+  9. Level 5: once not holding on (overboard: a new tomorrow), once properly, through the storm to the masts.
+ 10. Level 6: once diving and staying down (out of breath: a new tomorrow at the last air), and once properly: air to
+     air through the wrecks, the teacup, the whale bone, digging out the gap, and the turtle.
 
 Run it from the project folder:
     pip install playwright && playwright install chromium
@@ -419,6 +422,80 @@ async def play_storm(browser):
     await ctx.close()
     return notes, errors, report
 
+# Level 6's bot. window._mode: 'sink' (dives and stays down: out of breath) or 'play'. It finds its way with a search over the
+# map's letters, goes back to the nearest air when its breath wouldn't last to it, and waits for the eels to go in.
+WRECKS_BOT = r"""
+(() => { const { S, wrecks: D, keys, input, cards } = window.ichigo, M = window._wm, T = 24; let wait = 0; window._step = window._step || 0;
+  const AIR = [[24, 6], [39, 10], [51, 17], [64, 15], [74, 17], [86, 6], [95, 6], [91, 21], [111, 6]];
+  const GOALS = [[24, 6], [39, 10], [51, 17], ['cup', 56, 25], [64, 15], [74, 17], [86, 6], ['bone', 85, 25], [91, 21], ['dig'], ['end', 111, 21]];
+  const free = (c, r) => !M.solidAt(c, r) && r >= 0, node = (c, r) => free(c - 1, r) && free(c, r) && free(c + 1, r) && r >= S.level.surface;
+  function search(c0, r0) { const d = new Map(), q = [[c0, r0]], from = new Map(); d.set(c0 + ',' + r0, 0);
+    while (q.length) { const [c, r] = q.shift(), k = c + ',' + r; for (const [dc, dr] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const n = (c + dc) + ',' + (r + dr); if (d.has(n) || !node(c + dc, r + dr)) continue; d.set(n, d.get(k) + 1); from.set(n, k); q.push([c + dc, r + dr]); } }
+    return { d, from }; }
+  const here = () => { let c = M.col(D.x), r = M.row(D.y); if (r < S.level.surface) r = S.level.surface; if (!node(c, r)) for (const [a, b] of [[c + 1, r], [c - 1, r], [c, r + 1], [c, r - 1]]) if (node(a, b)) return [a, b]; return [c, r]; };
+  const pathTo = (S0, c, r) => { const out = []; let k = c + ',' + r; while (k && S0.from.has(k)) { out.unshift(k.split(',').map(Number)); k = S0.from.get(k); } return out; };
+  const danger = e => { const E = { warn: .8, out: 1.5 }; return !e.still && (e.t < E.warn + E.out + .15 || e.t > e.every - .5); };
+  function steer(tx, ty) { const dx = tx - D.x, dy = ty - D.y; keys.ArrowRight = dx > 4; keys.ArrowLeft = dx < -4; keys.ArrowUp = dy < -4; keys.ArrowDown = dy > 4; }
+  window._tick = () => {
+    if (cards.active()) { if (++wait > 20) { cards.next(); wait = 0; } return; }
+    for (const k of ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'KeyS', 'ShiftLeft', 'Space']) keys[k] = false;
+    if (S.scene !== 'deep' || D.phase !== 'play') return;
+    if (!D.dived) { keys.ArrowRight = true; return; }
+    if (window._mode === 'sink') { keys.ArrowDown = true; return; }
+    let g = GOALS[window._step]; while (g && ((g[0] === 'cup' && D.items.find(i => i.kind === 'teacup').taken) || (g[0] === 'bone' && D.bone) || (g[0] === 'dig' && D.open))) g = GOALS[++window._step];
+    if (!g) return;
+    const [c, r] = here(), S0 = search(c, r), air = AIR.map(a => [a, S0.d.get(a[0] + ',' + a[1])]).filter(a => a[1] !== undefined).sort((a, b) => a[1] - b[1])[0];
+    const atAir = D.surfaced || D.mode === 'deck', secs = D.breath * 10;
+    // breath: at air, fill up; away from it, go back before it would run out
+    if (atAir && D.breath < .97) return;
+    let target = null, act = null;
+    if (!atAir && air && secs < air[1] * T / 118 + 1.3) target = air[0];
+    else if (g[0] === 'dig') { const left = S.level.map.flatMap((q, rr) => [...q].map((ch, cc) => (ch === 'S' && !D.dug.has(cc + ',' + rr) ? [cc, rr] : null))).filter(Boolean).sort((a, b) => a[0] - b[0] || a[1] - b[1])[0];
+      if (!left) { window._step++; return; }
+      if (Math.abs(D.x - (left[0] * T - 22)) < 30 && M.row(D.y) >= 21 && M.row(D.y) <= 23) { keys.ArrowRight = true; keys.KeyS = true; return; }
+      target = [left[0] - 2, 22]; }
+    else { const [cc, rr] = typeof g[0] === 'string' ? g.slice(1) : g; target = [cc, rr]; if (Math.abs(c - cc) <= 1 && Math.abs(r - rr) <= 1) { if (g[0] === 'cup' || g[0] === 'bone') { input.usePressed = true; return; } if (g[0] === 'end') { steer((cc + .5) * T, M.at(0, rr + .5)[1]); return; } if (atAir) window._step++; else { keys.ArrowUp = true; return; } return; } }
+    const p = pathTo(S0, target[0], target[1]); if (!p.length) { const [x, y] = M.at(target[0] + .5, target[1] + .5); steer(x, y); return; }
+    const n = p[Math.min(1, p.length - 1)], [nx, ny] = M.at(n[0] + .5, n[1] + .5);
+    for (const e of D.eels) { const [ex] = M.at(e.c + .5, 0); if (Math.abs(nx - ex) < 50 && Math.abs(D.x - ex) > 40 && danger(e) && Math.abs(e.r - n[1]) < 5) return; }   // (wait for the eel)
+    steer(nx, ny);
+  };
+})();
+"""
+
+async def play_wrecks(browser):
+    """Level 6. Returns (problems, page errors, what to report)."""
+    errors, notes, report = [], [], {}
+    async def open_level(mode):
+        ctx = await browser.new_context(viewport={'width': 960, 'height': 540})
+        await ctx.add_init_script(FAST_CLOCK)
+        await ctx.add_init_script("localStorage.setItem('ichigo.save', JSON.stringify({ marks: ['chin', 'rope'], things: ['pinwheel'], tomorrows: 0, done: [1, 2, 3, 4, 5], seenWave: true }))")
+        page = await ctx.new_page(); page.on('pageerror', lambda e: errors.append(str(e)))
+        await page.goto(f'http://127.0.0.1:{PORT}/index.html'); await page.wait_for_timeout(2000)
+        await page.evaluate("import('/src/wrecks.js').then(m => { window._wm = m; })")
+        await page.evaluate(f"window._mode = '{mode}'"); await page.add_script_tag(content=WRECKS_BOT)
+        await page.evaluate('ichigo.begin(6)')
+        return ctx, page
+    async def until(page, js, shot=None, timeout=120): return await moment(page, 'Level 6', js.replace('D.', 'ichigo.wrecks.'), notes, shot, timeout)
+
+    ctx, page = await open_level('sink')   # dives and stays down: out of breath, and a new tomorrow at the last air
+    await until(page, "S.scene === 'deep' && D.dived && D.breath < .3", 'deep_breath'); await until(page, "D.phase === 'over'", 'deep_over'); await until(page, "S.scene === 'deep' && S.deaths === 1 && D.breath > .99", 'deep_again')
+    await ctx.close()
+
+    ctx, page = await open_level('play')
+    for js, shot in [("S.scene === 'deep' && S.sceneT > 1 && !ichigo.cards.active()", 'deep_deck'), ("D.dived && D.y > 500", 'deep_dive'), ("D.surfaced && D.x > 30 * 24 && D.x < 45 * 24", 'deep_pocket'),
+                     ("D.eels.some(e => window._wm.eelOut(e) > .9 && Math.abs(D.x - (e.c + .5) * 24) < 140)", 'deep_eel'), ("D.items.some(i => i.kind === 'teacup' && i.taken)", 'deep_cup'), ("D.surfaced && D.x > 60 * 24 && D.x < 68 * 24", 'deep_hold'),
+                     ("D.hold > 1", 'deep_bone'), ("D.digging", 'deep_dig'), ("D.open", 'deep_open'), ("D.phase === 'ride' && D.t > 3", 'deep_ride')]:
+        if not await until(page, js, shot, 240): break
+    await until(page, "S.scene === 'end' && S.sceneT > 3", 'deep_end', 120)
+    report = await page.evaluate("({ scene: ichigo.S.scene, deaths: ichigo.S.deaths, seconds: Math.round(ichigo.S.levelT), dug: ichigo.wrecks.dug.size })")
+    report['save'] = json.loads(await page.evaluate("localStorage.getItem('ichigo.save')"))
+    if report['scene'] != 'end': notes.append('Level 6: the bot did not finish')
+    s = report['save']
+    if 6 not in s['done'] or 'turtle' not in s['learned'] or 'bone' not in s['things'] or 'teacup' not in s['things']: notes.append('Level 6: the save is missing the level, the turtle, the bone or the teacup')
+    await ctx.close()
+    return notes, errors, report
+
 def serve():
     class Quiet(http.server.SimpleHTTPRequestHandler):
         def log_message(self, *a): pass
@@ -528,6 +605,7 @@ async def main():
         plum = await play_plum(browser) if ONLY in (None, 3) else None
         light = await play_light(browser) if ONLY in (None, 4) else None
         storm = await play_storm(browser) if ONLY in (None, 5) else None
+        wrecks = await play_wrecks(browser) if ONLY in (None, 6) else None
         await browser.close()
     httpd.shutdown()
 
@@ -543,7 +621,7 @@ async def main():
             s = r['save'] or {}
             if s.get('learned') != ['kaachan', 'sea'] or s.get('marks') != ['chin']: print("Problem: expected learned ['kaachan', 'sea'] and marks ['chin']"); ok = False
         if r['errors'] or r['notes']: ok = False
-    for name, got in (('Level 2', tide), ('Level 3', plum), ('Level 4', light), ('Level 5', storm)):
+    for name, got in (('Level 2', tide), ('Level 3', plum), ('Level 4', light), ('Level 5', storm), ('Level 6', wrecks)):
         if not got: continue
         notes, errors, report = got
         print(f'--- {name} ---')

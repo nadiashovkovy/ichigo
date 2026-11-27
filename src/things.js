@@ -13,7 +13,7 @@ import { lg, pixelSpace, scale2x } from './pixel.js';
 import { pixelText, LETTER, LINE } from './text.js';
 import { drawIcon, iconSize, LEARNED } from './icons.js';
 
-const C = { K: P.outline, Y: P.gold, y: P.ochre, R: P.red, r: P.rust, w: P.white, f: P.foam, b: P.wood, B: P.brown, a: P.aqua, o: P.ocean, n: P.navy, T: P.tan, t: P.tanD, p: P.pink, g: P.teal, s: P.sea, h: P.grey1, m: P.mist, d: P.deep };
+const C = { l: P.leaf, e: P.pine, K: P.outline, Y: P.gold, y: P.ochre, R: P.red, r: P.rust, w: P.white, f: P.foam, b: P.wood, B: P.brown, a: P.aqua, o: P.ocean, n: P.navy, T: P.tan, t: P.tanD, p: P.pink, g: P.teal, s: P.sea, h: P.grey1, m: P.mist, d: P.deep };
 // Pictures: letter grids. Small ones lie on the sand; the panel shows them doubled.
 export const THINGS = {
   bucket: { name: 'THE YELLOW BUCKET', text: 'KAA-CHAN BOUGHT IT FOR THE BEACH.', always: true, pic: ['...KKKKKK...', '..K......K..', '.K........K.', 'KKKKKKKKKKKK', 'KYYwYYYYYYyK', '.KYwYYYYYyK.', '.KYwYYYYYyK.', '.KYYYYYYYyK.', '..KYYYYYyK..', '..KKKKKKKK..'] },
@@ -28,6 +28,8 @@ export const THINGS = {
   chime: { name: 'A WIND CHIME', text: 'IT SOUNDS LIKE THE ONE UNDER THE EAVES AT HOME.', pic: ['.....K.....', '...KKmKK...', '..KmmwmmK..', '.KmwmRmmmK.', '.KmwRRRmmK.', '.KmmmRmmaK.', '..KKKKKKK..', '.....K.....', '....KKK....', '....KfK....', '....KRK....', '....KfK....', '....KKK....'] },
   pinwheel: { name: 'A PINWHEEL', text: 'IT TURNS WHEN ANYTHING MOVES. THERE WAS ONE ON THE FENCE.', pic: ['...KK..KKK..', '..KRRKKwwwK.', '..KRRRKwwK..', '.KKKRRwwKKK.', 'KaaaKYYKRRRK', 'KaaaaYYRRRRK', '.KKKwwaaKKK.', '..KwwKaaaK..', '.KwwwKKaaK..', '..KKK.KbKK..', '......KbK...', '......KbK...', '......KbK...'] },
   rope: { name: 'A ROPE', text: 'THE FISHERMAN GAVE IT TO ICHIGO, FOR A CRAB.', pic: ['...KKKKKK...', '..KTTTTTTK..', '.KTyKKKKyTK.', 'KTyKTTTTKyTK', 'KTKTyKKyTKTK', 'KTKTyKKyTKTK', 'KTyKTTTTKyTK', '.KTyKKKKyTK.', '..KTTTTTTTK.', '...KKKKKKTK.', '.........KK.'] },
+  bone: { name: 'A WHALE BONE', text: "IT WAS A WHALE'S SHOULDER BLADE. NOW IT IS FOR DIGGING.", pic: ['.KKKKKKK.', 'KffffffmK', 'KfffffmmK', 'KffffffmK', '.KfffmmK.', '.KfffmK..', '..KffmK..', '..KfmK...', '...KhhK..', '...KhhK..', '....KK...'] },
+  teacup: { name: 'A TEACUP', text: 'THERE IS A PINE TREE PAINTED ON IT. THERE IS ONE BY THE HOUSE.', pic: ['KKKKKKKKKK..', 'KffffeffmK..', 'KfffeeefmKKK', 'KffeeeeemK.K', 'KffffbffmK.K', '.KfffbfmKKK.', '.KffffffmK..', '..KKKKKKK...'] },
   paddle: { name: 'A PADDLE', text: 'THE OLD SAILOR WAS ASLEEP ON IT.', pic: ['.........KK.', '........KTbK', '.......KTbK.', '......KTbK..', '.....KTbK...', '....KTbK....', '..KKTbK.....', '.KTTbbK.....', 'KTTbbbK.....', 'KTbbbBK.....', '.KbbBK......', '..KKK.......'] },
 };
 for (const th of Object.values(THINGS)) { th.big = scale2x(th.pic); th.grid = th.pic.map(r => [...r].map(ch => (ch === '.' ? null : C[ch]))); }
@@ -104,6 +106,7 @@ const PIECES = [
   { thing: 'kite', lines: [[P.leaf, 186, 108, 214, 84, 244, 66, 274, 58, 306, 62]] },                                                        // the hill behind the house
   { thing: 'chime', lines: [[P.teal, 208, 90, 208, 94, 204, 98, 212, 98, 208, 94], [P.teal, 208, 98, 208, 102]] },                                         // the chime under the eaves
   { thing: 'pinwheel', lines: [[P.wood, 268, 108, 268, 88], [P.red, 268, 88, 262, 80, 268, 78, 268, 88, 276, 82, 278, 88, 268, 88, 274, 96, 268, 98, 268, 88, 260, 94, 258, 88, 268, 88]] },   // the pinwheel on the fence
+  { thing: 'teacup', lines: [[P.wood, 162, 110, 162, 98], [P.pine, 150, 100, 162, 84, 174, 100, 150, 100], [P.pine, 153, 92, 162, 76, 171, 92]] },   // the pine by the house
   { thing: 'shell', lines: [[P.sea, 12, 92, 24, 84, 36, 92, 48, 84, 60, 92, 72, 84, 84, 92], [P.sea, 60, 106, 72, 98, 84, 106, 96, 98, 108, 106, 120, 98, 132, 106]] },   // the sea between
 ];
 function stroke(x0, y0, [col, ...pts], solid) {

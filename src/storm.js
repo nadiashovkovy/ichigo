@@ -61,6 +61,11 @@ export function startStorm() {
   S.deaths = 0; S.levelT = 0; S.scene = 'storm'; S.sceneT = 0; S.camX = camFor();
   showCards(START_CARDS);
 }
+// The level as it ends, for the journey after it (main.js): the calm, the masts, Ichigo sitting on what's left of the raft.
+export function endStorm() {
+  Object.assign(R, { phase: 'calm', t: 12, done: 2, ended: true, light: 1, dark: 1, rough: .08, sail: false, waves: [], bits: [], shovel: false, fade: 0, seated: true, face: 1, plank: S.level.swim.planks.length - 1 });
+  R.swimX = R.x; R.x = mastX() - 30; S.noShovel = true; S.camX = camFor();
+}
 // A new tomorrow: the start of the part Ichigo was in.
 export function retryStorm() {
   Object.assign(R, fresh(), { phase: R.check, fade: 1 });

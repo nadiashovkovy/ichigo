@@ -14,6 +14,7 @@
 //   level 4   prowl     iwato          5 beats, on tiptoe    temple block and bowed kokyū: the eye
 //   level 5   sail      ritsu          6 beats, rolling      koto and flute, running before the wind
 //             storm     kumoi          7 beats, headlong     the big drums, and a nohkan shrieking over them
+//   level 6   deep      in             9 steps, drifting     a suikinkutsu: drops falling into a jar under the ground
 //
 // A song: tempo (beats a minute; a step is half a beat), steps to a bar, bars to a round, its strings (the scale,
 // up the koto), bass (a low note for each bar, in turn), bell and reeds (the shō's notes, and the bar they come in).
@@ -149,6 +150,22 @@ export const SONGS = {
       ['shime', .9, [[[0, .5], [1, .35], [2, .4], [3, .5], [4, .35], [5, .5], [6, .45]]], 'open'],
       ['nohkan', .04, [[[0, 86, 3], [3, 83, 4]], [[0, 88, 7]]], 'seen'],
       ['taiko', .7, [[[1, .5], [2, .6], [4, .6], [6, .8]]], 'seen'],
+    ],
+  },
+
+  // Level 6, the Ship Graveyard: slow threes, drifting, in the in scale (half a step up from the bottom note: dark, still).
+  // Drops ring in a jar the whole time. Under the water a low pulse comes in; nearly out of breath, a heartbeat.
+  deep: {
+    tempo: 66, steps: 9, bars: 16, strings: [40, 41, 45, 47, 50, 52, 53, 57, 59, 62, 64, 65, 69, 71, 74, 76, 77], bass: [40, 40, 45, 41], bell: 52, reeds: [[64, 69, 71, 76], 8, 4],
+    parts: [
+      ['suikin', .2, [[[0, 76], [5, 71]], [[2, 69]], [[0, 74], [4, 77], [7, 71]], [[3, 65]], [[0, 76]], [[2, 69], [6, 64]], [[1, 71], [4, 74]], R]],
+      ['koto', .16, [
+        [[0, 52, 'o'], [3, 59], [6, 64]], [[0, 57], [4, 62, 'p']], [[0, 53], [3, 57], [6, 59]], [[0, 52, 'o']],
+        [[0, 52, 'o'], [3, 59], [6, 65]], [[0, 57], [6, 64]], [[0, 53], [3, 62, 'g']], [[0, 52], [6, 76, 'r']],
+        R, [[0, 64, 'p']], R, [[3, 59], [6, 57]], [[0, 52, 'o'], [3, 59], [6, 64]], [[0, 57], [4, 65, 'p']], [[0, 53], [3, 57]], [[0, 52, 'o']]]],
+      ['shakuhachi', .085, [R, R, R, R, R, R, R, R, [[0, 64, 2], [2, 65, 2], [4, 69, 2], [6, 71, 3]], [[0, 74, 6], [6, 71, 3]], [[0, 69, 9]], R, R, R, R, R]],   // the Lullaby
+      ['pizz', .3, [[[0, 40], [6, 40]], [[0, 41], [6, 40]]], 'open'],
+      ['taiko', .5, [[[0, .9], [1, .5], [5, .8], [6, .45]]], 'seen'],
     ],
   },
 };

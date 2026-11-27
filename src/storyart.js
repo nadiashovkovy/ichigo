@@ -8,7 +8,7 @@ import { P, LW, LH, TOP_PX, PIXEL, RAMP } from './config.js';
 import { S } from './state.js';
 import { lg, beginWorld, pixelSpace, dither, pack, pixelBuffer, quantize } from './pixel.js';
 import { drawScenery, drawChartSea, drawLantern, drawFloatingKoinobori, drawPix, FAR_BOAT, hsh } from './art.js';
-import { drawSprite, spriteHeight, markIds, outline, SP } from './sprite.js';
+import { drawSprite, drawTurned, spriteHeight, markIds, outline, SP } from './sprite.js';
 import { drawPerson } from './people.js';
 import { drawThought } from './bubbles.js';
 import { foliage, trunk, clothAt, ORANGE } from './plumart.js';
@@ -325,6 +325,36 @@ export const SHOTS = {
       if (fed) { g.fillStyle = P.outline; g.fillRect(70, 43, 11, 6); g.fillStyle = P.aqua; g.fillRect(71, 44, 9, 4); g.fillStyle = P.white; g.fillRect(72, 46, 6, 1); g.fillStyle = P.deep; g.fillRect(79, 43, 2, 6); }
     }, 130, y0); nearSea_low('day');
     if (away) put(FLY[Math.floor(T() * 9) % 2], 330 + (t - 7) * 130, y0 + 90 - (t - 7) * 52);
+  } },
+
+  // --- before Level 6: a cabin on a wreck, at night; learning to swim off its deck
+  cabin: { draw(t) {
+    scenery('night', { cam: 40, view: 'night', x: 520, behind: moon(150, 88) }); nearSea('night', 404, 40);
+    const shut = Math.floor((t + .6) / 2.4) % 2 === 1, bob = 0, y0 = 128 + bob;
+    closeUp(150, 84, g => {
+      const q = (x, y, w, h, c) => { g.fillStyle = c; g.fillRect(x, y, w, h); };
+      g.clearRect(0, 0, 150, 84);
+      for (let y = 4; y < 76; y++) for (let x = 2; x < 148; x++) { const row = Math.floor(y / 6), seam = y % 6 === 5 || (x + row * 23) % 34 === 0; q(x, y, 1, 1, seam ? P.outline : hsh(row * 7.3 + Math.floor((x + row * 23) / 34)) < .2 ? P.brown : P.wood); }   // its walls
+      q(0, 2, 150, 3, P.outline); q(0, 76, 150, 8, P.outline); q(2, 77, 146, 2, P.ochre); q(0, 2, 3, 76, P.outline); q(147, 2, 3, 76, P.outline);
+      q(30, 18, 22, 16, P.outline); q(32, 20, 18, 12, P.navy); q(33, 21, 4, 3, P.foam); q(40, 20, 1, 12, P.outline); q(32, 26, 18, 1, P.outline);   // a window, the moon in it
+      q(104, 24, 30, 53, P.outline); q(106, 26, 26, 51, P.night); for (let i = 0; i < 26; i++) if (Math.sin(i * .6 + t * 2) > .4) q(106 + i, 60 + (i % 3), 1, 1, P.steel);   // the doorway, the sea outside
+      if (shut) { q(104, 24, 30, 53, P.outline); q(106, 26, 26, 51, P.wood); for (let j = 31; j < 77; j += 6) q(106, j, 26, 1, P.brown); q(126, 50, 3, 3, P.gold); }
+      else { q(132, 24, 12, 53, P.outline); q(133, 26, 9, 51, P.brown); q(134, 26, 2, 51, P.wood); }   // (the door, banging shut and open)
+      asleep(52, 75, 1, g);
+    }, 170, y0);
+    zs(274, y0 + 70);
+  } },
+  swimming: { phase: t => Math.min(2, Math.floor(t / 3.6)), draw(t, n) {
+    const cam = 120 + t * 6, q = (t - n * 3.6) / 3.6; scenery(['day', 'late', 'day'][n], { cam, view: 'day', x: 470, behind: sun([160, 470, 300][n], [96, 190, 80][n], n === 1 ? P.red : P.white) });
+    // the wreck's deck at the left, and the days scratched on its side
+    const dy = Yp(384), sx = 230;
+    for (let x = 0; x < sx; x++) for (let y = dy; y < Yp(SEA) + 30; y++) { const row = Math.floor((y - dy) / 6), seam = (y - dy) % 6 === 5 || (x + row * 23) % 34 === 0; r(x, y, 1, 1, x === sx - 1 || y === dy ? P.outline : seam ? P.outline : y - dy < 2 ? P.tan : hsh(row * 7.3 + Math.floor((x + row * 23) / 34)) < .2 ? P.brown : P.wood); }
+    for (let x = 6; x < sx - 4; x += 12) { r(x - 1, dy - 12, 4, 12, P.outline); r(x, dy - 11, 2, 11, P.wood); } r(0, dy - 13, sx - 4, 3, P.outline); r(0, dy - 12, sx - 4, 1, P.ochre);
+    const days = [1, 5, 12][n]; for (let i = 0; i < days; i++) { const gI = Math.floor(i / 5), j = i % 5, x = 150 + gI * 18 + j * 3; if (j < 4) r(x, dy + 5, 1, 10, P.foam); else for (let k = 0; k < 14; k++) r(x - 13 + k, dy + 13 - Math.floor(k * .6), 1, 1, P.foam); }   // (the days, scratched on its side)
+    // Ichigo in the water (drawn before the sea, so it covers all but their head and shoulders)
+    if (n === 0) { const x = sx + 12, y = seaRow(x); ichigo(Math.sin(t * 6) > 0 ? 'balance' : 'stand', x, y + 12, -1, ['pout']); }   // (holding on at the edge, kicking)
+    else { const far = n === 1 ? 40 + Math.sin(q * Math.PI) * 50 : 60 + q * 300, x = sx + far, y = seaRow(x), back = n === 1 && q > .5; drawTurned(lg, Math.floor(t * 8) % 2 ? 'kick' : 'jump', x, y - 3, 1, back ? -1 : 1, 0, [1, 0], markIds()); }
+    nearSea('day', SEA, cam);
   } },
 };
 // (a strip of sea across the foot of a close-up)

@@ -164,6 +164,21 @@ ICONS.wind = [   // the wind: three streaks of it, curling over at their ends
   '............',
 ];
 
+ICONS.turtle = [   // a sea turtle, swimming
+  '............',
+  '............',
+  '...OOOOO....',
+  '..OGgGGgO...',
+  '.OGGGgGGGOTT',
+  'OGgGGGGgGGTk',
+  'OOOOOOOOOOTT',
+  '.TTT....TTT.',
+  'TT........TT',
+  '............',
+  '............',
+  '............',
+];
+
 // What Ichigo learns about the world: the level it's learned in, and the picture that stands for it.
 export const LEARNED = {
   kaachan: { level: 1, icon: 'kaachan' },
@@ -172,6 +187,7 @@ export const LEARNED = {
   home: { level: 3, icon: 'house' },
   lighthouse: { level: 4, icon: 'lighthouse' },
   wind: { level: 5, icon: 'wind' },
+  turtle: { level: 6, icon: 'turtle' },
 };
 
 ICONS.plum = [   // a plum, a leaf on its stalk

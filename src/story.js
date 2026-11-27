@@ -10,7 +10,7 @@ import { S } from './state.js';
 import { lg, lo, pixelSpace, dither } from './pixel.js';
 import { pixelText, LETTER, LINE } from './text.js';
 import { drawSkip, onSkip } from './cards.js';
-import { seaSound, playLullaby, playWash, playMunch, playCry, playCut, playSplash, playClick } from './audio.js';
+import { seaSound, playLullaby, playWash, playMunch, playCry, playCut, playSplash, playClick, playThud } from './audio.js';
 import { SHOTS } from './storyart.js';
 
 // For each level: its pictures, in order. [picture, caption, how long it stays up at least (seconds), sounds]. A sound: [when, what].
@@ -54,6 +54,12 @@ const STORIES = {
     ['logs', 'ICHIGO TIES ON EVERY LOG THAT FLOATS BY. THE RAFT GETS BIGGER, AND SO DOES ICHIGO. ICHIGO IS FIVE.', 11.5, [[2.2, () => playClick(.8)], [4.9, () => playClick(.8)], [7.6, () => playClick(.8)]]],
     ['bird', 'A BIRD RIDES ON THE RAFT FOR FOUR DAYS. ICHIGO GIVES IT HALF OF EVERY FISH.', 9.5, [[2.4, () => playMunch()], [4.4, () => playMunch()]]],
     ['start5', 'THEN IT FLIES EAST, AND THE WIND GOES THE SAME WAY.', 7, []],
+  ],
+  6: [
+    ['end5', 'THE SEA IS FLAT AGAIN. THE MASTS ARE FROM OLD SHIPS THAT SANK ON A REEF.', 7.5, []],
+    ['cabin', 'ONE OF THE SHIPS STILL HAS ITS DECK ABOVE THE WATER. ICHIGO SLEEPS IN ITS CABIN. THE DOOR BANGS ALL NIGHT.', 10, [[1.8, () => playThud()], [4.2, () => playThud()], [6.6, () => playThud()], [9, () => playThud()]]],
+    ['swimming', 'EVERY DAY ICHIGO LETS GO OF THE DECK A LITTLE LONGER. ON THE TWELFTH DAY, ICHIGO CAN SWIM.', 11, [[.8, () => playSplash()], [4.4, () => playSplash()], [8, () => playSplash()]]],
+    ['start6', 'A MONTH GOES BY. NO BOATS COME INTO THE REEF.', 6.5, []],
   ],
 };
 

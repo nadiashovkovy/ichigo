@@ -250,3 +250,19 @@ export const STORM = {
   wave: { every: 7, warn: 2.4, speed: 330 },
   swim: { speed: 92, drift: 17, kick: 150, kicks: .05, tired: .03, under: .13, rest: .42, every: 4.4, wave: 300, hit: .2 },
 };
+
+// The Ship Graveyard (Level 6, wrecks.js). The map is in levels/level06.json.
+export const WRECKS = {
+  tile: 24,                 // one letter of the map, in game units (18 pixels)
+  // on a deck: walking, running, how quickly Ichigo gets going and stops; jumping (Ichigo at five)
+  walk: 150, run: 230, accel: 1400, stop: 1700, jump: 560, gravity: 1900,
+  // in the water: swimming speed (Shift: faster, but it uses breath faster); how quickly they get up to it; drifting up when
+  // not swimming; the jump out of the water at the surface
+  swim: 125, fast: 1.45, pull: 5, float: 26, climb: 470,
+  box: { swim: [22, 10], deck: [10, 12] },   // half the width and height of Ichigo, swimming and standing
+  breath: 10, fastBreath: 1.7, refill: .7,   // seconds of breath; how much faster it goes when swimming fast; seconds to fill it again
+  dig: .6,                  // seconds to dig away one letter of sand
+  // eels: seconds between; how long they're out; how long their eyes show first; how hard they push; how much breath it costs
+  eel: { every: [3.6, 4.4, 3.9, 4.8], out: 1.5, warn: .8, push: 290, cost: .1 },
+  turtle: { speed: 72, near: 170 },         // the turtle: how fast she swims; how near Ichigo has to be before she goes on
+};
